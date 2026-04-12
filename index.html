@@ -7,8 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://www.google.com/recaptcha/api.js"></script>
-    <script src="/api/client-config.js"></script>
+    <script id="recaptcha-script" src="https://www.google.com/recaptcha/api.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -342,11 +341,13 @@
                 if(C.waPhone)document.querySelectorAll('a.js-wa').forEach(a=>a.href='https://wa.me/'+C.waPhone);
                 if(C.instagramUrl)document.querySelectorAll('a.js-ig').forEach(a=>a.href=C.instagramUrl);
                 if(C.facebookUrl)document.querySelectorAll('a.js-fb').forEach(a=>a.href=C.facebookUrl);
-                if(C.emailjsPublicKey){
-                    emailjs.init(C.emailjsPublicKey);
-                    if(b) b.disabled = false;
+                if(C.emailjsPublicKey) emailjs.init(C.emailjsPublicKey);
+                if(C.recaptchaSiteKey) {
+                    const rs = document.getElementById('recaptcha-script');
+                    rs.src = 'https://www.google.com/recaptcha/api.js?render=' + C.recaptchaSiteKey;
                 }
             } catch(e) { console.error("Config fail", e); }
+            if(b) b.disabled = false;
         }
         loadConfig();
         function calculatePrice(){

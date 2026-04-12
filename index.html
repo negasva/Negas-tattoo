@@ -334,13 +334,18 @@
     <script>
         let C = {};
         async function loadConfig(){
+            const b = document.getElementById('submit-btn');
+            if(b) b.disabled = true;
             try {
                 const r = await fetch('/api/config');
                 C = await r.json();
                 if(C.waPhone)document.querySelectorAll('a.js-wa').forEach(a=>a.href='https://wa.me/'+C.waPhone);
                 if(C.instagramUrl)document.querySelectorAll('a.js-ig').forEach(a=>a.href=C.instagramUrl);
                 if(C.facebookUrl)document.querySelectorAll('a.js-fb').forEach(a=>a.href=C.facebookUrl);
-                if(C.emailjsPublicKey)emailjs.init(C.emailjsPublicKey);
+                if(C.emailjsPublicKey){
+                    emailjs.init(C.emailjsPublicKey);
+                    if(b) b.disabled = false;
+                }
             } catch(e) { console.error("Config fail", e); }
         }
         loadConfig();

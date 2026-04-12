@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://www.google.com/recaptcha/api.js"></script>
-    <script src="/api/client-config.js"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
         :root{--bg:#080808}
@@ -331,7 +331,16 @@
     </footer>
 
     <script>
-        const C=window.__CFG__||{};
+        const C = {
+            emailjsPublicKey: 'YOUR_EMAILJS_PUBLIC_KEY',
+            emailjsServiceId: 'YOUR_EMAILJS_SERVICE_ID',
+            emailjsTemplateId: 'YOUR_EMAILJS_TEMPLATE_ID',
+            recaptchaSiteKey: 'YOUR_RECAPTCHA_SITE_KEY',
+            waPhone: 'YOUR_WHATSAPP_PHONE_NUMBER', // Example: 573001234567 (without + or spaces)
+            instagramUrl: 'YOUR_INSTAGRAM_PROFILE_URL',
+            facebookUrl: 'YOUR_FACEBOOK_PROFILE_URL'
+        };
+        // const C=window.__CFG__||{}; // Original line, commented out
         function applySocialLinks(){if(C.waPhone)document.querySelectorAll('a.js-wa').forEach(a=>{a.href='https://wa.me/'+C.waPhone;});if(C.instagramUrl)document.querySelectorAll('a.js-ig').forEach(a=>{a.href=C.instagramUrl;});if(C.facebookUrl)document.querySelectorAll('a.js-fb').forEach(a=>{a.href=C.facebookUrl;});}
         applySocialLinks();
         function calculatePrice(){
@@ -360,7 +369,12 @@
         document.querySelectorAll('input,select,textarea').forEach(el=>{el.addEventListener('input',saveFormData);el.addEventListener('change',saveFormData);});
         form.onsubmit=async e=>{
             e.preventDefault();
-            if(!C.emailjsPublicKey||!C.emailjsServiceId||!C.emailjsTemplateId){alert('Falta configuración: crea .env desde .env.example, ejecuta npm install y npm start, y abre el sitio en http://localhost:3780');return;}
+            // Si usas EmailJS, asegúrate de que las claves estén configuradas en el objeto C.
+            // La subida de imágenes a ImgBB no funcionará en un sitio estático sin un backend.
+            if (!C.emailjsPublicKey || !C.emailjsServiceId || !C.emailjsTemplateId) {
+                alert('Error de configuración: Asegúrate de que las claves de EmailJS estén configuradas en el código HTML.');
+                return;
+            }
             const $=s=>document.querySelector(s),userName=$('input[name="user_name"]').value.trim(),userPhone=$('input[name="user_phone"]').value.trim(),userEmail=$('input[name="user_email"]').value.trim();
             if(!userName||!userPhone||!userEmail){alert('Por favor completa todos los campos requeridos.');return;}
             if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)){alert('Por favor ingresa un email válido.');return;}
@@ -368,8 +382,8 @@
             if(C.recaptchaSiteKey){try{document.getElementById('recaptcha_token').value=await grecaptcha.execute(C.recaptchaSiteKey,{action:'submit'});}catch(_){}}
             if(!canSubmit()){alert('Has enviado demasiadas solicitudes. Por favor, espera 30 segundos antes de intentarlo de nuevo.');return;}
             btn.textContent='PROCESANDO...';btn.disabled=true;
-            let url='';const file=foto.files[0];
-            if(file){try{const fd=new FormData();fd.append('image',file);const j=await(await fetch('/api/upload-image',{method:'POST',body:fd})).json();if(!j.url)throw new Error(j.error||'Respuesta inesperada');url=j.url;}catch(err){alert('Error al subir la imagen de referencia: '+err.message);btn.textContent='REINTENTAR';btn.disabled=false;return;}}
+            let url='';// const file=foto.files[0];
+            // if(file){try{const fd=new FormData();fd.append('image',file);const j=await(await fetch('/api/upload-image',{method:'POST',body:fd})).json();if(!j.url)throw new Error(j.error||'Respuesta inesperada');url=j.url;}catch(err){alert('Error al subir la imagen de referencia: '+err.message);btn.textContent='REINTENTAR';btn.disabled=false;return;}}
             const cx=document.getElementById('complexity'),tz=document.getElementById('tattoo_zone'),z=tz.value,params={cliente_nombre:userName,cliente_whatsapp:userPhone,user_email:userEmail,ciudad:document.getElementById('ciudad')?.value||'',complejidad_diseno:cx.options[cx.selectedIndex].text,zona_tatuaje:z==='OTRO'?'Otra':z,otras_zonas:z==='OTRO'?document.getElementById('other_zone').value:'N/A',descripcion_referencia:ta.value,link_referencia:url,cotizacion_estimada:document.getElementById('form-estimated-price').value,tamano_final:document.getElementById('form-size').value,reply_to:userEmail};
             emailjs.send(C.emailjsServiceId,C.emailjsTemplateId,params).then(()=>{recordSubmission();localStorage.setItem('ultimaCotizacion',JSON.stringify(params));localStorage.removeItem('formData');location.href='resumen.html';},err=>{alert('Error al enviar la solicitud: '+JSON.stringify(err));btn.textContent='REINTENTAR';btn.disabled=false;});
         };

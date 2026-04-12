@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://www.google.com/recaptcha/api.js"></script>
+    <script src="/api/client-config.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -331,18 +332,18 @@
     </footer>
 
     <script>
-        const C = {
-            emailjsPublicKey: 'YOUR_EMAILJS_PUBLIC_KEY',
-            emailjsServiceId: 'YOUR_EMAILJS_SERVICE_ID',
-            emailjsTemplateId: 'YOUR_EMAILJS_TEMPLATE_ID',
-            recaptchaSiteKey: 'YOUR_RECAPTCHA_SITE_KEY',
-            waPhone: 'YOUR_WHATSAPP_PHONE_NUMBER', // Example: 573001234567 (without + or spaces)
-            instagramUrl: 'YOUR_INSTAGRAM_PROFILE_URL',
-            facebookUrl: 'YOUR_FACEBOOK_PROFILE_URL'
-        };
-        // const C=window.__CFG__||{}; // Original line, commented out
-        function applySocialLinks(){if(C.waPhone)document.querySelectorAll('a.js-wa').forEach(a=>{a.href='https://wa.me/'+C.waPhone;});if(C.instagramUrl)document.querySelectorAll('a.js-ig').forEach(a=>{a.href=C.instagramUrl;});if(C.facebookUrl)document.querySelectorAll('a.js-fb').forEach(a=>{a.href=C.facebookUrl;});}
-        applySocialLinks();
+        let C = {};
+        async function loadConfig(){
+            try {
+                const r = await fetch('/api/config');
+                C = await r.json();
+                if(C.waPhone)document.querySelectorAll('a.js-wa').forEach(a=>a.href='https://wa.me/'+C.waPhone);
+                if(C.instagramUrl)document.querySelectorAll('a.js-ig').forEach(a=>a.href=C.instagramUrl);
+                if(C.facebookUrl)document.querySelectorAll('a.js-fb').forEach(a=>a.href=C.facebookUrl);
+                if(C.emailjsPublicKey)emailjs.init(C.emailjsPublicKey);
+            } catch(e) { console.error("Config fail", e); }
+        }
+        loadConfig();
         function calculatePrice(){
             const sz=document.getElementById('size'),cx=document.getElementById('complexity'),sv=document.getElementById('size-val'),pd=document.getElementById('price-display');
             if(!sz||!cx||!sv||!pd)return;
@@ -357,8 +358,6 @@
         document.getElementById('customFileBtn').onclick=e=>{e.preventDefault();foto.click();};
         foto.onchange=()=>{fn.textContent=foto.files[0]?.name||'No ha seleccionado archivos';};
         const ta=document.querySelector('textarea[name="message"]'),cc=document.getElementById('charCount');
-        ta.oninput=()=>{cc.textContent=ta.value.length;};
-        if(C.emailjsPublicKey)emailjs.init(C.emailjsPublicKey);
         const form=document.getElementById('tattoo-form'),btn=document.getElementById('submit-btn');
         let submissionTimestamps=JSON.parse(localStorage.getItem('submissionTimestamps')||'[]'),lastSubmitTime=0;
         function canSubmit(){const n=Date.now();if(n-lastSubmitTime<3e4)return false;submissionTimestamps=submissionTimestamps.filter(t=>n-t<6e4);if(submissionTimestamps.length>=2)return false;if(submissionTimestamps.filter(t=>n-t<36e5).length>=10)return false;return true;}
@@ -372,7 +371,7 @@
             // Si usas EmailJS, asegúrate de que las claves estén configuradas en el objeto C.
             // La subida de imágenes a ImgBB no funcionará en un sitio estático sin un backend.
             if (!C.emailjsPublicKey || !C.emailjsServiceId || !C.emailjsTemplateId) {
-                alert('Error de configuración: Asegúrate de que las claves de EmailJS estén configuradas en el código HTML.');
+                alert('Error de configuración: Claves no encontradas. Verifica el servidor.');
                 return;
             }
             const $=s=>document.querySelector(s),userName=$('input[name="user_name"]').value.trim(),userPhone=$('input[name="user_phone"]').value.trim(),userEmail=$('input[name="user_email"]').value.trim();

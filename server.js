@@ -19,22 +19,22 @@ app.use((req, res, next) => {
 app.use(express.static(ROOT));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(ROOT, 'NEGAS INK.html'));
+  res.sendFile(path.join(ROOT, 'index.html'));
 });
 
-app.get('/api/client-config.js', (req, res) => {
-  res.type('application/javascript; charset=utf-8');
-  res.set('Cache-Control', 'no-store');
-  const cfg = {
-    emailjsPublicKey: process.env.EMAILJS_PUBLIC_KEY || '',
-    emailjsServiceId: process.env.EMAILJS_SERVICE_ID || '',
-    emailjsTemplateId: process.env.EMAILJS_TEMPLATE_ID || '',
-    recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY || '',
-    waPhone: process.env.WHATSAPP_PHONE || '',
-    instagramUrl: process.env.INSTAGRAM_URL || '',
-    facebookUrl: process.env.FACEBOOK_URL || ''
-  };
-  res.send(`window.__CFG__=${JSON.stringify(cfg)};`);
+// Agrega esto a tu servidor Node.js (Express)
+app.get('/api/config', (req, res) => {
+    // Si no hay variables, intentar leerlas otra vez
+    const config = {
+        emailjsPublicKey: (process.env.EMAILJS_PUBLIC_KEY || '').trim(),
+        emailjsServiceId: (process.env.EMAILJS_SERVICE_ID || '').trim(),
+        emailjsTemplateId: (process.env.EMAILJS_TEMPLATE_ID || '').trim(),
+        recaptchaSiteKey: (process.env.RECAPTCHA_SITE_KEY || '').trim(),
+        waPhone: (process.env.WHATSAPP_PHONE || '').trim(),
+        instagramUrl: (process.env.INSTAGRAM_URL || '').trim(),
+        facebookUrl: (process.env.FACEBOOK_URL || '').trim()
+    };
+    res.json(config);
 });
 
 app.post('/api/upload-image', upload.single('image'), async (req, res) => {

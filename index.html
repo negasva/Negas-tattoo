@@ -3,71 +3,789 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resumen de Cotización | Negas Ink</title>
+    <title>Negas Ink | Tattoo Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/api/client-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script id="recaptcha-script"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #080808; --red: #D20000; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #fff; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 2rem; }
-        .text-stroke { -webkit-text-stroke: 1px rgba(255,255,255,0.3); color: transparent; }
-        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 2rem; padding: 1.5rem; max-width: 600px; margin: auto; width: 100%; }
-        @media (min-width: 640px) { .card { padding: 3rem; } }
+        :root{--bg:#080808}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:#fff;overflow-x:hidden;scroll-behavior:smooth;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+        body::before{content:"";position:fixed;inset:0;opacity:.03;pointer-events:none;z-index:1;background:transparent}
+        .text-stroke{-webkit-text-stroke:1px rgba(255,255,255,.3);color:transparent}
+        input,select,textarea{-webkit-appearance:none;appearance:none;background:transparent!important;border:none!important;border-bottom:1px solid #333!important;border-radius:0!important;transition:border-color .3s;color:#fff!important}
+        input:focus,select:focus{border-color:#fff!important;outline:none}
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.4)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right center !important;
+            background-size: 1.1em !important;
+            padding-right: 2rem !important;
+            font-style: italic;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        select:hover { border-bottom-color: #fff !important; }
+        select option{background:#0e0e0e;color:#fff;font-style: normal; font-weight: 400; text-transform: none;}
+        .sc{background:#0e0e0e;padding:2.5rem 0 2rem;overflow:hidden;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+        .sc-viewport{position:relative;height:320px;display:flex;align-items:center;justify-content:center;perspective:1000px}
+        .sc-card{position:absolute;width:280px;height:280px;border-radius:12px;overflow:hidden;cursor:pointer;will-change:transform,opacity;transform-origin:center;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+        .sc-card img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+        .sc-nav{display:flex;justify-content:center;gap:10px;margin-top:1.4rem}
+        .sc-btn{width:36px;height:36px;border-radius:50%;border:1px solid #333;background:transparent;color:#999;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s}
+        .sc-btn:hover{border-color:#666;color:#fff}
+        .sc-dots{display:flex;justify-content:center;gap:6px;margin-top:1rem}
+        .sc-dot{width:4px;height:4px;border-radius:50%;background:#333;transition:width .3s,background .3s;cursor:pointer}
+        .sc-dot.on{width:16px;border-radius:2px;background:#fff}
+        .calendly-inline-widget{filter:invert(1) hue-rotate(180deg) contrast(1.1)}
+        .menu-toggle{display:none}
+        /* Lightbox Styles */
+        #lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        #lightbox.active { opacity: 1; pointer-events: auto; }
+        #lb-img { max-width: 90%; max-height: 90%; object-fit: contain; transform: scale(0.8); opacity: 0; transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease; }
+        #lightbox.active #lb-img { transform: scale(1); opacity: 1; }
+        
+        /* Interacción del Carrusel */
+        .sc-card { transition: filter 0.3s ease; }
+        .sc-card:not(.active-center):hover { filter: brightness(1.2); }
+        .cursor-zoom-in { cursor: zoom-in; }
+        #mobileMenu{display:flex;gap:2rem;flex-direction:row}
+        .accordion-container{max-width:42rem;margin:3rem auto}
+        .accordion{position:relative}
+        .accordion-item{position:relative;opacity:1}
+        .accordion-line{width:100%;height:1px;background:rgba(255,255,255,.1);position:absolute;bottom:0;left:0}
+        .accordion-header{cursor:pointer;padding:1.5rem;display:flex;justify-content:space-between;align-items:center;transition:background-color .3s;user-select:none;position:relative;z-index:10}
+        .accordion-header:hover{background:rgba(255,255,255,.02)}
+        .accordion-header:hover .accordion-icon{transform:rotate(45deg)}
+        .accordion-header.active{background:rgba(210,0,0,.05)}
+        .accordion-header.active .accordion-icon{transform:rotate(180deg)!important}
+        .accordion-title{font-size:1rem;font-weight:600;text-align:left;color:#fff}
+        .accordion-content{height:0;overflow:hidden;background:rgba(13,13,13,.5)}
+        .field-label{font-size:0.85rem;text-transform:uppercase;letter-spacing:1.5px;font-weight:900;display:block;margin-bottom:0.8rem;color:#fff;opacity:0.9}
+        .section-header{font-size:2.5rem;font-weight:900;font-style:italic;text-transform:uppercase;letter-spacing:-1px;margin-bottom:2.5rem;color:#fff;border-left:6px solid #D20000;padding-left:1.5rem;line-height:1}
+        .accordion-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#D20000;transition:transform .4s cubic-bezier(0.4, 0, 0.2, 1);flex-shrink:0}
+        .accordion-text{color:#a1a1a1;font-size:.95rem;line-height:1.6}
+        @media (max-width:768px){
+        @keyframes hintSlide {
+            0%, 100% { transform: translateX(0); opacity: 1; }
+            20% { transform: translateX(10px); opacity: 0.8; }
+            40% { transform: translateX(-5px); }
+            60% { transform: translateX(5px); }
+        }
+        .animate-hint-slide { animation: hintSlide 2s ease-in-out infinite; }
+        body.menu-open nav{mix-blend-mode:normal!important}
+        .menu-toggle{display:block;position:fixed;top:1rem;right:1rem;z-index:10001;padding:.25rem}
+        #mobileMenu{display:flex;position:fixed;inset:0;width:100%;height:100vh;height:100dvh;flex-direction:column;justify-content:center;align-items:center;gap:.875rem;z-index:10000;background:#000;mix-blend-mode:normal;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-12px);transition:opacity .35s,transform .35s,visibility .35s}
+        #mobileMenu.active{opacity:1;visibility:visible;pointer-events:auto;transform:none}
+        #mobileMenu a{font-size:1.5rem;transition:opacity .25s,transform .35s}
+        #mobileMenu.active a{animation:menuL .4s ease backwards}
+        #mobileMenu.active a:nth-child(1){animation-delay:.05s}
+        #mobileMenu.active a:nth-child(2){animation-delay:.1s}
+        #mobileMenu.active a:nth-child(3){animation-delay:.15s}
+        .accordion-header{padding:1rem}
+        .accordion-title{font-size:.95rem}
+        }
+        @keyframes menuL{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
     </style>
 </head>
 <body class="selection:bg-white selection:text-black">
 
-    <div class="card space-y-8">
-        <div class="text-center">
-            <h1 class="text-4xl font-black italic uppercase tracking-tighter mb-2">¡Solicitud Enviada!</h1>
-            <p class="text-zinc-500 uppercase text-[10px] tracking-widest">Resumen de tu proyecto</p>
+    <nav class="fixed top-0 w-full z-[100] mix-blend-difference p-4 md:p-8 flex justify-between items-center">
+        <a href="#" class="text-lg md:text-xl font-black tracking-tighter uppercase italic self-center">Negas Ink</a>
+        
+        <button type="button" class="menu-toggle text-white text-2xl" onclick="toggleMenu(event)" aria-label="Abrir o cerrar menú">☰</button>
+        <div id="mobileMenu" class="md:gap-8 gap-3 text-[10px] uppercase tracking-[0.4em] font-medium items-center">
+            <a href="#portfolio" class="hover:opacity-50 transition self-center" onclick="toggleMenu(event)">Portfolio</a>
+            <a href="#redes" class="hover:opacity-50 transition self-center" onclick="toggleMenu(event)">Redes</a>
+            <a href="#booking" class="bg-[#D20000] text-white rounded-full hover:bg-[#b00000] transition duration-500 self-center max-md:px-6 max-md:py-3 max-md:font-black max-md:italic max-md:tracking-tighter max-md:text-lg md:px-4 md:py-2 md:font-bold" onclick="toggleMenu(event)">Cotizar</a>
         </div>
+    </nav>
 
-        <div class="space-y-4 border-y border-white/5 py-6 text-sm">
-            <div class="flex justify-between"><span class="text-zinc-500 uppercase text-[10px] tracking-widest">Nombre:</span> <span id="res-nombre" class="font-bold italic"></span></div>
-            <div class="flex justify-between"><span class="text-zinc-500 uppercase text-[10px] tracking-widest">Zona:</span> <span id="res-zona" class="font-bold italic"></span></div>
-            <div class="flex justify-between"><span class="text-zinc-500 uppercase text-[10px] tracking-widest">Tamaño:</span> <span id="res-tamano" class="font-bold italic"></span></div>
-            <div class="flex justify-between"><span class="text-zinc-500 uppercase text-[10px] tracking-widest">Estilo:</span> <span id="res-estilo" class="font-bold italic"></span></div>
-        </div>
-
-        <div class="text-center py-6">
-            <span class="text-zinc-500 uppercase text-[10px] tracking-widest block mb-2">Inversión Estimada</span>
-            <div id="res-precio" class="text-[clamp(1.5rem,12vw,4.5rem)] font-black italic tracking-tighter text-white break-all leading-none px-2"></div>
-        </div>
-
-        <div class="space-y-6 text-center pt-6 border-t border-white/5">
-            <a href="javascript:history.back()" class="block w-full bg-[#D20000] text-white py-4 rounded-full text-lg font-black uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500 transform hover:scale-[1.01] mb-6">
-                Volver
-            </a>
-            <div class="flex justify-center gap-8 text-[10px] uppercase tracking-[0.3em] font-bold text-zinc-400">
-                <a href="#" target="_blank" rel="noopener" class="js-ig hover:text-white transition">Instagram</a>
-                <a href="#" target="_blank" rel="noopener" class="js-wa hover:text-white transition">WhatsApp</a>
+    <section class="min-h-screen flex flex-col justify-center px-6 py-20">
+        <div class="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-10 items-center">
+            <div class="order-2 lg:order-1">
+                <h1 class="text-[12vw] lg:text-[8vw] leading-[0.85] font-black uppercase italic tracking-tighter mb-8">
+                    <div class="overflow-hidden"><span class="hero-word block">Black</span></div>
+                    <div class="overflow-hidden"><span class="hero-word text-stroke block italic">Work</span></div>
+                    <div class="overflow-hidden"><span class="hero-word block">negas</span></div>
+                </h1>
+                <p id="hero-desc" class="text-zinc-500 text-lg max-w-md leading-relaxed">
+                    Piezas de alto contraste y técnica impecable. En <span class="text-white font-bold">Negas Ink</span> transformamos ideas en marcas permanentes.
+                </p>
+                <div class="mt-10">
+                    <a href="#booking" class="bg-[#D20000] text-white px-10 py-6 rounded-full block w-full text-center text-xl lg:text-2xl font-black uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500 font-bold">
+                        Cotizar Tatuaje
+                    </a>
+                </div>
             </div>
-            
-            <a href="#" class="js-wa-msg block text-[11px] uppercase tracking-[0.2em] font-black italic text-red-500 hover:text-white transition">
-                ¿Tienes dudas? Contáctame
-            </a>
+            <div id="hero-img-container" class="order-1 lg:order-2 relative aspect-[4/5] overflow-hidden rounded-2xl bg-zinc-900 shadow-2xl border border-white/5">
+                <img id="hero-img" src="https://i.ibb.co/gbt230bD/657596602-18195058267358960-7783419555348968370-n.jpg" 
+                     class="w-full h-full object-cover grayscale hover:grayscale-0 transition duration-700 scale-110" alt="Tattoo Artist">
+            </div>
         </div>
-    </div>
+    </section>
+
+    <section id="portfolio" class="py-20 border-y border-white/5">
+        <div class="mb-8 px-8">
+            <h2 class="text-xs uppercase tracking-[0.5em] text-zinc-500 mb-2 font-bold italic">TRABAJOS DE REFERENCIA</h2>
+        </div>
+        
+        <div class="sc">
+            <div class="sc-viewport" id="vp"></div>
+            <div class="sc-dots" id="dots"></div>
+            <div class="sc-nav mt-8">
+                <button class="sc-btn" id="prev">&#8592;</button>
+                <button class="sc-btn" id="next">&#8594;</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="booking" class="max-w-3xl mx-auto px-6 py-20">
+        
+        <div class="mb-12">
+            <h3 class="text-5xl font-black italic uppercase tracking-tighter mb-4">Cotización</h3>
+            <p class="text-zinc-500 uppercase text-[10px] tracking-widest">Reserva tu espacio en la historia</p>
+        </div>
+
+        <form id="tattoo-form" class="space-y-10 mb-20">
+            <input type="hidden" name="estimated_price" id="form-estimated-price">
+            <input type="hidden" name="final_size" id="form-size">
+            <input type="hidden" name="fecha_cita" id="form-fecha-cita">
+            <input type="hidden" name="recaptcha_token" id="recaptcha_token">
+
+            <!-- SECCIÓN 1: EL PROYECTO -->
+            <div id="section-proyecto" class="space-y-12">
+                <h2 class="section-header">EL PROYECTO</h2>
+                
+                <div>
+                    <label class="field-label">Estilo de tatuaje</label>
+                    <select id="complexity" required class="w-full py-4 px-0 border-b border-zinc-700 focus:border-white transition-colors cursor-pointer bg-transparent text-lg font-bold italic uppercase">
+                        <option value="" disabled selected hidden>Selecciona una opción...</option>
+                        <option value="1.2">Blackwork</option>
+                        <option value="1.3">Ornamental</option>
+                        <option value="1">Botánico</option>
+                        <option value="1.2">Lettering</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="field-label">Cuéntame tu idea</label>
+                    <textarea name="message" rows="4" required placeholder="Describe tu diseño, estilo, referencias..." class="w-full py-3 px-0 resize-none border-b border-zinc-700 focus:border-white transition-colors text-lg italic"></textarea>
+                    <p class="text-[9px] text-zinc-500 mt-1 text-right"><span id="charCount">0</span>/1000</p>
+                </div>
+
+                <div id="size-card-display" class="py-4 px-6 border border-zinc-900 rounded-2xl bg-white/[0.01]">
+                    <label class="field-label !mb-2 !text-[0.7rem] opacity-60">Tamaño aproximado</label>
+                    <div class="flex items-center gap-6 h-16">
+                        <div id="slider-pulse-wrapper" class="flex-1 flex items-center">
+                            <input type="range" id="size" min="2" max="60" value="10" class="w-full h-1 bg-zinc-800 appearance-none cursor-pointer accent-[#D20000] hover:accent-white transition-all">
+                        </div>
+                        <div class="shrink-0 w-[100px] text-right flex items-center justify-end">
+                            <span id="size-display-val" class="text-4xl font-black tracking-tighter italic text-white leading-none">10cm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <label class="field-label">Referencia Visual</label>
+                    <input type="file" id="fotoTatuaje" accept="image/*" class="hidden" onchange="handleImagePreview(this)">
+                    <div id="upload-zone" onclick="document.getElementById('fotoTatuaje').click()" 
+                         class="relative group cursor-pointer border-2 border-dashed border-[#D20000]/40 hover:border-[#D20000] bg-zinc-900/30 rounded-2xl p-12 transition-all duration-500 flex flex-col items-center justify-center min-h-[220px] overflow-hidden">
+                        
+                        <div id="upload-placeholder" class="flex flex-col items-center text-center transition-all duration-500 group-hover:scale-105">
+                            <svg class="w-16 h-16 mb-4 text-[#D20000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v5m0 0l-2-2m2 2l2-2" />
+                            </svg>
+                            <span class="text-white font-black italic tracking-tighter text-2xl uppercase">Sube tu referencia visual aquí</span>
+                            <p class="text-[#D20000] text-[10px] font-bold uppercase mt-3 tracking-[0.2em] opacity-80">Una imagen nos ayuda a capturar tu idea de forma precisa</p>
+                        </div>
+
+                        <div id="upload-preview" class="hidden absolute inset-0 bg-black">
+                            <img id="preview-img" src="" class="w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-700">
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-zinc-600 italic">⚠️ El archivo debe ser menor a 20MB.</p>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: DATOS PERSONALES -->
+            <div id="section-datos" class="space-y-10 pt-16 mt-16 border-t border-zinc-900">
+                <h2 class="section-header">DATOS PERSONALES</h2>
+                
+                <div>
+                    <label class="field-label">Nombre Completo</label>
+                    <input type="text" name="user_name" required class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
+                </div>
+
+                <div>
+                    <label class="field-label">WhatsApp <span class="text-zinc-600 normal-case tracking-normal font-normal text-sm italic">(10 dígitos)</span></label>
+                    <input type="tel" name="user_phone" required pattern="[0-9]{10}" maxlength="10" class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
+                </div>
+
+                <div>
+                    <label class="field-label">Email</label>
+                    <input type="email" name="user_email" required class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
+                </div>
+
+                <div>
+                    <label class="field-label">Ciudad</label>
+                    <select id="ciudad" name="ciudad" required class="w-full py-4 px-0 border-b border-zinc-700 focus:border-white transition-colors cursor-pointer bg-transparent text-lg font-bold italic uppercase">
+                        <option value="" disabled selected>Selecciona una ciudad</option>
+                        <option value="Sabaneta">Sabaneta</option>
+                        <option value="Medellín">Medellín</option>
+                        <option value="Envigado">Envigado</option>
+                        <option value="Itaguí">Itaguí</option>
+                        <option value="Poblado">Poblado</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="field-label">Zona del cuerpo</label>
+                    <select id="tattoo_zone" name="tattoo_zone" required class="w-full py-4 px-0 border-b border-zinc-700 focus:border-white transition-colors cursor-pointer bg-transparent text-lg font-bold italic uppercase">
+                        <option value="" disabled selected hidden>Selecciona una zona...</option>
+                        <option value="Brazo">Brazo</option>
+                        <option value="Antebrazo">Antebrazo</option>
+                        <option value="Muñeca">Muñeca</option>
+                        <option value="Tobillo">Tobillo</option>
+                        <option value="Pantorrilla">Pantorrilla</option>
+                        <option value="Muslo">Muslo</option>
+                        <option value="Pecho">Pecho</option>
+                        <option value="Espalda">Espalda</option>
+                        <option value="Costillas">Costillas</option>
+                        <option value="Cuello">Cuello</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- 5. CUADRO GRANDE DE INVERSIÓN (al final) -->
+            <div id="price-card" class="py-10 px-4 sm:px-8 border-2 border-zinc-700 rounded-2xl bg-white/[0.03] text-center">
+                <div class="flex flex-col items-center justify-center">
+                    <span id="price-size-display" class="text-lg text-zinc-500 mb-2">—</span>
+                    <span id="price-display" class="text-[clamp(1.5rem,12vw,4.5rem)] font-black tracking-tighter italic text-white break-all leading-none">—</span>
+                    <p class="text-[10px] text-zinc-600 mt-4 uppercase tracking-widest">Inversión aproximada</p>
+                </div>
+                <p class="text-[9px] text-zinc-500 mt-6 italic">⚠️ Completa todos los campos para ver tu cotización.</p>
+            </div>
+
+            <button type="submit" id="submit-btn" class="w-full bg-[#D20000] text-white py-6 rounded-full text-xl font-black uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500 mt-8">
+                Enviar Solicitud
+            </button>
+        </form>
+
+        <div class="accordion-container">
+            <h2 class="text-2xl font-black italic uppercase tracking-tighter mb-6 text-center">Preguntas Frecuentes</h2>
+            <div class="accordion">
+                <div class="accordion-line top-line" style="top:0; bottom:auto;"></div>
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Cuál es el valor mínimo de una cotización?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">El valor mínimo depende del tamaño y complejidad del diseño. Para piezas pequeñas comenzamos desde $300.000 COP. Te recomendamos usar el cotizador para obtener una estimación inicial.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Puedo modificar el diseño después de cotizado?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">Claro, los diseños pueden ajustarse según tus preferencias. Cambios menores no tienen costo adicional. Modificaciones significativas pueden afectar el valor final de la cotización.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Cuánto tiempo tarda realizar un tatuaje?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">El tiempo depende del tamaño, complejidad y ubicación del diseño. Pueden ser desde 30 minutos para piezas pequeñas, hasta varias horas para trabajos más complejos. La duración se especifica en tu cotización.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Qué cuidados debo tener después del tatuaje?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">Mantén el área limpia e hidratada. Evita la exposición al sol durante 2-3 semanas. No nades en piscinas o playas durante el proceso de cicatrización. Usa bloqueador solar SPF 30+. Evita ropa muy ajustada sobre la zona tatuada.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Hacen tatuajes de cobertura?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">Sí, realizamos tatuajes de cobertura o remodelación de diseños anteriores. Este tipo de trabajos requiere consulta directa para evaluar el tatuaje anterior. Contacta vía WhatsApp con la foto del tatuaje que deseas modificar.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Cuál es la política de cancelación de citas?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">Las cotizaciones no requieren depósito. Para confirmar tu cita, es necesario un abono del 30% del valor total. Cancelaciones con 48 horas de anticipación reembolsan el abono. Cancelaciones posteriores pierden el abono.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-20">
+            <div class="max-w-2xl mx-auto text-center">
+                <h3 class="text-2xl font-black italic uppercase tracking-tighter mb-4">¿Tienes más preguntas?</h3>
+                <p class="text-zinc-500 text-sm leading-relaxed mb-8">Si tienes dudas sobre tu cotización, contáctame directamente a través de WhatsApp.</p>
+                
+                <div class="flex gap-6 justify-center">
+                    <a href="#" target="_blank" rel="noopener" class="js-wa bg-[#D20000] text-white py-4 px-8 rounded-full text-center font-bold uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500">
+                        Pregunta aquí
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <footer class="bg-black py-20 border-t border-white/5 w-full">
+        <div class="max-w-2xl mx-auto text-center space-y-8">
+            <div class="flex justify-center gap-12 text-[12px] uppercase tracking-[0.5em] font-medium">
+                <a href="#" target="_blank" rel="noopener" class="js-ig hover:text-white/50 transition duration-300">Instagram</a>
+                <a href="#" target="_blank" rel="noopener" class="js-wa hover:text-white/50 transition duration-300">WhatsApp</a>
+            </div>
+            <p class="text-[11px] text-[#444] tracking-[0.3em] uppercase font-light">
+                Negas Ink — Sabaneta, Medellín — 2026
+            </p>
+        </div>
+    </footer>
 
     <script>
-        const C=window.__CFG__||{};
-        if(C.waPhone){document.querySelectorAll('a.js-wa').forEach(a=>{a.href='https://wa.me/'+C.waPhone;});document.querySelectorAll('a.js-wa-msg').forEach(a=>{a.href='https://wa.me/'+C.waPhone+'?text='+encodeURIComponent('Hola! Tengo dudas sobre mi cotización');});}
-        if(C.instagramUrl)document.querySelectorAll('a.js-ig').forEach(a=>{a.href=C.instagramUrl;});
-        const raw = localStorage.getItem('ultimaCotizacion');
-        const datos = raw ? JSON.parse(raw) : null;
-        if (datos) {
-            document.getElementById('res-nombre').innerText = datos.cliente_nombre;
-            // Mostrar zona: si es "Otra" mostrar el valor de otras_zonas, sino mostrar zona_tatuaje
-            const zonaMostrar = datos.zona_tatuaje === 'Otra' ? datos.otras_zonas : datos.zona_tatuaje;
-            document.getElementById('res-zona').innerText = zonaMostrar || 'No especificada';
-            document.getElementById('res-tamano').innerText = datos.tamano_final;
-            document.getElementById('res-estilo').innerText = datos.complejidad_diseno;
-            document.getElementById('res-precio').innerText = datos.cotizacion_estimada;
-        } else {
-            // Si no hay datos, redirigir al inicio
-            window.location.href = '/';
+        // 1. INICIALIZACIÓN DE PLUGINS
+        gsap.registerPlugin(ScrollTrigger);
+
+        let C = {};
+        // Función de carga de configuración corregida
+        async function loadConfig(){
+            const b = document.getElementById('submit-btn');
+            if(b) b.disabled = true;
+            try {
+                const r = await fetch('/api/config');
+                if (r.ok) {
+                    C = await r.json();
+                    applyConfig();
+                }
+            } catch(e) { console.error("Config fail", e); }
+            if(b) b.disabled = false;
         }
+
+        function applyConfig() {
+            if(C.waPhone)document.querySelectorAll('a.js-wa').forEach(a=>a.href='https://wa.me/'+C.waPhone);
+            if(C.instagramUrl)document.querySelectorAll('a.js-ig').forEach(a=>a.href=C.instagramUrl);
+            if(C.facebookUrl)document.querySelectorAll('a.js-fb').forEach(a=>a.href=C.facebookUrl);
+            if(C.emailjsPublicKey) emailjs.init(C.emailjsPublicKey);
+            if(C.recaptchaSiteKey) {
+                const s = document.createElement('script');
+                s.src = 'https://www.google.com/recaptcha/api.js?render=' + C.recaptchaSiteKey;
+                s.async = true;
+                document.head.appendChild(s);
+            }
+        }
+
+        loadConfig();
+        function calculatePrice(){
+            const sz=document.getElementById('size'),cx=document.getElementById('complexity'),sdv=document.getElementById('size-display-val'),pd=document.getElementById('price-display');
+            if(!sz||!cx||!sdv||!pd)return;
+            
+            const size=+sz.value;
+            sdv.textContent=size+'cm';
+            document.getElementById('form-size').value=size+'cm';
+            
+            const psd = document.getElementById('price-size-display');
+            if(psd) psd.textContent = size + 'cm';
+            
+            const complexity=parseFloat(cx.value);
+            const message=document.querySelector('textarea[name="message"]')?.value.trim();
+
+            // Solo calcular si el estilo y la idea están presentes (el tamaño siempre tiene valor)
+            if(isNaN(complexity) || !message){
+                pd.textContent='—';
+                document.getElementById('form-estimated-price').value='';
+                return;
+            }
+            
+            const b=9e4,v=33e3,x=45e3,t=b+Math.min(size,15)*v*complexity+Math.max(0,size-15)*x*complexity,f='$'+t.toLocaleString('es-CO');
+            pd.textContent=f;
+            document.getElementById('form-estimated-price').value=f;
+        }
+        
+        function toggleMenu(e){e.stopPropagation();const m=document.getElementById('mobileMenu');m.classList.toggle('active');document.body.classList.toggle('menu-open',m.classList.contains('active'));}
+        
+        window.handleImagePreview = function(input) {
+            const placeholder = document.getElementById('upload-placeholder');
+            const preview = document.getElementById('upload-preview');
+            const img = document.getElementById('preview-img');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    placeholder.classList.add('hidden');
+                    preview.classList.remove('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
+
+        // Inicializar displays sin calcular precio
+        if(document.getElementById('size-display-val')) document.getElementById('size-display-val').textContent='10cm';
+        if(document.getElementById('price-display')) document.getElementById('price-display').textContent='—';
+        document.querySelector('input[name="user_phone"]')?.addEventListener('input',function(){this.value=this.value.replace(/\D/g,'');});
+        const foto=document.getElementById('fotoTatuaje');
+        const ta=document.querySelector('textarea[name="message"]'),cc=document.getElementById('charCount');
+        if(ta) ta.oninput=()=>{ if(cc) cc.textContent=ta.value.length; calculatePrice(); };
+
+        // --- LÓGICA DE ENVÍO RESTAURADA Y MEJORADA ---
+        const form=document.getElementById('tattoo-form'),btn=document.getElementById('submit-btn');
+        let submissionTimestamps=JSON.parse(localStorage.getItem('submissionTimestamps')||'[]'),lastSubmitTime=0;
+        
+        function canSubmit(){const n=Date.now();if(n-lastSubmitTime<3e4)return false;submissionTimestamps=submissionTimestamps.filter(t=>n-t<6e4);if(submissionTimestamps.length>=2)return false;return true;}
+        
+        form.onsubmit=async e=>{
+            e.preventDefault();
+            if (!C || !C.emailjsPublicKey) return alert('Error: Configuración no cargada. Asegúrate de abrir el sitio desde http://localhost:3780 y no como archivo local.');
+            if(!canSubmit()) return alert('Espera 30 segundos entre envíos.');
+
+            btn.textContent='ENVIANDO...'; btn.disabled=true;
+
+            let token = '';
+            if(typeof grecaptcha !== 'undefined' && C.recaptchaSiteKey){
+                try {
+                    await new Promise(resolve => grecaptcha.ready(resolve));
+                    token = await grecaptcha.execute(C.recaptchaSiteKey, { action: 'submit' });
+                } catch(err) { console.error("¡Ugh! Error de Guardián:", err); }
+            }
+
+            let imageUrl = '';
+            const fileInput = document.getElementById('fotoTatuaje');
+            const file = fileInput ? fileInput.files[0] : null;
+            if(file){
+                const fd = new FormData(); fd.append('image', file);
+                try {
+                    const res = await fetch('/api/upload-image', {method:'POST', body:fd});
+                    if (res.ok) { const data = await res.json(); imageUrl = data.url; }
+                } catch(err) { console.error("Upload fail", err); }
+            }
+
+            const params = {
+                cliente_nombre: form.user_name.value,
+                cliente_whatsapp: form.user_phone.value,
+                user_email: form.user_email.value,
+                cotizacion_estimada: document.getElementById('form-estimated-price').value,
+                tamano_final: document.getElementById('form-size').value,
+                link_referencia: imageUrl,
+                recaptcha_token: token
+            };
+
+            emailjs.send(C.emailjsServiceId, C.emailjsTemplateId, params)
+                .then(() => {
+                    localStorage.setItem('ultimaCotizacion', JSON.stringify(params));
+                    window.location.href = 'resumen.html';
+                })
+                .catch(err => {
+                    alert('Error al enviar.');
+                    btn.textContent='REINTENTAR'; btn.disabled=false;
+                });
+        };
+
+        // Listeners para que el slider y el resto de campos actualicen el precio y los cm
+        document.getElementById('size')?.addEventListener('input', calculatePrice);
+        document.getElementById('complexity')?.addEventListener('change', calculatePrice);
+        document.getElementById('ciudad')?.addEventListener('change', calculatePrice);
+
+        // --- ACORDEÓN MEJORADO CON GSAP ---
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const content = header.nextElementSibling;
+                const isOpen = header.classList.contains('active');
+                
+                // Cerrar todos los demás
+                document.querySelectorAll('.accordion-header').forEach(h => {
+                    if(h !== header && h.classList.contains('active')) {
+                        h.classList.remove('active');
+                        gsap.to(h.nextElementSibling, { height: 0, padding: 0, duration: 0.3, ease: "power2.inOut" });
+                    }
+                });
+
+                // Toggle actual
+                header.classList.toggle('active');
+                gsap.to(content, {
+                    height: isOpen ? 0 : "auto",
+                    padding: isOpen ? 0 : "1.5rem",
+                    duration: 0.4,
+                    ease: "power2.out"
+                });
+            });
+        });
+
+        // Función para generar texto alt basado en la URL
+        function getAltText(url) {
+            const filename = url.substring(url.lastIndexOf('/') + 1).split('.')[0].toLowerCase();
+            let alt = "Tatuaje blackwork Negas Ink"; // Texto alt genérico por defecto
+
+            if (filename.includes('mariposa')) {
+                alt = "Tatuaje de mariposa blackwork Negas Ink";
+            } else if (filename.includes('letras')) {
+                alt = "Tatuaje de letras blackwork Negas Ink";
+            } else if (filename.includes('bebe')) {
+                alt = "Tatuaje de bebé blackwork Negas Ink";
+            } else if (filename.includes('angel') || filename.includes('tatttoo-angel')) {
+                alt = "Tatuaje de ángel blackwork Negas Ink";
+            } else if (filename.includes('pierna-completa')) {
+                alt = "Tatuaje de pierna completa blackwork Negas Ink";
+            } else if (filename.includes('mask')) {
+                alt = "Tatuaje de máscara blackwork Negas Ink";
+            } else if (filename.includes('tigre')) {
+                alt = "Tatuaje de tigre blackwork Negas Ink";
+            } else if (filename.includes('elefante')) {
+                alt = "Tatuaje de elefante blackwork Negas Ink";
+            } else if (filename.includes('eye')) {
+                alt = "Tatuaje de ojo blackwork Negas Ink";
+            } else if (filename.includes('flor')) { // Añadido por si hay imágenes de flores
+                alt = "Tatuaje de flor blackwork Negas Ink";
+            } else if (filename.includes('mano')) { // Añadido por si hay imágenes de manos
+                alt = "Tatuaje en la mano blackwork Negas Ink";
+            }
+            return alt;
+        }
+
+        // Todas las URLs de imágenes (existentes + nuevas)
+        const allImageUrls = [
+            "https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg","https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg","https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg","https://i.ibb.co/s93WWvNq/Tatttoo-Angel-copy-7.jpg","https://i.ibb.co/35ggTM1t/Tatttoo-pierna-completa-copy-2.jpg","https://i.ibb.co/x8MJ4tW3/Tatttoo-mask-copy.jpg","https://i.ibb.co/CKMdBXVC/Tatttoo-mask.jpg","https://i.ibb.co/4n31ng5r/Tatttoo-Angel-copy-2.jpg","https://i.ibb.co/Z6LmS5WK/Tatttoo-tigre.jpg","https://i.ibb.co/C3MCJJFW/Tatttoo-pierna-completa.jpg","https://i.ibb.co/JYsWfZd/Tatttoo-Angel-copy-3.jpg","https://i.ibb.co/fdPZLNzG/Tatttoo-Elefante.jpg","https://i.ibb.co/FLhCmFhg/Tatttoo-eye.jpg","https://i.ibb.co/Q7YssPnN/Tatttoo-Angel-copy-4.jpg","https://i.ibb.co/kVWLJHSn/Tatttoo-Angel-copy.jpg","https://i.ibb.co/cKvQ5BkL/Tatttoo-Angel-copy-6.jpg",
+            "https://i.ibb.co/dFYtWP4/tatuaje-mariposa.jpg", "https://i.ibb.co/6RCSYkN4/tatuaje-letras.jpg",
+            "https://i.ibb.co/wZhYZ7TN/tatuaje-letras-copy.jpg", "https://i.ibb.co/FLGJ9Q23/tatuaje-bebe.jpg",
+            "https://i.ibb.co/HTZR5SnQ/Tatttoo-tigre.jpg", // Duplicado, se manejará con Set
+            "https://i.ibb.co/tMJQbKZW/IMG-0066.png", "https://i.ibb.co/hF1pjnd9/IMG-0067.png",
+            "https://i.ibb.co/ynWN6Cj1/IMG-0065.png", "https://i.ibb.co/pBjNrfVs/IMG-0063.png",
+            "https://i.ibb.co/pjnW24PB/IMG-4198.jpg", "https://i.ibb.co/cKQLSWqs/IMG-4197.jpg",
+            "https://i.ibb.co/pTN8kzF/IMG-4195.jpg", "https://i.ibb.co/W4mNXJdv/IMG-4194.jpg",
+            "https://i.ibb.co/Xf6251Jc/IMG-4192.jpg", "https://i.ibb.co/Sw36MPnL/IMG-4201.jpg"
+        ];
+
+        // Eliminar duplicados y crear objetos con src y alt
+        const uniqueImageObjects = Array.from(new Set(allImageUrls)).map(url => ({
+            src: url,
+            alt: getAltText(url)
+        }));
+
+        // Función para aleatorizar un array (Fisher-Yates shuffle)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        const IMGS_SHUFFLED = shuffleArray(uniqueImageObjects);
+        const N = IMGS_SHUFFLED.length;
+        const W=280,GAP=24,SCALES=[1.15,1,1,1],OPAS=[1,1,1,1],VISIBLE=4;
+        let cur=0,dragging=false,dragX0=0,dragCurX=0,cards=[];
+        const vp=document.getElementById('vp'),dotsEl=document.getElementById('dots');
+
+        function relOffset(i){let o=((i-cur)%N+N)%N;return o>N/2?o-N:o;}
+        function targetProps(offset){const abs=Math.abs(offset),sign=offset===0?0:offset>0?1:-1;if(abs>=VISIBLE)return null;const scale=SCALES[abs],opa=OPAS[abs];let x=0;for(let s=1;s<=abs;s++)x+=sign*(W*SCALES[s-1]/2+W*SCALES[s]/2+GAP);return{x,scale,autoAlpha:opa,zIndex:20-abs};}
+        function layout(instant){
+            if(!vp) return;
+            cards.forEach((cardElement,i)=>{
+                const props=targetProps(relOffset(i));
+                if(!props){gsap.set(cardElement,{autoAlpha:0,zIndex:0});return;}
+                cardElement.style.zIndex=props.zIndex;
+                cardElement.style.visibility = 'visible';
+                const anim={x:props.x,scale:props.scale,autoAlpha:props.autoAlpha,overwrite:true};
+                instant?gsap.set(cardElement,anim):gsap.to(cardElement,{...anim,duration:0.6,ease:'power3.out'});
+            });
+            document.querySelectorAll('.sc-dot').forEach((d,i)=>d.classList.toggle('on',i===Math.round(cur)));
+        }
+        function go(d){if(!d)return;cur=((cur+d)%N+N)%N;layout(false);}
+
+        if(vp && dotsEl) {
+            IMGS_SHUFFLED.forEach((imageData,i)=>{
+                const card=document.createElement('div');card.className='sc-card';
+                const img=document.createElement('img');
+                img.src=imageData.src;
+                img.alt=imageData.alt; // Añadir el atributo alt
+                card.appendChild(img);
+                card.onclick=()=>{
+                    if(Math.abs(dragCurX-dragX0)>6) return;
+                    const offset = relOffset(i);
+                    if(offset === 0) openLightbox(imageData.src, card);
+                    else go(offset);
+                };
+                vp.appendChild(card);cards.push(card);
+                const dot=document.createElement('div');dot.className='sc-dot';
+                dot.onclick=()=>go(relOffset(i));dotsEl.appendChild(dot);
+            });
+            vp.onpointerdown=e=>{dragging=true;dragX0=dragCurX=e.clientX;vp.setPointerCapture(e.pointerId);};
+            vp.onpointermove=e=>{if(!dragging)return;dragCurX=e.clientX;const dx=dragCurX-dragX0;cards.forEach((card,i)=>{const p=targetProps(relOffset(i));if(p)gsap.set(card,{x:p.x+dx*.25});});};
+            vp.onpointerup=()=>{if(!dragging)return;dragging=false;Math.abs(dragCurX-dragX0)>55?go(dragCurX<dragX0?1:-1):layout(false);};
+            if(document.getElementById('prev')) document.getElementById('prev').onclick=()=>go(-1);
+            if(document.getElementById('next')) document.getElementById('next').onclick=()=>go(1);
+            layout(true);
+        }
+
+        // --- LÓGICA DE LIGHTBOX ---
+        function openLightbox(src, element) {
+            const lb = document.getElementById('lightbox');
+            const lbImg = document.getElementById('lb-img');
+            const rect = element.getBoundingClientRect();
+            
+            lbImg.src = src;
+            
+            // Posicionamiento inicial de la imagen para el efecto zoom-in desde la miniatura
+            const startX = (rect.left + rect.width / 2) - (window.innerWidth / 2);
+            const startY = (rect.top + rect.height / 2) - (window.innerHeight / 2);
+            const startScale = rect.width / (window.innerWidth * 0.9);
+            // Configuramos estado inicial sin transición para el "salto" a la miniatura
+            lbImg.style.transition = 'none';
+            lbImg.style.transform = `translate(${startX}px, ${startY}px) scale(${startScale})`;
+            lbImg.style.opacity = '0';
+
+            lb.classList.add('active');
+            
+            // Forzar reflow para que el navegador registre el estado inicial
+            lbImg.offsetHeight;
+            
+            // Activamos la transición CSS para la animación de apertura
+            lbImg.style.transition = '';
+            lbImg.style.transform = 'translate(0, 0) scale(1)';
+            lbImg.style.opacity = '1';
+            
+            document.body.style.overflow = 'hidden'; // Bloquear scroll
+        }
+
+        function closeLightbox() {
+            const lb = document.getElementById('lightbox');
+            lb.classList.remove('active');
+            document.body.style.overflow = ''; // Liberar scroll
+        }
+
+        // --- ANIMACIONES HERO ---
+        gsap.from(".hero-word", {
+            y: 100,
+            opacity: 0,
+            filter: "blur(20px)",
+            duration: 1.2,
+            stagger: 0.2,
+            ease: "power3.out",
+            delay: 0.5
+        });
+
+        // Revelación suave de la descripción y el botón
+        gsap.from("#hero-desc, .mt-10", {
+            opacity: 0,
+            y: 30,
+            duration: 1,
+            delay: 1,
+            ease: "power3.out"
+        });
+
+        // PARALLAX REAL DE LA FOTO
+        gsap.to("#hero-img", {
+            yPercent: 30,
+            ease: "none",
+            scrollTrigger: {
+                trigger: "#hero-img-container",
+                start: "top center",
+                end: "bottom top",
+                scrub: true
+            }
+        });
+
+        // 3. Animaciones del Formulario de Cotización
+        // Reveal de Secciones de Formulario
+        gsap.from("#section-proyecto > div, #section-datos > div", {
+            opacity: 0,
+            y: 20,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: "power2.out",
+            scrollTrigger: {
+                trigger: "#booking",
+                start: "top 75%",
+                toggleActions: "play none none none"
+            }
+        });
+
+        // Reveal de la tarjeta de precio (Derecha)
+        gsap.from("#price-card", {
+            opacity: 0,
+            x: 50,
+            duration: 1,
+            ease: "power3.out",
+            scrollTrigger: {
+                trigger: "#booking",
+                start: "top 70%",
+                toggleActions: "play none none none"
+            }
+        });
+
+        // Animación de pulso para el slider al entrar
+        ScrollTrigger.create({
+            trigger: "#size-card-display", // Cambiado a id del nuevo cuadro
+            start: "top 80%",
+            onEnter: () => {
+                const slider = document.getElementById('slider-pulse-wrapper');
+                slider.classList.add('animate-hint-slide');
+                // Quitar la animación después de que el usuario interactúe
+                const stopPulse = () => {
+                    slider.classList.remove('animate-hint-slide');
+                    slider.removeEventListener('mousedown', stopPulse);
+                    slider.removeEventListener('touchstart', stopPulse);
+                };
+                slider.addEventListener('mousedown', stopPulse);
+                slider.addEventListener('touchstart', stopPulse);
+            }
+        });
+
+        // 4. Animaciones de FAQ (Preguntas Frecuentes)
+        gsap.timeline({
+            scrollTrigger: {
+                trigger: ".accordion-container",
+                start: "top 85%",
+                toggleActions: "play none none none"
+            }
+        })
+        .from(".accordion-item", {
+            opacity: 0,
+            y: 30,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: "power3.out"
+        })
+        .from(".accordion-line", {
+            width: 0,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: "power2.inOut"
+        }, "-=0.4");
     </script>
 </body>
 </html>

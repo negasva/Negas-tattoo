@@ -545,7 +545,68 @@
             });
         });
 
-        const IMGS=["https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg","https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg","https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg","https://i.ibb.co/s93WWvNq/Tatttoo-Angel-copy-7.jpg","https://i.ibb.co/35ggTM1t/Tatttoo-pierna-completa-copy-2.jpg","https://i.ibb.co/x8MJ4tW3/Tatttoo-mask-copy.jpg","https://i.ibb.co/CKMdBXVC/Tatttoo-mask.jpg","https://i.ibb.co/4n31ng5r/Tatttoo-Angel-copy-2.jpg","https://i.ibb.co/Z6LmS5WK/Tatttoo-tigre.jpg","https://i.ibb.co/C3MCJJFW/Tatttoo-pierna-completa.jpg","https://i.ibb.co/JYsWfZd/Tatttoo-Angel-copy-3.jpg","https://i.ibb.co/fdPZLNzG/Tatttoo-Elefante.jpg","https://i.ibb.co/FLhCmFhg/Tatttoo-eye.jpg","https://i.ibb.co/Q7YssPnN/Tatttoo-Angel-copy-4.jpg","https://i.ibb.co/kVWLJHSn/Tatttoo-Angel-copy.jpg","https://i.ibb.co/cKvQ5BkL/Tatttoo-Angel-copy-6.jpg"],N=IMGS.length,W=280,GAP=24,SCALES=[1.15,1,1,1],OPAS=[1,1,1,1],VISIBLE=4;
+        // Función para generar texto alt basado en la URL
+        function getAltText(url) {
+            const filename = url.substring(url.lastIndexOf('/') + 1).split('.')[0].toLowerCase();
+            let alt = "Tatuaje blackwork Negas Ink"; // Texto alt genérico por defecto
+
+            if (filename.includes('mariposa')) {
+                alt = "Tatuaje de mariposa blackwork Negas Ink";
+            } else if (filename.includes('letras')) {
+                alt = "Tatuaje de letras blackwork Negas Ink";
+            } else if (filename.includes('bebe')) {
+                alt = "Tatuaje de bebé blackwork Negas Ink";
+            } else if (filename.includes('angel') || filename.includes('tatttoo-angel')) {
+                alt = "Tatuaje de ángel blackwork Negas Ink";
+            } else if (filename.includes('pierna-completa')) {
+                alt = "Tatuaje de pierna completa blackwork Negas Ink";
+            } else if (filename.includes('mask')) {
+                alt = "Tatuaje de máscara blackwork Negas Ink";
+            } else if (filename.includes('tigre')) {
+                alt = "Tatuaje de tigre blackwork Negas Ink";
+            } else if (filename.includes('elefante')) {
+                alt = "Tatuaje de elefante blackwork Negas Ink";
+            } else if (filename.includes('eye')) {
+                alt = "Tatuaje de ojo blackwork Negas Ink";
+            } else if (filename.includes('flor')) { // Añadido por si hay imágenes de flores
+                alt = "Tatuaje de flor blackwork Negas Ink";
+            } else if (filename.includes('mano')) { // Añadido por si hay imágenes de manos
+                alt = "Tatuaje en la mano blackwork Negas Ink";
+            }
+            return alt;
+        }
+
+        // Todas las URLs de imágenes (existentes + nuevas)
+        const allImageUrls = [
+            "https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg","https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg","https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg","https://i.ibb.co/s93WWvNq/Tatttoo-Angel-copy-7.jpg","https://i.ibb.co/35ggTM1t/Tatttoo-pierna-completa-copy-2.jpg","https://i.ibb.co/x8MJ4tW3/Tatttoo-mask-copy.jpg","https://i.ibb.co/CKMdBXVC/Tatttoo-mask.jpg","https://i.ibb.co/4n31ng5r/Tatttoo-Angel-copy-2.jpg","https://i.ibb.co/Z6LmS5WK/Tatttoo-tigre.jpg","https://i.ibb.co/C3MCJJFW/Tatttoo-pierna-completa.jpg","https://i.ibb.co/JYsWfZd/Tatttoo-Angel-copy-3.jpg","https://i.ibb.co/fdPZLNzG/Tatttoo-Elefante.jpg","https://i.ibb.co/FLhCmFhg/Tatttoo-eye.jpg","https://i.ibb.co/Q7YssPnN/Tatttoo-Angel-copy-4.jpg","https://i.ibb.co/kVWLJHSn/Tatttoo-Angel-copy.jpg","https://i.ibb.co/cKvQ5BkL/Tatttoo-Angel-copy-6.jpg",
+            "https://i.ibb.co/dFYtWP4/tatuaje-mariposa.jpg", "https://i.ibb.co/6RCSYkN4/tatuaje-letras.jpg",
+            "https://i.ibb.co/wZhYZ7TN/tatuaje-letras-copy.jpg", "https://i.ibb.co/FLGJ9Q23/tatuaje-bebe.jpg",
+            "https://i.ibb.co/HTZR5SnQ/Tatttoo-tigre.jpg", // Duplicado, se manejará con Set
+            "https://i.ibb.co/tMJQbKZW/IMG-0066.png", "https://i.ibb.co/hF1pjnd9/IMG-0067.png",
+            "https://i.ibb.co/ynWN6Cj1/IMG-0065.png", "https://i.ibb.co/pBjNrfVs/IMG-0063.png",
+            "https://i.ibb.co/pjnW24PB/IMG-4198.jpg", "https://i.ibb.co/cKQLSWqs/IMG-4197.jpg",
+            "https://i.ibb.co/pTN8kzF/IMG-4195.jpg", "https://i.ibb.co/W4mNXJdv/IMG-4194.jpg",
+            "https://i.ibb.co/Xf6251Jc/IMG-4192.jpg", "https://i.ibb.co/Sw36MPnL/IMG-4201.jpg"
+        ];
+
+        // Eliminar duplicados y crear objetos con src y alt
+        const uniqueImageObjects = Array.from(new Set(allImageUrls)).map(url => ({
+            src: url,
+            alt: getAltText(url)
+        }));
+
+        // Función para aleatorizar un array (Fisher-Yates shuffle)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        const IMGS_SHUFFLED = shuffleArray(uniqueImageObjects);
+        const N = IMGS_SHUFFLED.length;
+        const W=280,GAP=24,SCALES=[1.15,1,1,1],OPAS=[1,1,1,1],VISIBLE=4;
         let cur=0,dragging=false,dragX0=0,dragCurX=0,cards=[];
         const vp=document.getElementById('vp'),dotsEl=document.getElementById('dots');
 
@@ -553,26 +614,29 @@
         function targetProps(offset){const abs=Math.abs(offset),sign=offset===0?0:offset>0?1:-1;if(abs>=VISIBLE)return null;const scale=SCALES[abs],opa=OPAS[abs];let x=0;for(let s=1;s<=abs;s++)x+=sign*(W*SCALES[s-1]/2+W*SCALES[s]/2+GAP);return{x,scale,autoAlpha:opa,zIndex:20-abs};}
         function layout(instant){
             if(!vp) return;
-            cards.forEach((card,i)=>{
+            cards.forEach((cardElement,i)=>{
                 const props=targetProps(relOffset(i));
-                if(!props){gsap.set(card,{autoAlpha:0,zIndex:0});return;}
-                card.style.zIndex=props.zIndex;
-                card.style.visibility = 'visible';
+                if(!props){gsap.set(cardElement,{autoAlpha:0,zIndex:0});return;}
+                cardElement.style.zIndex=props.zIndex;
+                cardElement.style.visibility = 'visible';
                 const anim={x:props.x,scale:props.scale,autoAlpha:props.autoAlpha,overwrite:true};
-                instant?gsap.set(card,anim):gsap.to(card,{...anim,duration:0.6,ease:'power3.out'});
+                instant?gsap.set(cardElement,anim):gsap.to(cardElement,{...anim,duration:0.6,ease:'power3.out'});
             });
             document.querySelectorAll('.sc-dot').forEach((d,i)=>d.classList.toggle('on',i===Math.round(cur)));
         }
         function go(d){if(!d)return;cur=((cur+d)%N+N)%N;layout(false);}
 
         if(vp && dotsEl) {
-            IMGS.forEach((src,i)=>{
+            IMGS_SHUFFLED.forEach((imageData,i)=>{
                 const card=document.createElement('div');card.className='sc-card';
-                const img=document.createElement('img');img.src=src;card.appendChild(img);
+                const img=document.createElement('img');
+                img.src=imageData.src;
+                img.alt=imageData.alt; // Añadir el atributo alt
+                card.appendChild(img);
                 card.onclick=()=>{
                     if(Math.abs(dragCurX-dragX0)>6) return;
                     const offset = relOffset(i);
-                    if(offset === 0) openLightbox(src, card);
+                    if(offset === 0) openLightbox(imageData.src, card);
                     else go(offset);
                 };
                 vp.appendChild(card);cards.push(card);

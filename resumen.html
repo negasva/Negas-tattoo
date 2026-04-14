@@ -11,7 +11,8 @@
         :root { --bg: #080808; --red: #D20000; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #fff; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 2rem; }
         .text-stroke { -webkit-text-stroke: 1px rgba(255,255,255,0.3); color: transparent; }
-        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 2rem; padding: 3rem; max-width: 600px; margin: auto; width: 100%; }
+        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 2rem; padding: 1.5rem; max-width: 600px; margin: auto; width: 100%; }
+        @media (min-width: 640px) { .card { padding: 3rem; } }
     </style>
 </head>
 <body class="selection:bg-white selection:text-black">
@@ -31,7 +32,7 @@
 
         <div class="text-center py-6">
             <span class="text-zinc-500 uppercase text-[10px] tracking-widest block mb-2">Inversión Estimada</span>
-            <div id="res-precio" class="text-6xl lg:text-7xl font-black italic tracking-tighter text-white"></div>
+            <div id="res-precio" class="text-[clamp(1.5rem,12vw,4.5rem)] font-black italic tracking-tighter text-white break-all leading-none px-2"></div>
         </div>
 
         <div class="space-y-6 text-center pt-6 border-t border-white/5">

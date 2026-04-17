@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Negas Ink | Tattoo Studio</title>
+    
+    <!-- SEO & Meta Tags -->
+    <meta name="description" content="Estudio de tatuajes especializado en Blackwork y piezas de alto contraste en Sabaneta, Medellín. Cotiza tu próximo proyecto con Negas Ink.">
+    <meta name="keywords" content="Tattoo Medellín, Blackwork Sabaneta, Tatuajes Medellín, Negas Ink">
+    <link rel="canonical" href="https://negasink.com">
+
+    <!-- Open Graph / WhatsApp / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://negasink.com">
+    <meta property="og:title" content="Negas Ink | Tattoo Studio">
+    <meta property="og:description" content="Transformamos tus ideas en piezas permanentes de alto contraste. Técnica impecable en Medellín.">
+    <meta property="og:image" content="https://i.ibb.co/gbt230bD/657596602-18195058267358960-7783419555348968370-n.jpg">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .field-label {
+            font-size: 11px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 2px !important;
+            color: #71717a; /* zinc-400 */
+            margin-bottom: 1rem;
+            display: block;
+            font-weight: 800;
+            opacity: 0.8;
+        }
+        .reveal-item {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        #submit-btn {
+            background-color: transparent !important;
+            border: 1px solid #D20000 !important;
+            color: white;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #submit-btn.form-valid {
+            background-color: #D20000 !important;
+        }
+    </style>
+</head>
+<body class="selection:bg-white selection:text-black">
+
+    <header class="fixed top-0 w-full z-[100] mix-blend-difference px-10 py-8 md:px-24 lg:px-48 md:py-12 flex justify-between items-center">
+        <a href="#" class="text-lg md:text-xl font-black tracking-tighter uppercase italic self-center">Negas Ink</a>
+        
+        <button type="button" class="menu-toggle text-white text-2xl" onclick="toggleMenu(event)" aria-label="Abrir o cerrar menú">☰</button>
+        <div id="mobileMenu" class="md:gap-8 gap-3 text-[10px] uppercase tracking-[0.4em] font-medium items-center">
+            <a href="#portfolio" class="hover:opacity-50 transition" onclick="toggleMenu(event)">Portfolio</a>
+            <a href="#redes" class="hover:opacity-50 transition" onclick="toggleMenu(event)">Redes</a>
+            <a href="#booking" class="bg-[#D20000] text-white rounded-full hover:bg-[#b00000] transition duration-500 max-md:px-6 max-md:py-3 max-md:font-black max-md:italic max-md:tracking-tighter max-md:text-lg md:px-4 md:py-2 md:font-bold" onclick="toggleMenu(event)">Cotizar</a>
+        </div>
+    </header>
+
+    <main>
+    <section id="hero" class="reveal-section min-h-screen flex flex-col justify-center px-8 md:px-20 lg:px-32 py-20">
+        <div class="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-10 items-center">
+            <header class="order-2 lg:order-1">
+                <h1 class="text-[12vw] lg:text-[8vw] leading-[0.85] font-black uppercase italic tracking-tighter mb-8">
+                    <div class="overflow-hidden"><span class="hero-word block">Black</span></div>
+                    <div class="overflow-hidden"><span class="hero-word text-stroke block italic">Work</span></div>
+                    <div class="overflow-hidden"><span class="hero-word block">negas</span></div>
+                </h1>
+                <p id="hero-desc" class="reveal-item text-zinc-500 text-lg max-w-md leading-relaxed">
+                    Piezas de alto contraste y técnica impecable. En <span class="text-white font-bold">Negas Ink</span> transformamos ideas en marcas permanentes.
+                </p>
+                <div class="mt-10 reveal-item">
+                    <a href="#booking" class="bg-[#D20000] text-white px-10 py-6 rounded-full block w-full text-center text-xl lg:text-2xl font-black uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500 font-bold">
+                        Cotizar Tatuaje
+                    </a>
+                </div>
+            </header>
+            <div id="hero-img-container" class="reveal-item order-1 lg:order-2 relative aspect-[4/5] overflow-hidden rounded-2xl bg-zinc-900 shadow-2xl border border-white/5">
+                <img id="hero-img" src="https://i.ibb.co/gbt230bD/657596602-18195058267358960-7783419555348968370-n.jpg" 
+                     class="w-full h-full object-cover grayscale hover:grayscale-0 transition duration-700 scale-110" alt="Negas Ink Tattoo Studio Artist">
+            </div>
+        </div>
+    </section>
+
+    <section id="portfolio" class="py-20 border-y border-white/5">
+        <div class="mb-8 px-10 md:px-24 lg:px-48">
+            <h2 class="text-xs uppercase tracking-[0.5em] text-zinc-500 mb-2 font-bold italic">TRABAJOS DE REFERENCIA</h2>
+        </div>
+        
+        <div class="sc">
+            <div class="sc-viewport" id="vp"></div>
+            <div class="sc-dots" id="dots"></div>
+            <div class="sc-nav mt-8">
+                <button class="sc-btn" id="prev">&#8592;</button>
+                <button class="sc-btn" id="next">&#8594;</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="booking" class="max-w-5xl mx-auto px-10 md:px-24 lg:px-48 py-20">
+        
+        <div class="mb-12 reveal-item">
+            <h3 class="text-5xl font-black italic uppercase tracking-tighter mb-4">Cotización Tatuaje</h3>
+            <p class="text-zinc-500 uppercase text-[10px] tracking-widest">Reserva tu espacio en la historia</p>
+        </div>
+
+        <form id="tattoo-form" class="space-y-10 mb-20">
+            <input type="hidden" name="estimated_price" id="form-estimated-price">
+            <input type="hidden" name="final_size" id="form-size">
+            <input type="hidden" name="fecha_cita" id="form-fecha-cita">
+            <input type="hidden" name="recaptcha_token" id="recaptcha_token">
+
+            <!-- SECCIÓN 1: EL PROYECTO -->
+            <div id="section-proyecto" class="space-y-6 reveal-item">
+                <h2 class="section-header">EL PROYECTO</h2>
+                
+                <div class="border border-[#1a1a1a] p-8 rounded-xl relative bg-black/40">
+                    <label class="field-label">Estilo de tatuaje</label>
+                    <div class="custom-dropdown relative">
+                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-[12px] py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
+                            <span class="dropdown-label opacity-50">Selecciona una opción...</span>
+                            <svg class="dropdown-icon w-5 h-5 text-zinc-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-[12px] overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1.2">Blackwork</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1.3">Ornamental</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1">Botánico</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1.2">Lettering</div>
+                        </div>
+                        <input type="hidden" id="complexity" name="complexity" data-label="Estilo" required>
+                    </div>
+                </div>
+
+                <div class="border border-[#1a1a1a] p-8 rounded-xl relative bg-black/40">
+                    <label class="field-label">Cuéntame tu idea</label>
+                    <textarea name="message" rows="4" required maxlength="500" placeholder="Describe tu diseño, estilo, referencias..." class="w-full py-3 px-0 resize-none border-b border-zinc-700 focus:border-white transition-colors text-lg italic"></textarea>
+                    <span id="charCount" class="absolute bottom-4 right-6 text-[10px] text-zinc-500 font-mono">0/500</span>
+                </div>
+
+                <!-- CUADRO UNIFICADO DE TAMAÑO E INVERSIÓN -->
+                <div id="price-card" class="p-8 border border-[#1a1a1a] rounded-xl bg-white/[0.02] space-y-4">
+                    <div>
+                        <label class="field-label">Tamaño en centímetros</label>
+                        <div class="flex items-center gap-6 h-16">
+                            <div id="slider-pulse-wrapper" class="flex-1 flex items-center">
+                                <input type="range" id="size" min="2" max="60" value="10" class="w-full h-1 bg-zinc-800 appearance-none cursor-pointer accent-[#D20000] hover:accent-white transition-all">
+                            </div>
+                            <div class="shrink-0 w-[100px] text-right flex items-center justify-end">
+                                <span id="size-display-val" class="text-4xl font-black tracking-tighter italic text-white leading-none">10cm</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center pt-4 border-t border-white/5">
+                        <div id="terminal-container" class="min-h-[20px] flex items-center justify-center mb-2 gap-3">
+                            <div id="terminal-spinner" class="hidden">
+                                <svg class="animate-spin h-4 w-4 text-emerald-500/80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
+                            <p id="terminal-msg" class="text-[10px] uppercase tracking-widest leading-relaxed transition-colors duration-300"></p>
+                        </div>
+
+                        <div id="price-result" class="hidden opacity-0 transition-opacity duration-500">
+                            <span id="price-display" class="text-[clamp(1.5rem,12vw,4.5rem)] font-black tracking-tighter italic text-white break-all leading-none"></span>
+                            <p class="text-[14px] text-zinc-600 mt-2 uppercase tracking-widest">PRECIO APROXIMADO</p>
+                        </div>
+
+                        <p id="disclaimer-msg" class="text-[12px] text-zinc-500 mt-6 italic transition-opacity duration-300">⚠️ Completa todos los campos para ver tu cotización.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <label class="field-label">Referencia Visual</label>
+                    <input type="file" id="fotoTatuaje" accept="image/*" class="hidden" onchange="handleImagePreview(this)">
+                    <div id="upload-zone" onclick="document.getElementById('fotoTatuaje').click()" 
+                         class="relative group cursor-pointer border-2 border-dashed border-[#D20000]/40 hover:border-[#D20000] bg-zinc-900/30 rounded-2xl p-12 transition-all duration-500 flex flex-col items-center justify-center min-h-[220px] overflow-hidden">
+                        
+                        <div id="upload-placeholder" class="flex flex-col items-center text-center transition-all duration-500 group-hover:scale-105">
+                            <svg class="w-16 h-16 mb-4 text-[#D20000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v5m0 0l-2-2m2 2l2-2" />
+                            </svg>
+                            <span class="text-white font-black italic tracking-tighter text-2xl uppercase">Sube tu referencia visual aquí</span>
+                            <p class="text-[#D20000] text-[10px] font-bold uppercase mt-3 tracking-[0.2em] opacity-80">Una imagen nos ayuda a capturar tu idea de forma precisa</p>
+                        </div>
+
+                        <div id="upload-preview" class="hidden absolute inset-0 bg-black">
+                            <img id="preview-img" src="" 
+                                 class="w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-700" alt="Vista previa de referencia">
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-zinc-600 italic">⚠️ El archivo debe ser menor a 20MB.</p>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: DATOS PERSONALES -->
+            <div id="section-datos" class="space-y-10 pt-16 mt-16 border-t border-[#1a1a1a] reveal-item">
+                <h2 class="section-header">DATOS PERSONALES</h2>
+                
+                <div>
+                    <label class="field-label">Nombre Completo</label>
+                    <input type="text" name="user_name" required class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
+                </div>
+
+                <div>
+                    <label class="field-label">WhatsApp <span class="text-zinc-600 normal-case tracking-normal font-normal text-sm italic">(10 dígitos)</span></label>
+                    <input type="tel" name="user_phone" required pattern="[0-9]{10}" maxlength="10" class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
+                </div>
+
+                <div>
+                    <label class="field-label">Email</label>
+                    <input type="email" name="user_email" required class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
+                </div>
+
+                <div class="border border-[#1a1a1a] p-8 rounded-xl relative bg-black/40">
+                    <label class="field-label">Ciudad</label>
+                    <div class="custom-dropdown relative">
+                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-[12px] py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
+                            <span class="dropdown-label opacity-50">Selecciona una ciudad...</span>
+                            <svg class="dropdown-icon w-5 h-5 text-zinc-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-[12px] overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Sabaneta">Sabaneta</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Medellín">Medellín</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Envigado">Envigado</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Itaguí">Itaguí</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Poblado">Poblado</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Otro">Otro</div>
+                        </div>
+                        <input type="hidden" id="ciudad" name="ciudad" data-label="Ciudad" required>
+                    </div>
+                </div>
+
+                <div class="border border-[#1a1a1a] p-8 rounded-xl relative bg-black/40">
+                    <label class="field-label">Zona del cuerpo</label>
+                    <div class="custom-dropdown relative">
+                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-[12px] py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
+                            <span class="dropdown-label opacity-50">Selecciona una zona...</span>
+                            <svg class="dropdown-icon w-5 h-5 text-zinc-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-[12px] overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Brazo">Brazo</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Antebrazo">Antebrazo</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Muñeca">Muñeca</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Tobillo">Tobillo</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Pantorrilla">Pantorrilla</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Muslo">Muslo</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Pecho">Pecho</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Espalda">Espalda</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Costillas">Costillas</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Cuello">Cuello</div>
+                        </div>
+                        <input type="hidden" id="tattoo_zone" name="tattoo_zone" data-label="Zona" required>
+                    </div>
+                </div>
+
+            </div>
+
+            <button type="submit" id="submit-btn" class="reveal-item w-full text-white py-6 rounded-full text-xl font-black uppercase italic tracking-tighter mt-8">
+                Enviar Solicitud
+            </button>
+        </form>
+
+        <div class="accordion-container reveal-item">
+            <h2 class="text-3xl font-black italic uppercase tracking-tighter mb-10 text-center">Preguntas Frecuentes</h2>
+            <div class="accordion">
+                <div class="accordion-line top-line" style="top:0; bottom:auto;"></div>
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Cuál es el valor mínimo de una cotización?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">El valor mínimo depende del tamaño y complejidad del diseño. Para piezas pequeñas comenzamos desde $180.000 COP. Te recomendamos usar el cotizador para obtener una estimación inicial.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </div>
+
+                <article class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Puedo modificar el diseño después de cotizado?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">Claro, los diseños pueden ajustarse según tus preferencias. Cambios menores no tienen costo adicional. Modificaciones significativas pueden afectar el valor final de la cotización.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </article>
+
+                <article class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Cuánto tiempo tarda realizar un tatuaje?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">El tiempo depende del tamaño, complejidad y ubicación del diseño. Pueden ser desde 30 minutos para piezas pequeñas, hasta varias horas para trabajos más complejos. La duración se especifica en tu cotización.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </article>
+
+                <article class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Qué cuidados debo tener después del tatuaje?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">Mantén el área limpia e hidratada. Evita la exposición al sol durante las primeras semanas. No nades en piscinas o playas durante el proceso de cicatrización. Usa bloqueador a partir de la segunda semana. Evita ropa muy ajustada sobre la zona tatuada.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </article>
+
+                <article class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Hacen tatuajes de cobertura?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">No hago coberturas, mi trabajo usa el contraste de la piel con la tinta para crear espacios de luz, tiendo a no rellenar sólido con tinta, por esto es imposible hacer coberturas con mi estilo de tatuaje.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </article>
+
+                <article class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">¿Cuál es la política de cancelación de citas?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">Las cotizaciones no requieren depósito. Para confirmar tu cita, es necesario un abono de 50.000 pesos. No reembolsamos el abono en caso de cancelación, es posible reagendar si se avisa con mínimo 48 horas de anticipación. Reagendaciones posteriores están sujetas a disponibilidad.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </article>
+            </div>
+        </div>
+
+        <div class="pt-20 reveal-item">
+            <div class="max-w-2xl mx-auto text-center">
+                <p class="text-zinc-500 text-sm leading-relaxed mb-8">Si tienes dudas sobre tu cotización, contáctame directamente a través de WhatsApp.</p>
+                
+                <div class="flex gap-6 justify-center">
+                    <a href="#" target="_blank" rel="noopener" class="js-wa bg-[#D20000] text-white py-4 px-8 rounded-full text-center font-bold uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500">
+                        Pregunta aquí
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+    </main>
+
+    <!-- Estructura del Lightbox para el Portfolio -->
+    <div id="lightbox" onclick="closeLightbox()">
+        <button type="button" 
+                class="absolute top-6 left-6 md:top-12 md:left-12 text-white z-[250] flex items-center gap-2 group transition-all" 
+                onclick="event.stopPropagation(); closeLightbox();" aria-label="Volver">
+            <svg class="w-8 h-8 md:w-10 md:h-10 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span class="hidden md:block uppercase tracking-widest text-[10px] font-black italic">Volver</span>
+        </button>
+        <img id="lb-img" src="" alt="Negas Ink Portfolio Zoom" onclick="event.stopPropagation()">
+    </div>
+
+    <footer class="bg-black py-20 border-t border-white/5 w-full">
+        <div class="max-w-2xl mx-auto text-center space-y-8">
+            <div class="flex justify-center gap-12 text-[12px] uppercase tracking-[0.5em] font-medium">
+                <a href="#" target="_blank" rel="noopener" class="js-ig hover:text-white/50 transition duration-300">Instagram</a>
+                <a href="#" target="_blank" rel="noopener" class="js-wa hover:text-white/50 transition duration-300">WhatsApp</a>
+            </div>
+            <p class="text-[11px] text-[#444] tracking-[0.3em] uppercase font-light">
+                Negas Ink — Sabaneta, Medellín — 2026
+            </p>
+        </div>
+    </footer>
+
+    <script src="script.js" defer></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            // Validación visual del botón de envío
+            const form = document.getElementById('tattoo-form');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            const checkForm = () => {
+                const isValid = form.checkValidity();
+                submitBtn.classList.toggle('form-valid', isValid);
+            };
+
+            if(form) form.addEventListener('input', checkForm);
+            
+            // El carrusel necesita inicializarse después de que el DOM esté listo
+            setTimeout(() => {
+                if (typeof layout === 'function') layout(true);
+            }, 100);
+        });
+    </script>
+</body>
+</html>

@@ -134,15 +134,15 @@ input:focus, select:focus { border-color: #fff !important; outline: none; }
 
     /* --- DROPDOWNS MOBILE --- */
     .dropdown-btn {
-        padding: 1rem 1.25rem !important;
+        padding: 1rem 0.75rem !important;
         min-height: 3.5rem;
     }
     .dropdown-label {
-        font-size: 0.8rem !important;
+        font-size: 0.72rem !important;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 85%;
+        max-width: 90%;
     }
 
     /* --- SUBMIT BUTTON MOBILE --- */
@@ -172,7 +172,7 @@ input:focus, select:focus { border-color: #fff !important; outline: none; }
 
     /* --- FAQ MOBILE --- */
     .accordion-container {
-        margin-top: 6rem !important; /* Margen generoso solicitado */
+        margin-top: 15rem !important; /* Margen generoso para separación visual clara */
         padding-top: 2rem;
     }
     .accordion-header { padding: 1rem; }
@@ -186,41 +186,47 @@ input:focus, select:focus { border-color: #fff !important; outline: none; }
     #hero {
         height: 100svh !important;
         padding: 5rem 1.5rem 2rem 1.5rem !important;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
+        display: block; /* Cambiado para permitir sticky */
+        position: relative;
+        overflow: visible; 
     }
 
     #hero > div {
+        position: sticky;
+        top: 4.5rem;
         display: flex !important;
         flex-direction: column;
-        height: 100%;
-        justify-content: space-between;
-        gap: 0 !important;
+        height: auto; /* Permite que el contenido se agrupe */
+        justify-content: flex-start;
+        gap: 0.5rem !important; /* Todo más pegado */
     }
 
     #hero-img-container {
-        max-height: 35svh;
+        max-height: 38svh;
         width: 100%;
         position: relative;
-        margin-bottom: 1rem;
+        margin-bottom: 0.25rem !important;
     }
 
     #hero header.order-2 {
         flex: 1;
         display: flex;
         flex-direction: column;
-        justify-content: space-evenly; /* Distribuye h1 y botón */
+        justify-content: flex-start;
+        gap: 0.5rem;
     }
 
     #hero h1 { 
-        font-size: 16vw !important; 
-        line-height: 0.75 !important;
+        font-size: 20vw !important; /* Tamaño para ocupar el mismo ancho que la foto */
+        line-height: 0.8 !important;
         margin: 0 !important;
+        width: 100%;
+        text-align: center;
+        letter-spacing: -0.05em; /* Ajuste para compactar horizontalmente */
     }
 
     #hero #hero-btn-container {
-        margin-top: 1rem !important;
+        margin-top: 0.5rem !important;
         width: 100%;
     }
 

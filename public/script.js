@@ -1,10 +1,21 @@
-gsap.registerPlugin(ScrollTrigger);
-
 // 0. COMPORTAMIENTO INICIAL: Reiniciar scroll al recargar
 if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
 }
-window.scrollTo(0, 0);
+window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+gsap.registerPlugin(ScrollTrigger);
+
+// Forzar scroll al inicio después de que todo cargue y GSAP esté listo
+window.addEventListener('DOMContentLoaded', () => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+});
+
+window.addEventListener('load', () => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    ScrollTrigger.clearScrollMemory();
+    ScrollTrigger.refresh();
+});
 
 let configuracionApp = {};
 let tiempoEscritura;
@@ -264,14 +275,18 @@ function openLightbox(src, el) {
 // Hacerlo disponible globalmente
 window.openLightbox = openLightbox;
 
-function closeLightbox() { 
+function closeLightbox() {
     const lb = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lb-img');
+    
     if(lb) {
         lb.classList.remove('active');
-        const lbImg = document.getElementById('lb-img');
         if(lbImg) {
             lbImg.style.opacity = '0';
             lbImg.style.transform = 'translateY(20px) scale(0.95)';
+            
+            // Limpiar el src tras la animación para evitar parpadeos al abrir otra imagen
+            setTimeout(() => { if(!lb.classList.contains('active')) lbImg.src = ''; }, 500);
         }
     }
     document.body.style.overflow = '';
@@ -325,7 +340,7 @@ heroTl
     .to("#hero-btn-container", { opacity: 1, y: 0, duration: 1, ease: "power3.out" }, "-=0.5");
 
 // Parallax suave para la imagen del hero
-gsap.to("#hero-img-parallax", {
+gsap.to("#hero-img", {
     yPercent: 15,
     ease: "none",
     scrollTrigger: {

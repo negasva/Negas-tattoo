@@ -58,14 +58,14 @@
             transform: translateY(20px);
         }
         #submit-btn {
-            background-color: transparent !important;
-            border: 1px solid #D20000 !important;
+            background-color: #D20000 !important;
+            border: none !important;
             color: white;
             transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
             cursor: pointer;
         }
-        #submit-btn.form-valid, #submit-btn:hover {
-            background-color: #D20000 !important;
+        #submit-btn:hover {
+            background-color: #b00000 !important;
         }
     </style>
 </head>
@@ -87,13 +87,13 @@
         <div class="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-10 items-center">
             <header class="order-2 lg:order-1">
                 <h1 class="text-[12vw] lg:text-[8vw] leading-[0.85] font-black uppercase italic tracking-tighter mb-8">
-                    <div class="overflow-hidden"><span class="hero-word block">Black</span></div>
-                    <div class="overflow-hidden"><span class="hero-word text-stroke block italic">Work</span></div>
-                    <div class="overflow-hidden"><span class="hero-word block">negas</span></div>
+                    <div class="overflow-hidden"><span id="hero-black" class="hero-word block">Black</span></div>
+                    <div class="overflow-hidden"><span id="hero-work" class="hero-word text-stroke block italic">Work</span></div>
+                    <div class="overflow-hidden"><span id="hero-negas" class="hero-word block">negas</span></div>
                 </h1>
                 <p id="hero-desc" class="reveal-item text-zinc-500 text-lg max-w-md leading-relaxed">
                 </p>
-                <div class="mt-10 reveal-item">
+                <div id="hero-btn-container" class="mt-10 reveal-item">
                     <a href="#booking" class="bg-[#D20000] text-white px-10 py-6 rounded-full block w-full text-center text-xl lg:text-2xl font-black uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500 font-bold">
                         Cotizar Tatuaje
                     </a>
@@ -380,16 +380,16 @@
     </main>
 
     <!-- Estructura del Lightbox para el Portfolio -->
-    <div id="lightbox" class="cursor-pointer" onclick="closeLightbox()">
+    <div id="lightbox" class="cursor-pointer bg-black/95 backdrop-blur-sm" onclick="closeLightbox()">
         <button type="button" 
-                class="absolute top-6 left-6 md:top-12 md:left-12 text-white z-[250] flex items-center gap-2 group transition-all" 
-                onclick="event.stopPropagation(); closeLightbox();" aria-label="Volver">
+                class="absolute top-6 left-6 md:top-12 md:left-12 text-white z-[250] flex items-center gap-2 group transition-all p-4" 
+                onclick="closeLightbox();" aria-label="Volver">
             <svg class="w-8 h-8 md:w-10 md:h-10 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             <span class="hidden md:block uppercase tracking-widest text-[10px] font-black italic">Volver</span>
         </button>
-        <img id="lb-img" src="" class="cursor-default" alt="Negas Ink Portfolio Zoom" onclick="event.stopPropagation()">
+        <img id="lb-img" src="" class="cursor-default shadow-2xl" alt="Negas Ink Portfolio Zoom" onclick="event.stopPropagation()">
     </div>
 
     <footer class="bg-black py-20 border-t border-white/5 w-full">

@@ -134,7 +134,61 @@ input:focus, select:focus { border-color: #fff !important; outline: none; }
     .accordion-header { padding: 1rem; }
     .accordion-title { font-size: .95rem; }
 
-    #hero h1 { font-size: 18vw; width: 100%; overflow: hidden; }
+    /* --- HERO MOBILE REFACTOR (Above the Fold) --- */
+    body > header.fixed {
+        padding: 1rem 1.5rem !important; /* Reducción del padding del header principal */
+    }
+
+    #hero {
+        height: 100svh !important; /* Altura exacta del viewport móvil */
+        min-height: 100svh !important;
+        padding: 4.5rem 1.5rem 1.5rem 1.5rem !important; /* Espacio para el header fijo */
+        display: flex;
+        flex-direction: column;
+    }
+
+    #hero > div {
+        display: flex !important; /* Sobrescribir Grid de Tailwind por Flexbox */
+        flex-direction: column;
+        height: 100%;
+        justify-content: space-between; /* Distribución uniforme */
+        gap: 0.5rem;
+    }
+
+    #hero-img-container {
+        max-height: 40svh; /* Límite de la imagen para no empujar el contenido */
+        width: 100%;
+        aspect-ratio: auto !important;
+    }
+
+    #hero header.order-2 {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    #hero h1 { 
+        font-size: 16vw !important; 
+        line-height: 0.8 !important;
+        margin-bottom: 0.5rem !important;
+        width: 100%; 
+    }
+
+    #hero-desc {
+        font-size: 0.875rem !important;
+        line-height: 1.4 !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    #hero .mt-10 {
+        margin-top: auto !important; /* Empuja el botón al final del contenedor */
+    }
+
+    #hero .mt-10 a {
+        padding: 1rem !important;
+        font-size: 1.2rem !important;
+    }
 }
 
 /* Filtro Cinematográfico de Grano */

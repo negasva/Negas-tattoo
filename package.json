@@ -5,15 +5,10 @@
     "start": "node server.js"
   },
   "dependencies": {
-<<<<<<< HEAD
     "cors": "^2.8.6",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^8.3.2",
-=======
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
->>>>>>> 5e89b44366c1f19dcc0c00d265d3950f5479c07d
     "form-data": "^4.0.1",
     "helmet": "^8.1.0",
     "multer": "^1.4.5-lts.1"

@@ -3,18 +3,15 @@ const express = require('express');
 const multer = require('multer');
 const FormData = require('form-data');
 const path = require('path');
-<<<<<<< HEAD
 const helmet = require('helmet');
 const cors = require('cors');
-=======
->>>>>>> 5e89b44366c1f19dcc0c00d265d3950f5479c07d
+
 
 const app = express();
 
 // Configuración de constantes
 const PORT = Number(process.env.PORT) || 3780;
-<<<<<<< HEAD
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // Reducido a 5MB por seguridad (suficiente para fotos)
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
 // Configuración de CORS
 const corsOptions = {
@@ -24,9 +21,6 @@ const corsOptions = {
   credentials: true, // Permitir cookies si fuera necesario
   optionsSuccessStatus: 200
 };
-=======
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
->>>>>>> 5e89b44366c1f19dcc0c00d265d3950f5479c07d
 
 // Configuración de Multer (Considerar diskStorage para producción si los archivos son grandes)
 const upload = multer({
@@ -36,7 +30,6 @@ const upload = multer({
 
 // --- MIDDLEWARES ---
 
-<<<<<<< HEAD
 app.use(cors(corsOptions)); // Aplicar CORS con opciones
 app.use(helmet({
   crossOriginEmbedderPolicy: false, // Necesario para cargar recursos de CDNs externos
@@ -55,8 +48,7 @@ app.use(helmet({
     },
   },
 }));
-=======
->>>>>>> 5e89b44366c1f19dcc0c00d265d3950f5479c07d
+
 app.use(express.json());
 
 // Servir archivos estáticos de forma controlada
@@ -109,15 +101,13 @@ app.post('/api/upload-image', upload.single('image'), async (req, res) => {
     if (!key) throw new Error('Servicio de imágenes no configurado');
     if (!req.file) return res.status(400).json({ error: 'Archivo no proporcionado' });
 
-<<<<<<< HEAD
     // Validación básica de tipo MIME
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(req.file.mimetype)) {
         return res.status(400).json({ error: 'Tipo de archivo no permitido (solo JPG, PNG, WEBP)' });
     }
 
-=======
->>>>>>> 5e89b44366c1f19dcc0c00d265d3950f5479c07d
+
     const form = new FormData();
     form.append('image', req.file.buffer, {
       filename: req.file.originalname || 'image.jpg',

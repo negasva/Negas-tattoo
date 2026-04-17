@@ -306,8 +306,35 @@ window.handleImagePreview = function(input) {
 };
 
 // 7. ANIMACIONES GSAP
-gsap.from(".hero-word", { y: 100, opacity: 0, filter: "blur(20px)", duration: 1.2, stagger: 0.2, ease: "power3.out", delay: 0.5 });
-gsap.to("#hero-img", { yPercent: 30, scrollTrigger: { trigger: "#hero-img-container", scrub: true } });
+
+// 7. ANIMACIONES HERO (Secuencia Refactorizada)
+const heroTl = gsap.timeline({ delay: 0.5 });
+
+heroTl
+    .to("#hero-black", { x: 0, opacity: 1, duration: 1.2, ease: "power4.out" })
+    .to("#hero-negas", { x: 0, opacity: 1, duration: 1.2, ease: "power4.out" }, "-=0.8")
+    .to("#hero-work", { opacity: 1, duration: 1.5, ease: "expo.out" }, "-=0.4")
+    .to("#hero-btn-container", { opacity: 1, y: 0, duration: 1, ease: "power3.out" }, "-=0.5");
+
+// Parallax suave para la imagen del hero
+gsap.to("#hero-img-parallax", {
+    yPercent: 15,
+    ease: "none",
+    scrollTrigger: {
+        trigger: "#hero",
+        start: "top top",
+        end: "bottom top",
+        scrub: true
+    }
+});
+
+// Animación de entrada para el contenedor de la imagen
+gsap.from("#hero-img-container", {
+    clipPath: "inset(100% 0% 0% 0%)",
+    duration: 1.5,
+    ease: "power4.inOut",
+    delay: 0.2
+});
 
 gsap.utils.toArray('.reveal-item').forEach(el => {
     gsap.to(el, {

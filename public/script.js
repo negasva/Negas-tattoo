@@ -1,4 +1,11 @@
 gsap.registerPlugin(ScrollTrigger);
+
+// 0. COMPORTAMIENTO INICIAL: Reiniciar scroll al recargar
+if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+}
+window.scrollTo(0, 0);
+
 let configuracionApp = {};
 let tiempoEscritura;
 let tiempoCalculo;
@@ -247,6 +254,7 @@ function openLightbox(src, el) {
     lb.classList.add('active');
     lbImg.offsetHeight; // force reflow
 
+    // Animación de entrada suave
     lbImg.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease';
     lbImg.style.transform = 'translate(0, 0) scale(1)';
     lbImg.style.opacity = '1';
@@ -263,7 +271,7 @@ function closeLightbox() {
         const lbImg = document.getElementById('lb-img');
         if(lbImg) {
             lbImg.style.opacity = '0';
-            lbImg.style.transform = 'scale(0.8)';
+            lbImg.style.transform = 'translateY(20px) scale(0.95)';
         }
     }
     document.body.style.overflow = '';

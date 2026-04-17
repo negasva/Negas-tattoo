@@ -62,8 +62,9 @@
             border: 1px solid #D20000 !important;
             color: white;
             transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
         }
-        #submit-btn.form-valid {
+        #submit-btn.form-valid, #submit-btn:hover {
             background-color: #D20000 !important;
         }
     </style>
@@ -379,7 +380,7 @@
     </main>
 
     <!-- Estructura del Lightbox para el Portfolio -->
-    <div id="lightbox" onclick="closeLightbox()">
+    <div id="lightbox" class="cursor-pointer" onclick="closeLightbox()">
         <button type="button" 
                 class="absolute top-6 left-6 md:top-12 md:left-12 text-white z-[250] flex items-center gap-2 group transition-all" 
                 onclick="event.stopPropagation(); closeLightbox();" aria-label="Volver">
@@ -388,7 +389,7 @@
             </svg>
             <span class="hidden md:block uppercase tracking-widest text-[10px] font-black italic">Volver</span>
         </button>
-        <img id="lb-img" src="" alt="Negas Ink Portfolio Zoom" onclick="event.stopPropagation()">
+        <img id="lb-img" src="" class="cursor-default" alt="Negas Ink Portfolio Zoom" onclick="event.stopPropagation()">
     </div>
 
     <footer class="bg-black py-20 border-t border-white/5 w-full">

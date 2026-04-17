@@ -131,22 +131,60 @@ input:focus, select:focus { border-color: #fff !important; outline: none; }
         transition: all .35s;
     }
     #mobileMenu.active { opacity: 1; visibility: visible; transform: none; pointer-events: auto; }
+
+    /* --- DROPDOWNS MOBILE --- */
+    .dropdown-btn {
+        padding: 1rem 1.25rem !important;
+        min-height: 3.5rem;
+    }
+    .dropdown-label {
+        font-size: 0.8rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 85%;
+    }
+
+    /* --- SUBMIT BUTTON MOBILE --- */
+    #submit-btn {
+        background-color: var(--red) !important;
+        color: #fff !important;
+        border: none !important;
+        box-shadow: 0 10px 20px rgba(210, 0, 0, 0.3);
+        animation: attentionShake 1.5s infinite;
+        transform-origin: center;
+    }
+
+    @keyframes attentionShake {
+        0% { transform: translateX(0); }
+        2% { transform: translateX(-5px) rotate(-1deg); }
+        4% { transform: translateX(5px) rotate(1deg); }
+        6% { transform: translateX(-4px) rotate(-1deg); }
+        8% { transform: translateX(4px) rotate(1deg); }
+        10% { transform: translateX(-3px); }
+        12% { transform: translateX(3px); }
+        14% { transform: translateX(-2px); }
+        16% { transform: translateX(2px); }
+        18% { transform: translateX(0); }
+        20% { transform: translateX(0); } /* Fin de 0.3s (20% de 1.5s) */
+        100% { transform: translateX(0); }
+    }
+
+    /* --- FAQ MOBILE --- */
+    .accordion-container {
+        margin-top: 6rem !important; /* Margen generoso solicitado */
+        padding-top: 2rem;
+    }
     .accordion-header { padding: 1rem; }
     .accordion-title { font-size: .95rem; }
 
-    /* --- HERO MOBILE REFACTOR (Above the Fold) --- */
+    /* --- HERO MOBILE REFACTOR --- */
     body > header.fixed {
-        padding: 1rem 1.5rem !important; /* Reducción del padding del header principal */
-    }
-
-    /* --- HERO MOBILE REFACTOR (Above the Fold) --- */
-    body > header.fixed {
-        padding: 1.2rem 1.5rem !important;
+        padding: 1rem 1.5rem !important;
     }
 
     #hero {
         height: 100svh !important;
-        min-height: 100svh !important;
         padding: 5rem 1.5rem 2rem 1.5rem !important;
         display: flex;
         flex-direction: column;
@@ -164,6 +202,7 @@ input:focus, select:focus { border-color: #fff !important; outline: none; }
     #hero-img-container {
         max-height: 35svh;
         width: 100%;
+        position: relative;
         margin-bottom: 1rem;
     }
 

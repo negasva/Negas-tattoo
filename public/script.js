@@ -1,10 +1,15 @@
 // 0. COMPORTAMIENTO INICIAL: Reiniciar scroll al recargar
+gsap.registerPlugin(ScrollTrigger);
+
+// Configuración de alto rendimiento para móviles
+ScrollTrigger.config({ 
+    ignoreMobileResize: true, // Evita el stuttering cuando la barra del navegador sube/baja
+    limitCallbacks: true 
+});
+
 if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
 }
-window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-
-gsap.registerPlugin(ScrollTrigger);
 
 // Forzar scroll al inicio después de que todo cargue y GSAP esté listo
 window.addEventListener('DOMContentLoaded', () => {
@@ -373,15 +378,16 @@ window.handleImagePreview = function(input) {
 const heroTl = gsap.timeline({ delay: 0.5 });
 
 heroTl
-    .to("#hero-black", { x: 0, opacity: 1, duration: 1.2, ease: "power4.out" })
-    .to("#hero-negas", { x: 0, opacity: 1, duration: 1.2, ease: "power4.out" }, "-=0.8")
-    .to("#hero-work", { opacity: 1, duration: 1.5, ease: "expo.out" }, "-=0.4")
-    .to("#hero-btn-container", { opacity: 1, y: 0, duration: 1, ease: "power3.out" }, "-=0.5");
+    .to("#hero-black", { x: 0, opacity: 1, duration: 1.2, ease: "power4.out", force3D: true })
+    .to("#hero-negas", { x: 0, opacity: 1, duration: 1.2, ease: "power4.out", force3D: true }, "-=0.8")
+    .to("#hero-work", { opacity: 1, duration: 1.5, ease: "expo.out", force3D: true }, "-=0.4")
+    .to("#hero-btn-container", { opacity: 1, y: 0, duration: 1, ease: "power3.out", force3D: true }, "-=0.5");
 
 // Parallax suave para la imagen del hero
 gsap.to("#hero-img", {
     yPercent: 15,
     ease: "none",
+    force3D: true, // Fuerza aceleración por hardware
     scrollTrigger: {
         trigger: "#hero",
         start: "top top",

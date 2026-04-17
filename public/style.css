@@ -201,7 +201,7 @@ input:focus, select:focus { border-color: #fff !important; outline: none; }
         padding: 4.5rem 1.25rem 1rem 1.25rem !important;
         display: block; /* Cambiado para permitir sticky */
         position: relative;
-        overflow: hidden; /* Evitar scrolls accidentales en el hero */
+        overflow: clip; /* Más eficiente que hidden para scrolls modernos */
     }
 
     #hero > div {
@@ -212,6 +212,7 @@ input:focus, select:focus { border-color: #fff !important; outline: none; }
         height: calc(100svh - 5.5rem);
         justify-content: center; /* Centrado vertical para impacto visual */
         gap: 0.25rem !important;
+        will-change: transform; /* Estabiliza el sticky en móviles */
     }
 
     #hero-img-container {

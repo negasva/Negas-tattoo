@@ -77,7 +77,15 @@
         <button type="button" class="menu-toggle text-white text-2xl" onclick="toggleMenu(event)" aria-label="Abrir o cerrar menú">☰</button>
         <div id="mobileMenu" class="md:gap-8 gap-3 text-[10px] uppercase tracking-[0.4em] font-medium items-center">
             <a href="#portfolio" class="hover:opacity-50 transition" onclick="toggleMenu(event)">Portfolio</a>
-            <a href="#redes" class="hover:opacity-50 transition" onclick="toggleMenu(event)">Redes</a>
+            <div class="relative group redes-dropdown">
+                <button class="hover:opacity-50 transition flex items-center gap-1 uppercase tracking-[0.4em]">Redes</button>
+                <div class="redes-content absolute top-full left-1/2 -translate-x-1/2 pt-4 opacity-0 invisible translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
+                    <div class="bg-black/90 border border-white/10 rounded-xl p-2 flex flex-col gap-2 min-w-[140px] backdrop-blur-md">
+                        <a href="#" class="js-ig px-4 py-2 hover:bg-[#D20000] rounded-lg transition-colors text-center">Instagram</a>
+                        <a href="#" class="js-fb px-4 py-2 hover:bg-[#D20000] rounded-lg transition-colors text-center">Facebook</a>
+                    </div>
+                </div>
+            </div>
             <a href="#booking" class="bg-[#D20000] text-white rounded-full hover:bg-[#b00000] transition duration-500 max-md:px-6 max-md:py-3 max-md:font-black max-md:italic max-md:tracking-tighter max-md:text-lg md:px-4 md:py-2 md:font-bold" onclick="toggleMenu(event)">Cotizar</a>
         </div>
     </header>

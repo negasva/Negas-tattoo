@@ -136,6 +136,14 @@ input:focus, select:focus { border-color: #fff !important; outline: none; }
     }
     #mobileMenu.active { opacity: 1; visibility: visible; transform: none; pointer-events: auto; }
 
+    /* Soporte para el dropdown de redes en móvil al hacer click */
+    .redes-dropdown.active .redes-content {
+        opacity: 1 !important;
+        visibility: visible !important;
+        translate: -50% 0 !important;
+        position: relative !important;
+    }
+
     /* --- DROPDOWNS MOBILE --- */
     .dropdown-btn {
         padding: 1rem 0.75rem !important;

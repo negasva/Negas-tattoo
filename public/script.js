@@ -1,28 +1,26 @@
 // 0. COMPORTAMIENTO INICIAL: Reiniciar scroll al recargar
+if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+}
+window.scrollTo(0, 0);
+
 gsap.registerPlugin(ScrollTrigger);
 
 // Configuración de alto rendimiento para móviles
 ScrollTrigger.config({ 
-    ignoreMobileResize: true, // Evita el stuttering cuando la barra del navegador sube/baja
+    ignoreMobileResize: true, 
     limitCallbacks: true,
-    autoRefreshEvents: "visibilitychange,DOMContentLoaded,load" // Refresca solo en eventos críticos
+    autoRefreshEvents: "visibilitychange,DOMContentLoaded,load" 
 });
 
-ScrollTrigger.normalizeScroll(true); // Unifica el scroll en móviles para evitar saltos
-
-if ('scrollRestoration' in history) {
-    history.scrollRestoration = 'manual';
-}
-
-// Forzar scroll al inicio después de que todo cargue y GSAP esté listo
-window.addEventListener('DOMContentLoaded', () => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-});
+ScrollTrigger.normalizeScroll(true); 
 
 window.addEventListener('load', () => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    ScrollTrigger.clearScrollMemory();
-    ScrollTrigger.refresh();
+    setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        ScrollTrigger.clearScrollMemory();
+        ScrollTrigger.refresh();
+    }, 50);
 });
 
 let configuracionApp = {};
@@ -64,6 +62,14 @@ window.toggleMenu = function(e) {
     m.classList.toggle('active');
     document.body.classList.toggle('menu-open', m.classList.contains('active'));
 };
+
+// Manejo del dropdown de redes
+document.querySelector('.redes-dropdown button')?.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768) {
+        e.preventDefault();
+        e.currentTarget.parentElement.classList.toggle('active');
+    }
+});
 
 document.querySelectorAll('.custom-dropdown').forEach(dropdown => {
     const btn = dropdown.querySelector('.dropdown-btn');

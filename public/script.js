@@ -4,8 +4,11 @@ gsap.registerPlugin(ScrollTrigger);
 // Configuración de alto rendimiento para móviles
 ScrollTrigger.config({ 
     ignoreMobileResize: true, // Evita el stuttering cuando la barra del navegador sube/baja
-    limitCallbacks: true 
+    limitCallbacks: true,
+    autoRefreshEvents: "visibilitychange,DOMContentLoaded,load" // Refresca solo en eventos críticos
 });
+
+ScrollTrigger.normalizeScroll(true); // Unifica el scroll en móviles para evitar saltos
 
 if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';

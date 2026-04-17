@@ -139,55 +139,56 @@ input:focus, select:focus { border-color: #fff !important; outline: none; }
         padding: 1rem 1.5rem !important; /* Reducción del padding del header principal */
     }
 
+    /* --- HERO MOBILE REFACTOR (Above the Fold) --- */
+    body > header.fixed {
+        padding: 1.2rem 1.5rem !important;
+    }
+
     #hero {
-        height: 100svh !important; /* Altura exacta del viewport móvil */
+        height: 100svh !important;
         min-height: 100svh !important;
-        padding: 4.5rem 1.5rem 1.5rem 1.5rem !important; /* Espacio para el header fijo */
+        padding: 5rem 1.5rem 2rem 1.5rem !important;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
     }
 
     #hero > div {
-        display: flex !important; /* Sobrescribir Grid de Tailwind por Flexbox */
+        display: flex !important;
         flex-direction: column;
         height: 100%;
-        justify-content: space-between; /* Distribución uniforme */
-        gap: 0.5rem;
+        justify-content: space-between;
+        gap: 0 !important;
     }
 
     #hero-img-container {
-        max-height: 40svh; /* Límite de la imagen para no empujar el contenido */
+        max-height: 35svh;
         width: 100%;
-        aspect-ratio: auto !important;
+        margin-bottom: 1rem;
     }
 
     #hero header.order-2 {
         flex: 1;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: space-evenly; /* Distribuye h1 y botón */
     }
 
     #hero h1 { 
         font-size: 16vw !important; 
-        line-height: 0.8 !important;
-        margin-bottom: 0.5rem !important;
-        width: 100%; 
+        line-height: 0.75 !important;
+        margin: 0 !important;
     }
 
-    #hero-desc {
-        font-size: 0.875rem !important;
-        line-height: 1.4 !important;
-        margin-bottom: 0.5rem !important;
+    #hero #hero-btn-container {
+        margin-top: 1rem !important;
+        width: 100%;
     }
 
-    #hero .mt-10 {
-        margin-top: auto !important; /* Empuja el botón al final del contenedor */
-    }
-
-    #hero .mt-10 a {
-        padding: 1rem !important;
-        font-size: 1.2rem !important;
+    #hero #hero-btn-container a {
+        padding: 1.25rem !important;
+        font-size: 1.4rem !important;
+        box-shadow: 0 10px 30px rgba(210,0,0,0.4); /* Glow más fuerte para llamar la atención */
     }
 }
 

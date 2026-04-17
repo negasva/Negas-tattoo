@@ -38,6 +38,7 @@ app.use(helmet({
       "default-src": ["'self'"],
       // 'unsafe-inline' permite los onclick del HTML. 'unsafe-eval' es requerido por Tailwind Play CDN.
       "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://www.google.com", "https://www.gstatic.com"],
+      "script-src-attr": ["'unsafe-inline'"],
       "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
       "img-src": ["'self'", "data:", "blob:", "https://i.ibb.co", "https://*.ibb.co"],
       "connect-src": ["'self'", "https://api.imgbb.com", "https://www.google.com", "https://api.emailjs.com", "https://google.com"],

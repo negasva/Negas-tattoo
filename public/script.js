@@ -245,6 +245,17 @@ function layout(instant) {
     document.querySelectorAll('.sc-dot').forEach((d, i) => d.classList.toggle('on', i === Math.round(cur)));
 }
 
+// Listener para tecla Escape y Gestos de cierre
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeLightbox();
+});
+
+// Manejo del botón atrás del dispositivo
+window.addEventListener('popstate', (e) => {
+    const lb = document.getElementById('lightbox');
+    if (lb && lb.classList.contains('active')) closeLightbox(true);
+});
+
 function go(d) { cur = ((cur + d) % N + N) % N; layout(); }
 
 function openLightbox(src, el) {
@@ -263,6 +274,9 @@ function openLightbox(src, el) {
     lbImg.style.opacity = '0';
 
     lb.classList.add('active');
+    // Añadir estado al historial para que el botón "atrás" del cel cierre el modal
+    history.pushState({ lightbox: true }, "");
+    
     lbImg.offsetHeight; // force reflow
 
     // Animación de entrada suave
@@ -275,12 +289,18 @@ function openLightbox(src, el) {
 // Hacerlo disponible globalmente
 window.openLightbox = openLightbox;
 
-function closeLightbox() {
+function closeLightbox(isNavigation = false) {
     const lb = document.getElementById('lightbox');
     const lbImg = document.getElementById('lb-img');
     
     if(lb) {
+        if (!lb.classList.contains('active')) return;
+        
         lb.classList.remove('active');
+        
+        // Si no es una navegación de historial, retrocedemos nosotros
+        if (!isNavigation && history.state?.lightbox) history.back();
+
         if(lbImg) {
             lbImg.style.opacity = '0';
             lbImg.style.transform = 'translateY(20px) scale(0.95)';
@@ -292,6 +312,25 @@ function closeLightbox() {
     document.body.style.overflow = '';
 }
 window.closeLightbox = closeLightbox;
+
+// Inicializar listeners de gestos táctiles para el lightbox
+const lbContainer = document.getElementById('lightbox');
+if (lbContainer) {
+    // Cierre al hacer click en el overlay o botón
+    lbContainer.addEventListener('click', () => closeLightbox());
+    
+    // Evitar que el click en la imagen cierre el lightbox
+    const lbImg = document.getElementById('lb-img');
+    if (lbImg) lbImg.addEventListener('click', e => e.stopPropagation());
+
+    let touchStartY = 0;
+    lbContainer.addEventListener('touchstart', e => touchStartY = e.touches[0].clientY, {passive: true});
+    lbContainer.addEventListener('touchend', e => {
+        const touchEndY = e.changedTouches[0].clientY;
+        // Si el deslizamiento es mayor a 70px, cerrar
+        if (Math.abs(touchStartY - touchEndY) > 70) closeLightbox();
+    }, {passive: true});
+}
 
 // Init carousel
 if (vp) {

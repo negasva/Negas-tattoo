@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🛡️ Guía de Protección Anti-DDoS y Anti-Bots
 
 ## Protecciones Implementadas
@@ -150,3 +151,6 @@ Se agregaron:
 ---
 
 📝 **Última actualización:** 11 de abril de 2026
+=======
+
+>>>>>>> 5e89b44366c1f19dcc0c00d265d3950f5479c07d

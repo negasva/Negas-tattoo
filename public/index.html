@@ -41,7 +41,7 @@
         body {
             width: 100%;
             overflow-x: hidden;
-            background-color: #000;
+            background-color: #121212;
         }
         .field-label {
             font-size: 11px !important;
@@ -57,68 +57,56 @@
             opacity: 0;
             transform: translateY(20px);
         }
-        #submit-btn {
+        #submit-btn, #hero-btn, .btn-poster {
             background-color: #D20000 !important;
             border: none !important;
+            border-radius: 0 !important;
             color: white;
             transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
             cursor: pointer;
         }
-        #submit-btn:hover {
+        #submit-btn:hover, #hero-btn:hover, .btn-poster:hover {
             background-color: #b00000 !important;
+            color: white !important;
         }
     </style>
 </head>
 <body class="selection:bg-white selection:text-black">
 
-    <header class="fixed top-0 w-full z-[100] mix-blend-difference px-10 py-8 md:px-24 lg:px-48 md:py-12 flex justify-between items-center">
-        <a href="#" class="text-lg md:text-xl font-black tracking-tighter uppercase italic self-center">Negas Ink</a>
-        
-        <button type="button" class="menu-toggle text-white text-2xl" onclick="toggleMenu(event)" aria-label="Abrir o cerrar menú">☰</button>
-        <div id="mobileMenu" class="md:gap-8 gap-3 text-[10px] uppercase tracking-[0.4em] font-medium items-center">
-            <a href="#portfolio" class="hover:opacity-50 transition" onclick="toggleMenu(event)">Portfolio</a>
-            <div class="relative group redes-dropdown">
-                <button class="hover:opacity-50 transition flex items-center gap-1 uppercase tracking-[0.4em]">Redes</button>
-                <div class="redes-content absolute top-full left-1/2 -translate-x-1/2 pt-4 opacity-0 invisible translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
-                    <div class="bg-black/90 border border-white/10 rounded-xl p-2 flex flex-col gap-2 min-w-[140px] backdrop-blur-md">
-                        <a href="#" class="js-ig px-4 py-2 hover:bg-[#D20000] rounded-lg transition-colors text-center">Instagram</a>
-                        <a href="#" class="js-fb px-4 py-2 hover:bg-[#D20000] rounded-lg transition-colors text-center">Facebook</a>
-                    </div>
+    <main>
+    <section id="hero" class="reveal-section min-h-screen flex flex-col justify-center px-8 md:px-20 lg:px-32 py-4">
+        <div class="max-w-7xl mx-auto w-full flex flex-col items-center text-center">
+            <!-- Metadatos estilo Póster -->
+            <div class="w-full flex justify-between items-end mb-12 uppercase font-black italic text-[10px] tracking-[0.3em] border-b border-white/20 pb-4">
+                <div class="text-left leading-tight">
+                    Sabaneta<br>Antioquia
+                </div>
+                <div class="text-red-600 text-lg">2026</div>
+                <div class="text-right leading-tight">
+                    Estudio<br>Privado
                 </div>
             </div>
-            <a href="#booking" class="bg-[#D20000] text-white rounded-full hover:bg-[#b00000] transition duration-500 max-md:px-6 max-md:py-3 max-md:font-black max-md:italic max-md:tracking-tighter max-md:text-lg md:px-4 md:py-2 md:font-bold" onclick="toggleMenu(event)">Cotizar</a>
-        </div>
-    </header>
 
-    <main>
-    <section id="hero" class="reveal-section min-h-screen flex flex-col justify-center px-8 md:px-20 lg:px-32 py-20">
-        <div class="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-10 items-center">
-            <header class="order-2 lg:order-1">
-                <h1 class="text-[12vw] lg:text-[8vw] leading-[0.85] font-black uppercase italic tracking-tighter mb-8">
-                    <div class="overflow-hidden"><span id="hero-black" class="hero-word block">Black</span></div>
-                    <div class="overflow-hidden"><span id="hero-work" class="hero-word text-stroke block italic">Work</span></div>
-                    <div class="overflow-hidden"><span id="hero-negas" class="hero-word block">negas</span></div>
+            <div class="relative w-full mb-12">
+                <h1 class="text-[18vw] lg:text-[14vw] leading-[0.75] font-black uppercase italic tracking-tighter">
+                    <div class="overflow-hidden"><span id="hero-black" class="hero-word block">Negas</span></div>
+                    <div class="overflow-hidden"><span id="hero-work" class="hero-word text-red-600 block italic">Tattoo</span></div>
+                    <div class="overflow-hidden"><span id="hero-negas" class="hero-word block">Studio</span></div>
                 </h1>
-                <p id="hero-desc" class="reveal-item text-zinc-500 text-lg max-w-md leading-relaxed">
-                </p>
-                <div id="hero-btn-container" class="mt-10 reveal-item">
-                    <a href="#booking" class="bg-[#D20000] text-white px-10 py-6 rounded-full block w-full text-center text-xl lg:text-2xl font-black uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500 font-bold">
-                        Cotizar Tatuaje
-                    </a>
+            </div>
+
+            <div id="hero-btn-container" class="reveal-item w-full max-w-xl flex flex-col items-center">
+                <a href="#booking" id="hero-btn" class="px-12 py-8 block w-full text-center text-3xl font-black uppercase italic tracking-tighter transition-all duration-300">
+                    COTIZAR TATUAJE
+                </a>
+                <div class="mt-12 hero-scroll-indicator">
+                    <span class="text-white text-5xl font-light block select-none tracking-[-0.2em]">>></span>
                 </div>
-            </header>
-            <div id="hero-img-container" class="reveal-item order-1 lg:order-2 relative aspect-[4/5] overflow-hidden rounded-2xl bg-zinc-900 shadow-2xl border border-white/5">
-                <img id="hero-img" src="https://i.ibb.co/gbt230bD/657596602-18195058267358960-7783419555348968370-n.jpg" 
-                     class="w-full h-full object-cover grayscale hover:grayscale-0 transition duration-700 scale-110" alt="Negas Ink Tattoo Studio Artist">
             </div>
         </div>
     </section>
 
-    <section id="portfolio" class="py-20 border-y border-white/5">
-        <div class="mb-8 px-10 md:px-24 lg:px-48">
-            <h2 class="text-xs uppercase tracking-[0.5em] text-zinc-500 mb-2 font-bold italic">TRABAJOS DE REFERENCIA</h2>
-        </div>
-        
+    <section id="portfolio" class="py-8 border-y border-white/5">
         <div class="sc">
             <div class="sc-viewport" id="vp"></div>
             <div class="sc-dots" id="dots"></div>
@@ -129,33 +117,37 @@
         </div>
     </section>
 
-    <section id="booking" class="max-w-5xl mx-auto px-10 md:px-24 lg:px-48 py-20">
+    <section id="booking" class="max-w-5xl mx-auto px-10 md:px-24 lg:px-48 py-6">
         
-        <div class="mb-12 reveal-item">
-            <h3 class="text-5xl font-black italic uppercase tracking-tighter mb-4">Cotización Tatuaje</h3>
-            <p class="text-zinc-500 uppercase text-[10px] tracking-widest">Reserva tu espacio en la historia</p>
+        <!-- Cabecera de Formulario estilo Póster -->
+        <div class="w-full flex justify-between items-end mb-10 uppercase font-black italic text-[10px] tracking-[0.3em] border-b border-white/20 pb-4 reveal-item">
+            <div class="text-left leading-tight">SOLICITUD<br>DE DISEÑO</div>
+            <div class="text-red-600 text-lg">PROCESO</div>
+            <div class="text-right leading-tight">ESTIMACIÓN<br>INSTANTÁNEA</div>
         </div>
 
-        <form id="tattoo-form" class="space-y-10 mb-20">
+        <h3 class="section-header main-title-header reveal-item mb-10">Cotización</h3>
+
+        <form id="tattoo-form" class="space-y-6 mb-12">
             <input type="hidden" name="estimated_price" id="form-estimated-price">
             <input type="hidden" name="final_size" id="form-size">
             <input type="hidden" name="fecha_cita" id="form-fecha-cita">
             <input type="hidden" name="recaptcha_token" id="recaptcha_token">
 
             <!-- SECCIÓN 1: EL PROYECTO -->
-            <div id="section-proyecto" class="space-y-6 reveal-item">
-                <h2 class="section-header">EL PROYECTO</h2>
+            <div id="section-proyecto" class="space-y-4 reveal-item">
+                <h2 class="section-header text-center">TU TATUAJE</h2>
                 
-                <div class="border border-[#1a1a1a] p-8 rounded-xl relative bg-black/40">
+                <div class="poster-card">
                     <label class="field-label">Estilo de tatuaje</label>
                     <div class="custom-dropdown relative">
-                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-[12px] py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
+                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-none py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
                             <span class="dropdown-label opacity-50">Selecciona una opción...</span>
                             <svg class="dropdown-icon w-5 h-5 text-zinc-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-[12px] overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
+                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-none overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1.2">Blackwork</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1">Botánico(Flores)</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1">Minimalismo</div>
@@ -165,14 +157,39 @@
                     </div>
                 </div>
 
-                <div class="border border-[#1a1a1a] p-8 rounded-xl relative bg-black/40">
+                <div class="poster-card">
                     <label class="field-label">Cuéntame tu idea</label>
                     <textarea name="message" rows="4" required maxlength="500" placeholder="Describe tu diseño, estilo, referencias..." class="w-full py-3 px-0 resize-none border-b border-zinc-700 focus:border-white transition-colors text-lg italic"></textarea>
                     <span id="charCount" class="absolute bottom-4 right-6 text-[10px] text-zinc-500 font-mono">0/500</span>
                 </div>
 
+                <div class="poster-card">
+                    <label class="field-label">Zona del cuerpo</label>
+                    <div class="custom-dropdown relative">
+                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-none py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
+                            <span class="dropdown-label opacity-50">Selecciona una zona...</span>
+                            <svg class="dropdown-icon w-5 h-5 text-zinc-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-none overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Brazo">Brazo</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Antebrazo">Antebrazo</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Muñeca">Muñeca</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Tobillo">Tobillo</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Pantorrilla">Pantorrilla</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Muslo">Muslo</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Pecho">Pecho</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Espalda">Espalda</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Costillas">Costillas</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Cuello">Cuello</div>
+                        </div>
+                        <input type="hidden" id="tattoo_zone" name="tattoo_zone" data-label="Zona" required>
+                    </div>
+                </div>
+
                 <!-- CUADRO UNIFICADO DE TAMAÑO E INVERSIÓN -->
-                <div id="price-card" class="p-8 border border-[#1a1a1a] rounded-xl bg-white/[0.02] space-y-4">
+                <div id="price-card" class="poster-card border-red-600 space-y-4">
                     <div>
                         <label class="field-label">Tamaño en centímetros</label>
                         <div class="flex items-center gap-6 h-16">
@@ -209,7 +226,7 @@
                     <label class="field-label">Referencia Visual</label>
                     <input type="file" id="fotoTatuaje" accept="image/*" class="hidden" onchange="handleImagePreview(this)">
                     <div id="upload-zone" onclick="document.getElementById('fotoTatuaje').click()" 
-                         class="relative group cursor-pointer border-2 border-dashed border-[#D20000]/40 hover:border-[#D20000] bg-zinc-900/30 rounded-2xl p-12 transition-all duration-500 flex flex-col items-center justify-center min-h-[220px] overflow-hidden">
+                         class="relative group cursor-pointer border-2 border-dashed border-white/20 hover:border-red-600 bg-black rounded-none p-12 transition-all duration-500 flex flex-col items-center justify-center min-h-[220px] overflow-hidden">
                         
                         <div id="upload-placeholder" class="flex flex-col items-center text-center transition-all duration-500 group-hover:scale-105">
                             <svg class="w-16 h-16 mb-4 text-[#D20000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -230,8 +247,8 @@
             </div>
 
             <!-- SECCIÓN 2: DATOS PERSONALES -->
-            <div id="section-datos" class="space-y-10 pt-16 mt-16 border-t border-[#1a1a1a] reveal-item">
-                <h2 class="section-header">DATOS PERSONALES</h2>
+            <div id="section-datos" class="space-y-6 pt-8 mt-8 border-t border-[#1a1a1a] reveal-item">
+                <h2 class="section-header text-center">DATOS PERSONALES</h2>
                 
                 <div>
                     <label class="field-label">Nombre Completo</label>
@@ -248,16 +265,16 @@
                     <input type="email" name="user_email" required class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
                 </div>
 
-                <div class="border border-[#1a1a1a] p-8 rounded-xl relative bg-black/40">
+                <div class="poster-card">
                     <label class="field-label">Ciudad</label>
                     <div class="custom-dropdown relative">
-                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-[12px] py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
+                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-none py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
                             <span class="dropdown-label opacity-50">Selecciona una ciudad...</span>
                             <svg class="dropdown-icon w-5 h-5 text-zinc-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-[12px] overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
+                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-none overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Sabaneta">Sabaneta</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Medellín">Medellín</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Envigado">Envigado</div>
@@ -269,34 +286,9 @@
                     </div>
                 </div>
 
-                <div class="border border-[#1a1a1a] p-8 rounded-xl relative bg-black/40">
-                    <label class="field-label">Zona del cuerpo</label>
-                    <div class="custom-dropdown relative">
-                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-[12px] py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
-                            <span class="dropdown-label opacity-50">Selecciona una zona...</span>
-                            <svg class="dropdown-icon w-5 h-5 text-zinc-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-[12px] overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Brazo">Brazo</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Antebrazo">Antebrazo</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Muñeca">Muñeca</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Tobillo">Tobillo</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Pantorrilla">Pantorrilla</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Muslo">Muslo</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Pecho">Pecho</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Espalda">Espalda</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Costillas">Costillas</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Cuello">Cuello</div>
-                        </div>
-                        <input type="hidden" id="tattoo_zone" name="tattoo_zone" data-label="Zona" required>
-                    </div>
-                </div>
-
             </div>
 
-            <button type="submit" id="submit-btn" class="reveal-item w-full text-white py-6 rounded-full text-xl font-black uppercase italic tracking-tighter mt-8">
+            <button type="submit" id="submit-btn" class="reveal-item w-full text-white py-8 rounded-none text-3xl font-black uppercase italic tracking-tighter mt-4">
                 Enviar Solicitud
             </button>
         </form>
@@ -377,8 +369,8 @@
             <div class="max-w-2xl mx-auto text-center">
                 <p class="text-zinc-500 text-sm leading-relaxed mb-8">Si tienes dudas sobre tu cotización, contáctame directamente a través de WhatsApp.</p>
                 
-                <div class="flex gap-6 justify-center">
-                    <a href="#" target="_blank" rel="noopener" class="js-wa bg-[#D20000] text-white py-4 px-8 rounded-full text-center font-bold uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500">
+                <div class="flex justify-center">
+                    <a href="#" target="_blank" rel="noopener" class="js-wa btn-poster bg-[#D20000] text-white py-8 px-12 block w-full text-center text-3xl font-black uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500">
                         Pregunta aquí
                     </a>
                 </div>
@@ -400,7 +392,7 @@
         <img id="lb-img" src="" class="max-w-[90%] max-h-[85%] object-contain cursor-default shadow-2xl transition-all duration-500" alt="Negas Ink Portfolio Zoom">
     </div>
 
-    <footer class="bg-black py-20 border-t border-white/5 w-full">
+    <footer class="bg-black py-10 border-t border-white/5 w-full">
         <div class="max-w-2xl mx-auto text-center space-y-8">
             <div class="flex justify-center gap-12 text-[12px] uppercase tracking-[0.5em] font-medium">
                 <a href="#" target="_blank" rel="noopener" class="js-ig hover:text-white/50 transition duration-300">Instagram</a>
@@ -411,6 +403,22 @@
             </p>
         </div>
     </footer>
+
+    <!-- Popup de Advertencia para Ciudad "Otro" -->
+    <div id="city-warning" class="fixed inset-0 z-[300] hidden items-center justify-center p-6">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" onclick="document.getElementById('city-warning').classList.add('hidden'); document.getElementById('city-warning').classList.remove('flex');"></div>
+        <div class="poster-card max-w-lg w-full z-10 border-red-600 text-center space-y-6">
+            <h4 class="text-3xl font-black italic uppercase tracking-tighter">¡Aviso Importante!</h4>
+            <p class="text-zinc-300 italic leading-relaxed">
+                ¡Hola! Qué alegría que consideres mi trabajo. 🖤 Solo quería recordarte que mi estudio está ubicado únicamente en <strong>Sabaneta, Antioquia</strong> (justo a las afueras de Medellín). Si tienes la disponibilidad para viajar y llegar hasta aquí, ¡estás más que invitado a enviar tu solicitud! Estaré encantado de agendar tu cita y tatuarte.
+            </p>
+            <button type="button" 
+                    onclick="document.getElementById('city-warning').classList.add('hidden'); document.getElementById('city-warning').classList.remove('flex');" 
+                    class="bg-white text-black px-8 py-4 font-black uppercase italic tracking-tighter hover:bg-red-600 hover:text-white transition-all w-full">
+                Entendido, ¡allá llegaré!
+            </button>
+        </div>
+    </div>
 
     <script src="script.js" defer></script>
     <script>

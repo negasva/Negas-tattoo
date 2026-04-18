@@ -2,7 +2,10 @@
 if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
 }
-window.scrollTo(0, 0);
+
+if (!window.location.hash) {
+    window.scrollTo(0, 0);
+}
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -13,14 +16,10 @@ ScrollTrigger.config({
     autoRefreshEvents: "visibilitychange,DOMContentLoaded,load" 
 });
 
-ScrollTrigger.normalizeScroll(true); 
+ScrollTrigger.normalizeScroll(false); 
 
 window.addEventListener('load', () => {
-    setTimeout(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-        ScrollTrigger.clearScrollMemory();
-        ScrollTrigger.refresh();
-    }, 50);
+    ScrollTrigger.refresh();
 });
 
 let configuracionApp = {};
@@ -93,12 +92,20 @@ document.querySelectorAll('.custom-dropdown').forEach(dropdown => {
     };
 
     options.forEach(opt => {
-        opt.onclick = () => {
+        opt.onclick = (e) => {
+            e.stopPropagation(); // Evita que el click se pierda o cierre el menú prematuramente
             input.value = opt.getAttribute('data-value'); 
             label.textContent = opt.textContent; 
             label.classList.remove('opacity-50');
             menu.classList.add('opacity-0', 'invisible', '-translate-y-2'); 
             icon.classList.remove('rotate-180');
+
+            // Mostrar advertencia si elige "Otro" en Ciudad
+            if (input.id === 'ciudad' && opt.getAttribute('data-value') === 'Otro') {
+                const warning = document.getElementById('city-warning');
+                if (warning) { warning.classList.remove('hidden'); warning.classList.add('flex'); }
+            }
+
             calculatePrice();
         };
     });
@@ -236,7 +243,7 @@ const allImageUrls = [
 ];
 
 const IMGS = shuffleArray([...new Set(allImageUrls)].map(url => ({ src: url, alt: getAltText(url) })));
-const N = IMGS.length, W = 280, GAP = 24, VISIBLE = 4, SCALES = [1.15, 1, 1, 1];
+const N = IMGS.length, W = 350, GAP = 32, VISIBLE = 4, SCALES = [1.15, 1, 1, 1];
 let cur = 0, dragging = false, dragX0 = 0, dragCurX = 0, cards = [];
 const vp = document.getElementById('vp'), dotsEl = document.getElementById('dots');
 
@@ -351,8 +358,9 @@ if (vp) {
     IMGS.forEach((imgData, i) => {
         const card = document.createElement('div'); card.className = 'sc-card';
         const img = document.createElement('img'); img.src = imgData.src; img.alt = imgData.alt; card.appendChild(img);
-        img.loading = "lazy"; img.width = 280; img.height = 280;
+        img.loading = "lazy"; img.width = 350; img.height = 350;
         card.onclick = () => {
+            stopAutoPlay();
             if(Math.abs(dragCurX - dragX0) > 6) return;
             const offset = relOffset(i);
             if(offset === 0) openLightbox(imgData.src, card);
@@ -362,11 +370,22 @@ if (vp) {
         const dot = document.createElement('div'); dot.className = 'sc-dot'; dot.onclick = () => go(relOffset(i)); 
         if(dotsEl) dotsEl.appendChild(dot);
     });
-    vp.onpointerdown = e => { dragging = true; dragX0 = dragCurX = e.clientX; vp.setPointerCapture(e.pointerId); };
+
+    // Lógica de rotación automática
+    let autoPlayInterval = setInterval(() => go(1), 3500);
+    const stopAutoPlay = () => clearInterval(autoPlayInterval);
+
+    vp.onpointerdown = e => { 
+        stopAutoPlay();
+        dragging = true; 
+        dragX0 = dragCurX = e.clientX; 
+        vp.setPointerCapture(e.pointerId); 
+    };
     vp.onpointermove = e => { if (!dragging) return; dragCurX = e.clientX; cards.forEach((c, i) => { const p = targetProps(relOffset(i)); if (p) gsap.set(c, { x: p.x + (dragCurX - dragX0) * .25 }); }); };
     vp.onpointerup = () => { dragging = false; Math.abs(dragCurX - dragX0) > 55 ? go(dragCurX < dragX0 ? 1 : -1) : layout(); };
-    if(document.getElementById('prev')) document.getElementById('prev').onclick = () => go(-1);
-    if(document.getElementById('next')) document.getElementById('next').onclick = () => go(1);
+    
+    if(document.getElementById('prev')) document.getElementById('prev').onclick = () => { stopAutoPlay(); go(-1); };
+    if(document.getElementById('next')) document.getElementById('next').onclick = () => { stopAutoPlay(); go(1); };
     layout(true);
 }
 
@@ -387,31 +406,10 @@ window.handleImagePreview = function(input) {
 const heroTl = gsap.timeline({ delay: 0.5 });
 
 heroTl
-    .to("#hero-black", { x: 0, opacity: 1, duration: 1.2, ease: "power4.out", force3D: true })
-    .to("#hero-negas", { x: 0, opacity: 1, duration: 1.2, ease: "power4.out", force3D: true }, "-=0.8")
-    .to("#hero-work", { opacity: 1, duration: 1.5, ease: "expo.out", force3D: true }, "-=0.4")
-    .to("#hero-btn-container", { opacity: 1, y: 0, duration: 1, ease: "power3.out", force3D: true }, "-=0.5");
-
-// Parallax suave para la imagen del hero
-gsap.to("#hero-img", {
-    yPercent: 15,
-    ease: "none",
-    force3D: true, // Fuerza aceleración por hardware
-    scrollTrigger: {
-        trigger: "#hero",
-        start: "top top",
-        end: "bottom top",
-        scrub: true
-    }
-});
-
-// Animación de entrada para el contenedor de la imagen
-gsap.from("#hero-img-container", {
-    clipPath: "inset(100% 0% 0% 0%)",
-    duration: 1.5,
-    ease: "power4.inOut",
-    delay: 0.2
-});
+    .to("#hero-black", { y: 0, opacity: 1, duration: 0.5, ease: "power4.out" })
+    .to("#hero-work", { y: 0, opacity: 1, duration: 0.5, ease: "power4.out" }, "-=0.35")
+    .to("#hero-negas", { y: 0, opacity: 1, duration: 0.5, ease: "power4.out" }, "-=0.35")
+    .to("#hero-btn-container", { opacity: 1, y: 0, duration: 0.7, ease: "expo.out" }, "-=0.1");
 
 gsap.utils.toArray('.reveal-item').forEach(el => {
     gsap.to(el, {

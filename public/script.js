@@ -46,8 +46,26 @@ async function loadConfig() {
 function applyConfig() {
     const { waPhone, instagramUrl, facebookUrl, recaptchaSiteKey } = configuracionApp;
 
-    if (waPhone) document.querySelectorAll('a.js-wa').forEach(a => { a.href = 'https://wa.me/' + waPhone; });
-    if (instagramUrl) document.querySelectorAll('a.js-ig').forEach(a => { a.href = instagramUrl; });
+    if (waPhone) {
+        const whatsappWebUrl = 'https://wa.me/' + waPhone;
+        document.querySelectorAll('a.js-wa').forEach(a => {
+            a.href = whatsappWebUrl;
+            a.dataset.webHref = whatsappWebUrl;
+            a.dataset.appHref = 'whatsapp://send?phone=' + waPhone;
+        });
+    }
+
+    if (instagramUrl) {
+        const instagramUsername = getInstagramUsername(instagramUrl);
+        document.querySelectorAll('a.js-ig').forEach(a => {
+            a.href = instagramUrl;
+            a.dataset.webHref = instagramUrl;
+            if (instagramUsername) {
+                a.dataset.appHref = 'instagram://user?username=' + instagramUsername;
+            }
+        });
+    }
+
     if (facebookUrl) document.querySelectorAll('a.js-fb').forEach(a => { a.href = facebookUrl; });
 
     if (recaptchaSiteKey && !document.querySelector('script[data-recaptcha-loader="true"]')) {
@@ -58,6 +76,67 @@ function applyConfig() {
         scriptRecaptcha.dataset.recaptchaLoader = 'true';
         document.head.appendChild(scriptRecaptcha);
     }
+}
+
+function isMobileDevice() {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+}
+
+function getInstagramUsername(instagramUrl) {
+    try {
+        const url = new URL(instagramUrl);
+        if (!/instagram\.com$/i.test(url.hostname) && !/www\.instagram\.com$/i.test(url.hostname)) {
+            return '';
+        }
+
+        const [username] = url.pathname.split('/').filter(Boolean);
+        return username || '';
+    } catch (_error) {
+        return '';
+    }
+}
+
+function openAppOrFallback(appUrl, webUrl) {
+    if (!appUrl) {
+        window.open(webUrl, '_blank', 'noopener');
+        return;
+    }
+
+    const startedAt = Date.now();
+    const fallbackDelay = 1200;
+    const fallback = setTimeout(() => {
+        if (Date.now() - startedAt < fallbackDelay + 250) {
+            window.location.href = webUrl;
+        }
+    }, fallbackDelay);
+
+    const handleVisibilityChange = () => {
+        if (document.hidden) {
+            clearTimeout(fallback);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.location.href = appUrl;
+}
+
+function bindDeepLinkAnchors() {
+    document.querySelectorAll('a.js-wa, a.js-ig').forEach(anchor => {
+        if (anchor.dataset.deepLinkBound === 'true') return;
+        anchor.dataset.deepLinkBound = 'true';
+
+        anchor.addEventListener('click', event => {
+            if (!isMobileDevice()) return;
+
+            const appHref = anchor.dataset.appHref;
+            const webHref = anchor.dataset.webHref || anchor.href;
+            if (!webHref) return;
+
+            event.preventDefault();
+            openAppOrFallback(appHref, webHref);
+        });
+    });
 }
 
 async function getRecaptchaToken() {
@@ -566,6 +645,7 @@ document.querySelectorAll('.accordion-header').forEach(header => {
 });
 
 loadConfig();
+bindDeepLinkAnchors();
 
 document.getElementById('size')?.addEventListener('input', calculatePrice);
 

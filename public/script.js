@@ -9,14 +9,13 @@ if (!window.location.hash) {
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Configuración de alto rendimiento para móviles
-ScrollTrigger.config({ 
-    ignoreMobileResize: true, 
+ScrollTrigger.config({
+    ignoreMobileResize: true,
     limitCallbacks: true,
-    autoRefreshEvents: "visibilitychange,DOMContentLoaded,load" 
+    autoRefreshEvents: 'visibilitychange,DOMContentLoaded,load'
 });
 
-ScrollTrigger.normalizeScroll(false); 
+ScrollTrigger.normalizeScroll(false);
 
 window.addEventListener('load', () => {
     ScrollTrigger.refresh();
@@ -25,33 +24,60 @@ window.addEventListener('load', () => {
 let configuracionApp = {};
 let tiempoEscritura;
 let tiempoCalculo;
-let ultimoMensajeEscrito = "";
+let ultimoMensajeEscrito = '';
 
 async function loadConfig() {
     const botonEnvio = document.getElementById('submit-btn');
     if (botonEnvio) botonEnvio.disabled = true;
+
     try {
         const res = await fetch('/api/config');
-        if (res.ok) {
-            configuracionApp = await res.json();
-            applyConfig();
-        }
-    } catch (e) { console.error("Error cargando configuración:", e); }
+        if (!res.ok) throw new Error('No se pudo cargar la configuracion');
+        configuracionApp = await res.json();
+        applyConfig();
+    } catch (error) {
+        console.error('Error cargando configuracion:', error);
+        typeWriter('Configuracion no disponible', 'text-red-500', true);
+    }
+
     if (botonEnvio) botonEnvio.disabled = false;
 }
 
 function applyConfig() {
-    const { waPhone, instagramUrl, facebookUrl, emailjsPublicKey, recaptchaSiteKey } = configuracionApp;
-    if (waPhone) document.querySelectorAll('a.js-wa').forEach(a => a.href = 'https://wa.me/' + waPhone);
-    if (instagramUrl) document.querySelectorAll('a.js-ig').forEach(a => a.href = instagramUrl);
-    if (facebookUrl) document.querySelectorAll('a.js-fb').forEach(a => a.href = facebookUrl);
-    if (emailjsPublicKey) emailjs.init(emailjsPublicKey);
-    if (recaptchaSiteKey) {
+    const { waPhone, instagramUrl, facebookUrl, recaptchaSiteKey } = configuracionApp;
+
+    if (waPhone) document.querySelectorAll('a.js-wa').forEach(a => { a.href = 'https://wa.me/' + waPhone; });
+    if (instagramUrl) document.querySelectorAll('a.js-ig').forEach(a => { a.href = instagramUrl; });
+    if (facebookUrl) document.querySelectorAll('a.js-fb').forEach(a => { a.href = facebookUrl; });
+
+    if (recaptchaSiteKey && !document.querySelector('script[data-recaptcha-loader="true"]')) {
         const scriptRecaptcha = document.createElement('script');
-        scriptRecaptcha.src = 'https://www.google.com/recaptcha/api.js?render=' + recaptchaSiteKey;
+        scriptRecaptcha.src = 'https://www.google.com/recaptcha/api.js?render=' + encodeURIComponent(recaptchaSiteKey);
         scriptRecaptcha.async = true;
+        scriptRecaptcha.defer = true;
+        scriptRecaptcha.dataset.recaptchaLoader = 'true';
         document.head.appendChild(scriptRecaptcha);
     }
+}
+
+async function getRecaptchaToken() {
+    const siteKey = configuracionApp.recaptchaSiteKey;
+    if (!siteKey || !window.grecaptcha) {
+        throw new Error('reCAPTCHA no disponible');
+    }
+
+    await new Promise(resolve => window.grecaptcha.ready(resolve));
+    return window.grecaptcha.execute(siteKey, { action: 'submit_quote' });
+}
+
+function showSubmitError(message) {
+    alert(message);
+    typeWriter(message, 'text-red-500', true);
+}
+
+function showSubmitWarning(message) {
+    alert(message);
+    typeWriter(message, 'text-amber-400');
 }
 
 window.toggleMenu = function(e) {
@@ -62,7 +88,6 @@ window.toggleMenu = function(e) {
     document.body.classList.toggle('menu-open', m.classList.contains('active'));
 };
 
-// Manejo del dropdown de redes
 document.querySelector('.redes-dropdown button')?.addEventListener('click', (e) => {
     if (window.innerWidth <= 768) {
         e.preventDefault();
@@ -87,23 +112,27 @@ document.querySelectorAll('.custom-dropdown').forEach(dropdown => {
             }
         });
         const open = !menu.classList.contains('invisible');
-        menu.classList.toggle('opacity-0', open); menu.classList.toggle('invisible', open); menu.classList.toggle('-translate-y-2', open);
+        menu.classList.toggle('opacity-0', open);
+        menu.classList.toggle('invisible', open);
+        menu.classList.toggle('-translate-y-2', open);
         icon.classList.toggle('rotate-180', !open);
     };
 
     options.forEach(opt => {
         opt.onclick = (e) => {
-            e.stopPropagation(); // Evita que el click se pierda o cierre el menú prematuramente
-            input.value = opt.getAttribute('data-value'); 
-            label.textContent = opt.textContent; 
+            e.stopPropagation();
+            input.value = opt.getAttribute('data-value');
+            label.textContent = opt.textContent;
             label.classList.remove('opacity-50');
-            menu.classList.add('opacity-0', 'invisible', '-translate-y-2'); 
+            menu.classList.add('opacity-0', 'invisible', '-translate-y-2');
             icon.classList.remove('rotate-180');
 
-            // Mostrar advertencia si elige "Otro" en Ciudad
             if (input.id === 'ciudad' && opt.getAttribute('data-value') === 'Otro') {
                 const warning = document.getElementById('city-warning');
-                if (warning) { warning.classList.remove('hidden'); warning.classList.add('flex'); }
+                if (warning) {
+                    warning.classList.remove('hidden');
+                    warning.classList.add('flex');
+                }
             }
 
             calculatePrice();
@@ -116,17 +145,24 @@ window.addEventListener('click', () => {
     document.querySelectorAll('.dropdown-icon').forEach(i => i.classList.remove('rotate-180'));
 });
 
-function typeWriter(text, colorClass = "text-zinc-500", shake = false) {
+function typeWriter(text, colorClass = 'text-zinc-500', shake = false) {
     const elementoMensaje = document.getElementById('terminal-msg');
     if (!elementoMensaje || (ultimoMensajeEscrito === text && elementoMensaje.classList.contains('animate-shake') === shake)) return;
+
     ultimoMensajeEscrito = text;
     clearTimeout(tiempoEscritura);
     elementoMensaje.className = `text-[10px] uppercase tracking-widest leading-relaxed transition-colors duration-300 ${colorClass} ${shake ? 'animate-shake' : ''}`;
     elementoMensaje.textContent = '';
     let indice = 0;
+
     function type() {
-        if (indice < text.length) { elementoMensaje.textContent += text.charAt(indice); indice++; tiempoEscritura = setTimeout(type, 10); }
+        if (indice < text.length) {
+            elementoMensaje.textContent += text.charAt(indice);
+            indice++;
+            tiempoEscritura = setTimeout(type, 10);
+        }
     }
+
     type();
 }
 
@@ -141,35 +177,48 @@ window.calculatePrice = function() {
     const terminal = document.getElementById('terminal-container');
 
     if (!selectorSize || !selectorComp || !displaySize || !displayPrice || !contenedorResultado) return;
-    
-    const valorTamano = +selectorSize.value; 
-    displaySize.textContent = valorTamano + 'cm'; 
+
+    const valorTamano = Number(selectorSize.value);
+    displaySize.textContent = valorTamano + 'cm';
     document.getElementById('form-size').value = valorTamano + 'cm';
-    
+
     const valorComplejidad = parseFloat(selectorComp.value);
     const ideaProyecto = document.querySelector('textarea[name="message"]')?.value.trim();
-    const estiloSeleccionado = !isNaN(valorComplejidad);
-    const ideaValida = ideaProyecto && ideaProyecto.length > 0;
+    const estiloSeleccionado = !Number.isNaN(valorComplejidad);
+    const ideaValida = Boolean(ideaProyecto);
     const sliderMovido = valorTamano !== 10;
-    
+
     clearTimeout(tiempoCalculo);
 
     if (!estiloSeleccionado && !ideaValida && !sliderMovido) {
-        if (spinner) spinner.classList.add('hidden'); if (terminal) terminal.classList.remove('hidden'); typeWriter('Esperando información...', 'text-zinc-500');
-        contenedorResultado.classList.add('hidden', 'opacity-0'); if (disclaimer) disclaimer.classList.remove('hidden');
+        if (spinner) spinner.classList.add('hidden');
+        if (terminal) terminal.classList.remove('hidden');
+        typeWriter('Esperando informacion...', 'text-zinc-500');
+        contenedorResultado.classList.add('hidden', 'opacity-0');
+        if (disclaimer) disclaimer.classList.remove('hidden');
     } else if (!estiloSeleccionado || !ideaValida) {
-        if (spinner) spinner.classList.add('hidden'); if (terminal) terminal.classList.remove('hidden'); typeWriter('Completa los campos requeridos 😟', 'text-red-500', true);
-        contenedorResultado.classList.add('hidden', 'opacity-0'); if (disclaimer) disclaimer.classList.remove('hidden');
+        if (spinner) spinner.classList.add('hidden');
+        if (terminal) terminal.classList.remove('hidden');
+        typeWriter('Completa los campos requeridos', 'text-red-500', true);
+        contenedorResultado.classList.add('hidden', 'opacity-0');
+        if (disclaimer) disclaimer.classList.remove('hidden');
     } else {
-        if (spinner) spinner.classList.remove('hidden'); if (terminal) terminal.classList.remove('hidden'); typeWriter('Procesando...', 'text-emerald-500/80');
+        if (spinner) spinner.classList.remove('hidden');
+        if (terminal) terminal.classList.remove('hidden');
+        typeWriter('Procesando...', 'text-emerald-500/80');
         tiempoCalculo = setTimeout(() => {
-            if (spinner) spinner.classList.add('hidden'); if (terminal) terminal.classList.add('hidden');
-            const base = 90000, factorPequeno = 33000, factorGrande = 45000;
+            if (spinner) spinner.classList.add('hidden');
+            if (terminal) terminal.classList.add('hidden');
+            const base = 90000;
+            const factorPequeno = 33000;
+            const factorGrande = 45000;
             const total = base + Math.min(valorTamano, 15) * factorPequeno * valorComplejidad + Math.max(0, valorTamano - 15) * factorGrande * valorComplejidad;
             const precioFormateado = '$' + total.toLocaleString('es-CO');
-            displayPrice.textContent = precioFormateado; 
+            displayPrice.textContent = precioFormateado;
             document.getElementById('form-estimated-price').value = precioFormateado;
-            contenedorResultado.classList.remove('hidden'); if (disclaimer) disclaimer.classList.add('hidden'); setTimeout(() => contenedorResultado.classList.remove('opacity-0'), 10);
+            contenedorResultado.classList.remove('hidden');
+            if (disclaimer) disclaimer.classList.add('hidden');
+            setTimeout(() => contenedorResultado.classList.remove('opacity-0'), 10);
         }, 800);
     }
 };
@@ -178,46 +227,89 @@ const form = document.getElementById('tattoo-form');
 if (form) {
     form.onsubmit = async e => {
         e.preventDefault();
+
         const btn = document.getElementById('submit-btn');
-        btn.textContent = 'ENVIANDO...'; btn.disabled = true;
-        
-        let imageUrl = '';
-        const file = document.getElementById('fotoTatuaje').files[0];
-        if (file) {
-            const fd = new FormData(); fd.append('image', file);
-            const res = await fetch('/api/upload-image', { method: 'POST', body: fd });
-            if (res.ok) { const data = await res.json(); imageUrl = data.url; }
+        btn.textContent = 'ENVIANDO...';
+        btn.disabled = true;
+
+        try {
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                throw new Error('Revisa los campos obligatorios antes de enviar.');
+            }
+
+            let imageUrl = '';
+            const fileInput = document.getElementById('fotoTatuaje');
+            const file = fileInput?.files?.[0];
+
+            if (file) {
+                const fd = new FormData();
+                fd.append('image', file);
+                const uploadRes = await fetch('/api/upload-image', { method: 'POST', body: fd });
+                const uploadData = await uploadRes.json().catch(() => ({}));
+                if (!uploadRes.ok) {
+                    console.warn('Image upload skipped:', uploadData.error || 'unknown upload error');
+                    showSubmitWarning((uploadData.error || 'No fue posible subir la imagen de referencia.') + '. La cotizacion se enviara sin imagen.');
+                } else {
+                    imageUrl = uploadData.url || '';
+                }
+            }
+
+            const recaptchaToken = await getRecaptchaToken();
+            document.getElementById('recaptcha_token').value = recaptchaToken;
+
+            const params = {
+                cliente_nombre: form.user_name.value.trim(),
+                cliente_whatsapp: form.user_phone.value.trim(),
+                user_email: form.user_email.value.trim(),
+                ciudad: document.getElementById('ciudad').value,
+                zona_tatuaje: document.getElementById('tattoo_zone').value,
+                complejidad_diseno: document.querySelector('#complexity').closest('.custom-dropdown').querySelector('.dropdown-label').textContent.trim(),
+                descripcion_referencia: form.message.value.trim(),
+                cotizacion_estimada: document.getElementById('form-estimated-price').value.trim(),
+                tamano_final: document.getElementById('form-size').value.trim(),
+                link_referencia: imageUrl
+            };
+
+            const response = await fetch('/api/submit-quote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: recaptchaToken, params })
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(data.error || 'No fue posible enviar la cotizacion.');
+            }
+
+            localStorage.setItem('ultimaCotizacion', JSON.stringify({
+                cliente_nombre: params.cliente_nombre,
+                zona_tatuaje: params.zona_tatuaje,
+                tamano_final: params.tamano_final,
+                complejidad_diseno: params.complejidad_diseno,
+                cotizacion_estimada: params.cotizacion_estimada
+            }));
+            window.location.href = 'resumen.html';
+        } catch (error) {
+            console.error('Submit error:', error);
+            showSubmitError(error.message || 'Error al enviar. Intenta de nuevo.');
+            btn.textContent = 'REINTENTAR';
+            btn.disabled = false;
+            return;
         }
 
-        const params = {
-            cliente_nombre: form.user_name.value,
-            cliente_whatsapp: form.user_phone.value,
-            user_email: form.user_email.value,
-            ciudad: document.getElementById('ciudad').value,
-            zona_tatuaje: document.getElementById('tattoo_zone').value,
-            complejidad_diseno: document.querySelector('#complexity').closest('.custom-dropdown').querySelector('.dropdown-label').textContent,
-            descripcion_referencia: form.message.value,
-            cotizacion_estimada: document.getElementById('form-estimated-price').value,
-            tamano_final: document.getElementById('form-size').value,
-            link_referencia: imageUrl
-        };
-
-        const { emailjsServiceId, emailjsTemplateId } = configuracionApp;
-        emailjs.send(emailjsServiceId, emailjsTemplateId, params).then(() => {
-            localStorage.setItem('ultimaCotizacion', JSON.stringify(params));
-            window.location.href = 'resumen.html';
-        }).catch(() => { alert('Error al enviar'); btn.textContent = 'REINTENTAR'; btn.disabled = false; });
+        btn.textContent = 'ENVIADO';
     };
 }
 
 function getAltText(url) {
     const filename = url.substring(url.lastIndexOf('/') + 1).split('.')[0].toLowerCase();
-    let alt = "Tatuaje Blackwork Negas Ink Sabaneta";
-    if (filename.includes('mariposa')) alt = "Tatuaje de mariposa blackwork Negas Ink";
-    else if (filename.includes('letras')) alt = "Tatuaje de letras blackwork Negas Ink";
-    else if (filename.includes('angel')) alt = "Tatuaje de ángel blackwork Negas Ink";
-    else if (filename.includes('tigre')) alt = "Tatuaje de tigre blackwork Negas Ink";
-    else if (filename.includes('mask')) alt = "Tatuaje de máscara blackwork Negas Ink";
+    let alt = 'Tatuaje Blackwork Negas Ink Sabaneta';
+    if (filename.includes('mariposa')) alt = 'Tatuaje de mariposa blackwork Negas Ink';
+    else if (filename.includes('letras')) alt = 'Tatuaje de letras blackwork Negas Ink';
+    else if (filename.includes('angel')) alt = 'Tatuaje de angel blackwork Negas Ink';
+    else if (filename.includes('tigre')) alt = 'Tatuaje de tigre blackwork Negas Ink';
+    else if (filename.includes('mask')) alt = 'Tatuaje de mascara blackwork Negas Ink';
     return alt;
 }
 
@@ -230,27 +322,43 @@ function shuffleArray(array) {
 }
 
 const allImageUrls = [
-    "https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg", "https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg", "https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg", 
-    "https://i.ibb.co/s93WWvNq/Tatttoo-Angel-copy-7.jpg", "https://i.ibb.co/35ggTM1t/Tatttoo-pierna-completa-copy-2.jpg", "https://i.ibb.co/x8MJ4tW3/Tatttoo-mask-copy.jpg", 
-    "https://i.ibb.co/CKMdBXVC/Tatttoo-mask.jpg", "https://i.ibb.co/4n31ng5r/Tatttoo-Angel-copy-2.jpg", "https://i.ibb.co/Z6LmS5WK/Tatttoo-tigre.jpg", 
-    "https://i.ibb.co/C3MCJJFW/Tatttoo-pierna-completa.jpg", "https://i.ibb.co/JYsWfZd/Tatttoo-Angel-copy-3.jpg", "https://i.ibb.co/fdPZLNzG/Tatttoo-Elefante.jpg", 
-    "https://i.ibb.co/FLhCmFhg/Tatttoo-eye.jpg", "https://i.ibb.co/Q7YssPnN/Tatttoo-Angel-copy-4.jpg", "https://i.ibb.co/kVWLJHSn/Tatttoo-Angel-copy.jpg", 
-    "https://i.ibb.co/cKvQ5BkL/Tatttoo-Angel-copy-6.jpg", "https://i.ibb.co/dFYtWP4/tatuaje-mariposa.jpg", "https://i.ibb.co/6RCSYkN4/tatuaje-letras.jpg", 
-    "https://i.ibb.co/wZhYZ7TN/tatuaje-letras-copy.jpg", "https://i.ibb.co/FLGJ9Q23/tatuaje-bebe.jpg", "https://i.ibb.co/tMJQbKZW/IMG-0066.png", 
-    "https://i.ibb.co/hF1pjnd9/IMG-0067.png", "https://i.ibb.co/ynWN6Cj1/IMG-0065.png", "https://i.ibb.co/pBjNrfVs/IMG-0063.png", 
-    "https://i.ibb.co/pjnW24PB/IMG-4198.jpg", "https://i.ibb.co/cKQLSWqs/IMG-4197.jpg", "https://i.ibb.co/pTN8kzF/IMG-4195.jpg", 
-    "https://i.ibb.co/W4mNXJdv/IMG-4194.jpg", "https://i.ibb.co/Xf6251Jc/IMG-4192.jpg", "https://i.ibb.co/Sw36MPnL/IMG-4201.jpg"
+    'https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg', 'https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg', 'https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg',
+    'https://i.ibb.co/s93WWvNq/Tatttoo-Angel-copy-7.jpg', 'https://i.ibb.co/35ggTM1t/Tatttoo-pierna-completa-copy-2.jpg', 'https://i.ibb.co/x8MJ4tW3/Tatttoo-mask-copy.jpg',
+    'https://i.ibb.co/CKMdBXVC/Tatttoo-mask.jpg', 'https://i.ibb.co/4n31ng5r/Tatttoo-Angel-copy-2.jpg', 'https://i.ibb.co/Z6LmS5WK/Tatttoo-tigre.jpg',
+    'https://i.ibb.co/C3MCJJFW/Tatttoo-pierna-completa.jpg', 'https://i.ibb.co/JYsWfZd/Tatttoo-Angel-copy-3.jpg', 'https://i.ibb.co/fdPZLNzG/Tatttoo-Elefante.jpg',
+    'https://i.ibb.co/FLhCmFhg/Tatttoo-eye.jpg', 'https://i.ibb.co/Q7YssPnN/Tatttoo-Angel-copy-4.jpg', 'https://i.ibb.co/kVWLJHSn/Tatttoo-Angel-copy.jpg',
+    'https://i.ibb.co/cKvQ5BkL/Tatttoo-Angel-copy-6.jpg', 'https://i.ibb.co/dFYtWP4/tatuaje-mariposa.jpg', 'https://i.ibb.co/6RCSYkN4/tatuaje-letras.jpg',
+    'https://i.ibb.co/wZhYZ7TN/tatuaje-letras-copy.jpg', 'https://i.ibb.co/FLGJ9Q23/tatuaje-bebe.jpg', 'https://i.ibb.co/tMJQbKZW/IMG-0066.png',
+    'https://i.ibb.co/hF1pjnd9/IMG-0067.png', 'https://i.ibb.co/ynWN6Cj1/IMG-0065.png', 'https://i.ibb.co/pBjNrfVs/IMG-0063.png',
+    'https://i.ibb.co/pjnW24PB/IMG-4198.jpg', 'https://i.ibb.co/cKQLSWqs/IMG-4197.jpg', 'https://i.ibb.co/pTN8kzF/IMG-4195.jpg',
+    'https://i.ibb.co/W4mNXJdv/IMG-4194.jpg', 'https://i.ibb.co/Xf6251Jc/IMG-4192.jpg', 'https://i.ibb.co/Sw36MPnL/IMG-4201.jpg'
 ];
 
 const IMGS = shuffleArray([...new Set(allImageUrls)].map(url => ({ src: url, alt: getAltText(url) })));
-const N = IMGS.length, W = 350, GAP = 32, VISIBLE = 4, SCALES = [1.15, 1, 1, 1];
-let cur = 0, dragging = false, dragX0 = 0, dragCurX = 0, cards = [];
-const vp = document.getElementById('vp'), dotsEl = document.getElementById('dots');
+const N = IMGS.length;
+const W = 350;
+const GAP = 32;
+const VISIBLE = 4;
+const SCALES = [1.15, 1, 1, 1];
+let cur = 0;
+let dragging = false;
+let dragX0 = 0;
+let dragCurX = 0;
+let cards = [];
+const vp = document.getElementById('vp');
+const dotsEl = document.getElementById('dots');
 
-function relOffset(i) { let o = ((i - cur) % N + N) % N; return o > N / 2 ? o - N : o; }
+function relOffset(i) {
+    let o = ((i - cur) % N + N) % N;
+    return o > N / 2 ? o - N : o;
+}
+
 function targetProps(o) {
-    const abs = Math.abs(o), s = o > 0 ? 1 : -1; if (abs >= VISIBLE) return null;
-    let x = 0; for (let j = 1; j <= abs; j++) x += s * (W * SCALES[j - 1] / 2 + W * SCALES[j] / 2 + GAP);
+    const abs = Math.abs(o);
+    const s = o > 0 ? 1 : -1;
+    if (abs >= VISIBLE) return null;
+    let x = 0;
+    for (let j = 1; j <= abs; j++) x += s * (W * SCALES[j - 1] / 2 + W * SCALES[j] / 2 + GAP);
     return { x, scale: SCALES[abs], zIndex: 20 - abs, autoAlpha: 1 };
 }
 
@@ -258,7 +366,10 @@ function layout(instant) {
     if (!vp) return;
     cards.forEach((el, i) => {
         const p = targetProps(relOffset(i));
-        if (!p) { gsap.set(el, { autoAlpha: 0, zIndex: 0 }); return; }
+        if (!p) {
+            gsap.set(el, { autoAlpha: 0, zIndex: 0 });
+            return;
+        }
         el.style.zIndex = p.zIndex;
         el.style.visibility = 'visible';
         gsap.to(el, { x: p.x, scale: p.scale, autoAlpha: p.autoAlpha, duration: instant ? 0 : 0.6, ease: 'power3.out', overwrite: true });
@@ -266,25 +377,26 @@ function layout(instant) {
     document.querySelectorAll('.sc-dot').forEach((d, i) => d.classList.toggle('on', i === Math.round(cur)));
 }
 
-// Listener para tecla Escape y Gestos de cierre
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeLightbox();
 });
 
-// Manejo del botón atrás del dispositivo
-window.addEventListener('popstate', (e) => {
+window.addEventListener('popstate', () => {
     const lb = document.getElementById('lightbox');
     if (lb && lb.classList.contains('active')) closeLightbox(true);
 });
 
-function go(d) { cur = ((cur + d) % N + N) % N; layout(); }
+function go(d) {
+    cur = ((cur + d) % N + N) % N;
+    layout();
+}
 
 function openLightbox(src, el) {
     const lb = document.getElementById('lightbox');
     const lbImg = document.getElementById('lb-img');
     const r = el.getBoundingClientRect();
     if (!lb || !lbImg) return;
-    
+
     lbImg.src = src;
     const startX = (r.left + r.width / 2) - (window.innerWidth / 2);
     const startY = (r.top + r.height / 2) - (window.innerHeight / 2);
@@ -295,151 +407,196 @@ function openLightbox(src, el) {
     lbImg.style.opacity = '0';
 
     lb.classList.add('active');
-    // Añadir estado al historial para que el botón "atrás" del cel cierre el modal
-    history.pushState({ lightbox: true }, "");
-    
-    lbImg.offsetHeight; // force reflow
+    history.pushState({ lightbox: true }, '');
 
-    // Animación de entrada suave
+    lbImg.offsetHeight;
+
     lbImg.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease';
     lbImg.style.transform = 'translate(0, 0) scale(1)';
     lbImg.style.opacity = '1';
-    
+
     document.body.style.overflow = 'hidden';
 }
-// Hacerlo disponible globalmente
+
 window.openLightbox = openLightbox;
 
 function closeLightbox(isNavigation = false) {
     const lb = document.getElementById('lightbox');
     const lbImg = document.getElementById('lb-img');
-    
-    if(lb) {
+
+    if (lb) {
         if (!lb.classList.contains('active')) return;
-        
+
         lb.classList.remove('active');
-        
-        // Si no es una navegación de historial, retrocedemos nosotros
+
         if (!isNavigation && history.state?.lightbox) history.back();
 
-        if(lbImg) {
+        if (lbImg) {
             lbImg.style.opacity = '0';
             lbImg.style.transform = 'translateY(20px) scale(0.95)';
-            
-            // Limpiar el src tras la animación para evitar parpadeos al abrir otra imagen
-            setTimeout(() => { if(!lb.classList.contains('active')) lbImg.src = ''; }, 500);
+            setTimeout(() => {
+                if (!lb.classList.contains('active')) lbImg.src = '';
+            }, 500);
         }
     }
     document.body.style.overflow = '';
 }
+
 window.closeLightbox = closeLightbox;
 
-// Inicializar listeners de gestos táctiles para el lightbox
 const lbContainer = document.getElementById('lightbox');
 if (lbContainer) {
-    // Cierre al hacer click en el overlay o botón
     lbContainer.addEventListener('click', () => closeLightbox());
-    
-    // Evitar que el click en la imagen cierre el lightbox
+
     const lbImg = document.getElementById('lb-img');
     if (lbImg) lbImg.addEventListener('click', e => e.stopPropagation());
 
     let touchStartY = 0;
-    lbContainer.addEventListener('touchstart', e => touchStartY = e.touches[0].clientY, {passive: true});
+    lbContainer.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
     lbContainer.addEventListener('touchend', e => {
         const touchEndY = e.changedTouches[0].clientY;
-        // Si el deslizamiento es mayor a 70px, cerrar
         if (Math.abs(touchStartY - touchEndY) > 70) closeLightbox();
-    }, {passive: true});
+    }, { passive: true });
 }
 
-// Init carousel
 if (vp) {
     IMGS.forEach((imgData, i) => {
-        const card = document.createElement('div'); card.className = 'sc-card';
-        const img = document.createElement('img'); img.src = imgData.src; img.alt = imgData.alt; card.appendChild(img);
-        img.loading = "lazy"; img.width = 350; img.height = 350;
+        const card = document.createElement('div');
+        card.className = 'sc-card';
+        const img = document.createElement('img');
+        img.src = imgData.src;
+        img.alt = imgData.alt;
+        card.appendChild(img);
+        img.loading = 'lazy';
+        img.width = 350;
+        img.height = 350;
         card.onclick = () => {
             stopAutoPlay();
-            if(Math.abs(dragCurX - dragX0) > 6) return;
+            if (Math.abs(dragCurX - dragX0) > 6) return;
             const offset = relOffset(i);
-            if(offset === 0) openLightbox(imgData.src, card);
+            if (offset === 0) openLightbox(imgData.src, card);
             else go(offset);
         };
-        vp.appendChild(card); cards.push(card);
-        const dot = document.createElement('div'); dot.className = 'sc-dot'; dot.onclick = () => go(relOffset(i)); 
-        if(dotsEl) dotsEl.appendChild(dot);
+        vp.appendChild(card);
+        cards.push(card);
+        const dot = document.createElement('div');
+        dot.className = 'sc-dot';
+        dot.onclick = () => go(relOffset(i));
+        if (dotsEl) dotsEl.appendChild(dot);
     });
 
-    // Lógica de rotación automática
     let autoPlayInterval = setInterval(() => go(1), 3500);
     const stopAutoPlay = () => clearInterval(autoPlayInterval);
 
-    vp.onpointerdown = e => { 
+    vp.onpointerdown = e => {
         stopAutoPlay();
-        dragging = true; 
-        dragX0 = dragCurX = e.clientX; 
-        vp.setPointerCapture(e.pointerId); 
+        dragging = true;
+        dragX0 = dragCurX = e.clientX;
+        vp.setPointerCapture(e.pointerId);
     };
-    vp.onpointermove = e => { if (!dragging) return; dragCurX = e.clientX; cards.forEach((c, i) => { const p = targetProps(relOffset(i)); if (p) gsap.set(c, { x: p.x + (dragCurX - dragX0) * .25 }); }); };
-    vp.onpointerup = () => { dragging = false; Math.abs(dragCurX - dragX0) > 55 ? go(dragCurX < dragX0 ? 1 : -1) : layout(); };
-    
-    if(document.getElementById('prev')) document.getElementById('prev').onclick = () => { stopAutoPlay(); go(-1); };
-    if(document.getElementById('next')) document.getElementById('next').onclick = () => { stopAutoPlay(); go(1); };
+    vp.onpointermove = e => {
+        if (!dragging) return;
+        dragCurX = e.clientX;
+        cards.forEach((c, i) => {
+            const p = targetProps(relOffset(i));
+            if (p) gsap.set(c, { x: p.x + (dragCurX - dragX0) * 0.25 });
+        });
+    };
+    vp.onpointerup = () => {
+        dragging = false;
+        Math.abs(dragCurX - dragX0) > 55 ? go(dragCurX < dragX0 ? 1 : -1) : layout();
+    };
+
+    document.getElementById('prev')?.addEventListener('click', () => {
+        stopAutoPlay();
+        go(-1);
+    });
+    document.getElementById('next')?.addEventListener('click', () => {
+        stopAutoPlay();
+        go(1);
+    });
     layout(true);
 }
 
 window.handleImagePreview = function(input) {
-    const preview = document.getElementById('upload-preview'), img = document.getElementById('preview-img');
+    const preview = document.getElementById('upload-preview');
+    const img = document.getElementById('preview-img');
     if (input.files[0]) {
-        const reader = new FileReader(); reader.onload = (e) => {
-            img.src = e.target.result; 
-            document.getElementById('upload-placeholder').classList.add('hidden'); 
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.src = e.target.result;
+            document.getElementById('upload-placeholder').classList.add('hidden');
             preview.classList.remove('hidden');
-        }; reader.readAsDataURL(input.files[0]);
+        };
+        reader.readAsDataURL(input.files[0]);
     }
 };
 
-// 7. ANIMACIONES GSAP
-
-// 7. ANIMACIONES HERO (Secuencia Refactorizada)
 const heroTl = gsap.timeline({ delay: 0.5 });
 
 heroTl
-    .to("#hero-black", { y: 0, opacity: 1, duration: 0.5, ease: "power4.out" })
-    .to("#hero-work", { y: 0, opacity: 1, duration: 0.5, ease: "power4.out" }, "-=0.35")
-    .to("#hero-negas", { y: 0, opacity: 1, duration: 0.5, ease: "power4.out" }, "-=0.35")
-    .to("#hero-btn-container", { opacity: 1, y: 0, duration: 0.7, ease: "expo.out" }, "-=0.1");
+    .to('#hero-black', { y: 0, opacity: 1, duration: 0.5, ease: 'power4.out' })
+    .to('#hero-work', { y: 0, opacity: 1, duration: 0.5, ease: 'power4.out' }, '-=0.35')
+    .to('#hero-negas', { y: 0, opacity: 1, duration: 0.5, ease: 'power4.out' }, '-=0.35')
+    .to('#hero-btn-container', { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out' }, '-=0.1');
 
 gsap.utils.toArray('.reveal-item').forEach(el => {
     gsap.to(el, {
         opacity: 1,
         y: 0,
         duration: 1.2,
-        ease: "power3.out",
-        scrollTrigger: { trigger: el, start: "top 90%", toggleActions: "play none none none" }
+        ease: 'power3.out',
+        scrollTrigger: { trigger: el, start: 'top 90%', toggleActions: 'play none none none' }
     });
 });
 
 document.querySelectorAll('.accordion-header').forEach(header => {
     header.onclick = () => {
-        const content = header.nextElementSibling, isOpen = header.classList.contains('active');
+        const content = header.nextElementSibling;
+        const isOpen = header.classList.contains('active');
         document.querySelectorAll('.accordion-header').forEach(h => {
             if (h !== header && h.classList.contains('active')) {
-                h.classList.remove('active'); gsap.to(h.nextElementSibling, { height: 0, padding: 0 });
+                h.classList.remove('active');
+                gsap.to(h.nextElementSibling, { height: 0, padding: 0 });
             }
         });
-        header.classList.toggle('active'); gsap.to(content, { height: isOpen ? 0 : "auto", padding: isOpen ? 0 : "1.5rem" });
+        header.classList.toggle('active');
+        gsap.to(content, { height: isOpen ? 0 : 'auto', padding: isOpen ? 0 : '1.5rem' });
     };
 });
 
-// 8. INICIO
 loadConfig();
-if(document.getElementById('size')) document.getElementById('size').oninput = calculatePrice;
+
+document.getElementById('size')?.addEventListener('input', calculatePrice);
+
 const ta = document.querySelector('textarea[name="message"]');
-if(ta) ta.oninput = function() {
-    document.getElementById('charCount').textContent = this.value.length + '/500';
-    calculatePrice();
-};
+if (ta) {
+    ta.oninput = function() {
+        document.getElementById('charCount').textContent = this.value.length + '/500';
+        calculatePrice();
+    };
+}
+
 const ph = document.querySelector('input[name="user_phone"]');
-if(ph) ph.oninput = function() { this.value = this.value.replace(/\D/g, ''); };
+if (ph) {
+    ph.oninput = function() {
+        this.value = this.value.replace(/\D/g, '');
+    };
+}
+
+const uploadZone = document.getElementById('upload-zone');
+const fileInput = document.getElementById('fotoTatuaje');
+if (uploadZone && fileInput) {
+    uploadZone.addEventListener('click', () => fileInput.click());
+}
+
+const cityWarning = document.getElementById('city-warning');
+const cityWarningOverlay = document.getElementById('city-warning-overlay');
+const cityWarningClose = document.getElementById('city-warning-close');
+const closeCityWarning = () => {
+    cityWarning?.classList.add('hidden');
+    cityWarning?.classList.remove('flex');
+};
+
+cityWarningOverlay?.addEventListener('click', closeCityWarning);
+cityWarningClose?.addEventListener('click', closeCityWarning);

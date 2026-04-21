@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resumen de Cotización | Negas Ink</title>
+    <title>Resumen de Cotizacion | Negas Ink</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/api/client-config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #141414; --red: #D20000; }
@@ -19,19 +18,19 @@
 
     <main class="card space-y-8">
         <div class="text-center">
-            <h1 class="text-4xl font-black italic uppercase tracking-tighter mb-2">¡Solicitud Enviada!</h1>
+            <h1 class="text-4xl font-black italic uppercase tracking-tighter mb-2">Solicitud Enviada</h1>
             <p class="text-zinc-500 uppercase text-[10px] tracking-widest">Resumen de tu proyecto</p>
         </div>
 
         <div class="space-y-4 border-y border-white/5 py-6 text-sm">
             <div class="flex justify-between"><span class="text-zinc-500 uppercase text-[10px] tracking-widest">Nombre:</span> <span id="res-nombre" class="font-bold italic"></span></div>
             <div class="flex justify-between"><span class="text-zinc-500 uppercase text-[10px] tracking-widest">Zona:</span> <span id="res-zona" class="font-bold italic"></span></div>
-            <div class="flex justify-between"><span class="text-zinc-500 uppercase text-[10px] tracking-widest">Tamaño:</span> <span id="res-tamano" class="font-bold italic"></span></div>
+            <div class="flex justify-between"><span class="text-zinc-500 uppercase text-[10px] tracking-widest">Tamano:</span> <span id="res-tamano" class="font-bold italic"></span></div>
             <div class="flex justify-between"><span class="text-zinc-500 uppercase text-[10px] tracking-widest">Estilo:</span> <span id="res-estilo" class="font-bold italic"></span></div>
         </div>
 
         <div class="text-center py-6">
-            <span class="text-zinc-500 uppercase text-[10px] tracking-widest block mb-2">Inversión Estimada</span>
+            <span class="text-zinc-500 uppercase text-[10px] tracking-widest block mb-2">Inversion Estimada</span>
             <div id="res-precio" class="text-[clamp(1.5rem,12vw,4.5rem)] font-black italic tracking-tighter text-white break-all leading-none px-2"></div>
         </div>
 
@@ -43,40 +42,40 @@
                 <a href="#" target="_blank" rel="noopener" class="js-ig hover:text-white transition">Instagram</a>
                 <a href="#" target="_blank" rel="noopener" class="js-wa hover:text-white transition">WhatsApp</a>
             </div>
-            
+
             <a href="#" class="js-wa-msg block text-[11px] uppercase tracking-[0.2em] font-black italic text-red-500 hover:text-white transition">
-                ¿Tienes dudas? Contáctame
+                Tienes dudas? Contactame
             </a>
         </div>
     </main>
 
     <script>
-        // Obtener configuración desde el API de forma dinámica
         async function init() {
             try {
                 const res = await fetch('/api/config');
-                const C = await res.json();
-                if(C.waPhone){
-                    document.querySelectorAll('a.js-wa').forEach(a=>{a.href='https://wa.me/'+C.waPhone;});
-                    document.querySelectorAll('a.js-wa-msg').forEach(a=>{a.href='https://wa.me/'+C.waPhone+'?text='+encodeURIComponent('Hola! Tengo dudas sobre mi cotización');});
+                const config = await res.json();
+                if (config.waPhone) {
+                    document.querySelectorAll('a.js-wa').forEach(a => { a.href = 'https://wa.me/' + config.waPhone; });
+                    document.querySelectorAll('a.js-wa-msg').forEach(a => {
+                        a.href = 'https://wa.me/' + config.waPhone + '?text=' + encodeURIComponent('Hola! Tengo dudas sobre mi cotizacion');
+                    });
                 }
-                if(C.instagramUrl) document.querySelectorAll('a.js-ig').forEach(a=>{a.href=C.instagramUrl;});
-            } catch(e) { console.error("Error cargando config en resumen:", e); }
+                if (config.instagramUrl) document.querySelectorAll('a.js-ig').forEach(a => { a.href = config.instagramUrl; });
+            } catch (error) {
+                console.error('Error cargando config en resumen:', error);
+            }
         }
         init();
 
         const raw = localStorage.getItem('ultimaCotizacion');
         const datos = raw ? JSON.parse(raw) : null;
         if (datos) {
-            document.getElementById('res-nombre').innerText = datos.cliente_nombre;
-            // Mostrar zona: si es "Otra" mostrar el valor de otras_zonas, sino mostrar zona_tatuaje
-            const zonaMostrar = datos.zona_tatuaje === 'Otra' ? datos.otras_zonas : datos.zona_tatuaje;
-            document.getElementById('res-zona').innerText = zonaMostrar || 'No especificada';
-            document.getElementById('res-tamano').innerText = datos.tamano_final;
-            document.getElementById('res-estilo').innerText = datos.complejidad_diseno;
-            document.getElementById('res-precio').innerText = datos.cotizacion_estimada;
+            document.getElementById('res-nombre').innerText = datos.cliente_nombre || 'No especificado';
+            document.getElementById('res-zona').innerText = datos.zona_tatuaje || 'No especificada';
+            document.getElementById('res-tamano').innerText = datos.tamano_final || 'No especificado';
+            document.getElementById('res-estilo').innerText = datos.complejidad_diseno || 'No especificado';
+            document.getElementById('res-precio').innerText = datos.cotizacion_estimada || 'No especificado';
         } else {
-            // Si no hay datos, redirigir al inicio
             window.location.href = '/';
         }
     </script>

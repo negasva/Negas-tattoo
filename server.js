@@ -1,143 +1,362 @@
 require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
-const FormData = require('form-data');
 const path = require('path');
 const helmet = require('helmet');
 const cors = require('cors');
-
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 
-// Configuración de constantes
 const PORT = Number(process.env.PORT) || 3780;
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const REQUEST_TIMEOUT_MS = 12000;
+const RECAPTCHA_MIN_SCORE = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
+const PUBLIC_PATH = path.join(__dirname, 'public');
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3780,http://127.0.0.1:3780,https://negas.tattoo')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 
-// Configuración de CORS
+if (process.env.TRUST_PROXY) {
+  app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : process.env.TRUST_PROXY);
+}
+
 const corsOptions = {
-  origin: (process.env.ALLOWED_ORIGINS || 'http://localhost:3780,https://negas.tattoo').split(','),
+  origin(origin, callback) {
+    const isLocalOrigin = typeof origin === 'string'
+      && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+
+    if (!origin || isLocalOrigin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn('CORS blocked origin:', origin);
+    return callback(null, false);
+  },
   methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // Permitir cookies si fuera necesario
+  allowedHeaders: ['Content-Type'],
+  credentials: false,
   optionsSuccessStatus: 200
 };
 
-// Configuración de Multer (Considerar diskStorage para producción si los archivos son grandes)
+const imageFileFilter = (_req, file, callback) => {
+  const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+  if (!allowedTypes.has(file.mimetype)) {
+    callback(new Error('INVALID_FILE_TYPE'));
+    return;
+  }
+
+  callback(null, true);
+};
+
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_FILE_SIZE }
+  limits: {
+    fileSize: MAX_FILE_SIZE,
+    files: 1
+  },
+  fileFilter: imageFileFilter
 });
 
-// --- MIDDLEWARES ---
+const configLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intenta de nuevo en un momento.' }
+});
 
-app.use(cors(corsOptions)); // Aplicar CORS con opciones
+const captchaLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Demasiados intentos de verificacion.' }
+});
+
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Se alcanzo el limite de carga de imagenes. Intenta mas tarde.' }
+});
+
+const submitLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Has enviado demasiadas solicitudes. Espera antes de reintentar.' }
+});
+
+app.use(cors(corsOptions));
 app.use(helmet({
-  crossOriginEmbedderPolicy: false, // Necesario para cargar recursos de CDNs externos
+  crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
     directives: {
-      "default-src": ["'self'"],
-      // 'unsafe-inline' permite los onclick del HTML. 'unsafe-eval' es requerido por Tailwind Play CDN.
-      "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://www.google.com", "https://www.gstatic.com"],
-      "script-src-attr": ["'unsafe-inline'"],
-      "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
-      "img-src": ["'self'", "data:", "blob:", "https://i.ibb.co", "https://*.ibb.co"],
-      "connect-src": ["'self'", "https://api.imgbb.com", "https://www.google.com", "https://api.emailjs.com", "https://google.com"],
-      "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-      "frame-src": ["'self'", "https://www.google.com", "https://recaptcha.google.com"],
-      "object-src": ["'none'"],
-      "upgrade-insecure-requests": null // Desactivado para evitar errores en http://localhost
-    },
+      'default-src': ["'self'"],
+      'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://www.google.com', 'https://www.gstatic.com', 'https://connect.facebook.net'],
+      'script-src-attr': ["'none'"],
+      'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      'img-src': ["'self'", 'data:', 'blob:', 'https://i.ibb.co', 'https://*.ibb.co'],
+      'connect-src': ["'self'", 'https://api.imgbb.com', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.facebook.com'],
+      'font-src': ["'self'", 'https://fonts.gstatic.com'],
+      'frame-src': ["'self'", 'https://www.google.com', 'https://recaptcha.google.com'],
+      'object-src': ["'none'"],
+      'base-uri': ["'self'"],
+      'form-action': ["'self'"],
+      'upgrade-insecure-requests': null
+    }
   },
+  referrerPolicy: { policy: 'no-referrer' }
 }));
+app.use(express.json({ limit: '100kb' }));
+app.use(express.static(PUBLIC_PATH, { index: false }));
 
-app.use(express.json());
+function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-// Servir archivos estáticos de forma controlada
-const PUBLIC_PATH = path.join(__dirname, 'public');
-app.use(express.static(PUBLIC_PATH));
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timeoutId));
+}
 
-// --- RUTAS ---
+function isValidImageBuffer(file) {
+  if (!file?.buffer || file.buffer.length < 12) return false;
 
-app.get('/', (req, res) => {
+  const headerHex = file.buffer.subarray(0, 12).toString('hex');
+  const isJpeg = headerHex.startsWith('ffd8ff');
+  const isPng = headerHex.startsWith('89504e470d0a1a0a');
+  const isWebp = file.buffer.subarray(0, 4).toString('ascii') === 'RIFF'
+    && file.buffer.subarray(8, 12).toString('ascii') === 'WEBP';
+
+  return isJpeg || isPng || isWebp;
+}
+
+function sanitizeText(value, maxLength) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, maxLength);
+}
+
+function buildQuotePayload(rawParams) {
+  const params = rawParams && typeof rawParams === 'object' ? rawParams : {};
+  const quote = {
+    cliente_nombre: sanitizeText(params.cliente_nombre, 100),
+    cliente_whatsapp: sanitizeText(params.cliente_whatsapp, 20),
+    user_email: sanitizeText(params.user_email, 120),
+    ciudad: sanitizeText(params.ciudad, 80),
+    zona_tatuaje: sanitizeText(params.zona_tatuaje, 80),
+    complejidad_diseno: sanitizeText(params.complejidad_diseno, 80),
+    descripcion_referencia: sanitizeText(params.descripcion_referencia, 500),
+    cotizacion_estimada: sanitizeText(params.cotizacion_estimada, 40),
+    tamano_final: sanitizeText(params.tamano_final, 40),
+    link_referencia: sanitizeText(params.link_referencia, 500)
+  };
+
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(quote.user_email);
+  const phoneOk = /^\d{10,15}$/.test(quote.cliente_whatsapp);
+  const requiredFields = [
+    quote.cliente_nombre,
+    quote.user_email,
+    quote.cliente_whatsapp,
+    quote.ciudad,
+    quote.zona_tatuaje,
+    quote.complejidad_diseno,
+    quote.descripcion_referencia,
+    quote.cotizacion_estimada,
+    quote.tamano_final
+  ];
+
+  if (requiredFields.some(value => !value) || !emailOk || !phoneOk) {
+    return null;
+  }
+
+  return quote;
+}
+
+async function verifyRecaptchaToken(token, remoteIp) {
+  const secret = (process.env.RECAPTCHA_SECRET_KEY || '').trim();
+  if (!token || !secret) return { success: false };
+
+  const body = new URLSearchParams({
+    secret,
+    response: token
+  });
+
+  if (remoteIp) {
+    body.append('remoteip', remoteIp);
+  }
+
+  try {
+    const response = await fetchWithTimeout('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    });
+
+    if (!response.ok) {
+      return { success: false };
+    }
+
+    const data = await response.json();
+    const score = Number(data.score || 0);
+    const action = sanitizeText(data.action, 50);
+
+    return {
+      success: Boolean(data.success) && score >= RECAPTCHA_MIN_SCORE,
+      score,
+      action
+    };
+  } catch (error) {
+    console.error('Captcha error:', error.message);
+    return { success: false };
+  }
+}
+
+app.get('/', (_req, res) => {
   res.sendFile(path.join(PUBLIC_PATH, 'index.html'));
 });
 
-app.get('/api/config', (req, res) => {
-    const config = {
-        emailjsPublicKey: (process.env.EMAILJS_PUBLIC_KEY || '').trim(),
-        emailjsServiceId: (process.env.EMAILJS_SERVICE_ID || '').trim(),
-        emailjsTemplateId: (process.env.EMAILJS_TEMPLATE_ID || '').trim(),
-        recaptchaSiteKey: (process.env.RECAPTCHA_SITE_KEY || '').trim(),
-        waPhone: (process.env.WHATSAPP_PHONE || '').trim(),
-        instagramUrl: (process.env.INSTAGRAM_URL || '').trim(),
-        facebookUrl: (process.env.FACEBOOK_URL || '').trim()
-    };
-    res.json(config);
+app.get('/api/config', configLimiter, (_req, res) => {
+  res.json({
+    recaptchaSiteKey: (process.env.RECAPTCHA_SITE_KEY || '').trim(),
+    waPhone: (process.env.WHATSAPP_PHONE || '').trim(),
+    instagramUrl: (process.env.INSTAGRAM_URL || '').trim(),
+    facebookUrl: (process.env.FACEBOOK_URL || '').trim()
+  });
 });
 
-app.post('/api/verify-captcha', async (req, res) => {
-    const { token } = req.body;
-    const secret = process.env.RECAPTCHA_SECRET_KEY;
+app.post('/api/verify-captcha', captchaLimiter, async (req, res) => {
+  const token = sanitizeText(req.body?.token, 4000);
+  const verification = await verifyRecaptchaToken(token, req.ip);
+  res.status(verification.success ? 200 : 400).json(verification);
+});
 
-    if (!token || !secret) return res.status(400).json({ success: false });
-
-    try {
-        const verifyUrl = `https://www.google.com/recaptcha/api/siteverify`;
-        const response = await fetch(verifyUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `secret=${secret}&response=${token}`
-        });
-        const data = await response.json();
-        res.json({ success: data.success, score: data.score });
-    } catch (e) {
-        console.error('Captcha error:', e.message);
-        res.status(500).json({ success: false });
+app.post('/api/upload-image', uploadLimiter, (req, res, next) => {
+  upload.single('image')(req, res, error => {
+    if (error instanceof multer.MulterError) {
+      const message = error.code === 'LIMIT_FILE_SIZE'
+        ? `La imagen supera el limite de ${MAX_FILE_SIZE / (1024 * 1024)} MB`
+        : 'No fue posible procesar la imagen';
+      return res.status(400).json({ error: message });
     }
-});
 
-app.post('/api/upload-image', upload.single('image'), async (req, res) => {
+    if (error) {
+      return res.status(400).json({ error: 'Tipo de archivo no permitido (solo JPG, PNG o WEBP)' });
+    }
+
+    return next();
+  });
+}, async (req, res) => {
   try {
-    const key = process.env.IMGBB_API_KEY;
-    if (!key) throw new Error('Servicio de imágenes no configurado');
-    if (!req.file) return res.status(400).json({ error: 'Archivo no proporcionado' });
+    console.log('Upload request received:', {
+      hasFile: Boolean(req.file),
+      origin: req.headers.origin || null,
+      mimeType: req.file?.mimetype || null,
+      size: req.file?.size || null,
+      name: req.file?.originalname || null
+    });
 
-    // Validación básica de tipo MIME
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(req.file.mimetype)) {
-        return res.status(400).json({ error: 'Tipo de archivo no permitido (solo JPG, PNG, WEBP)' });
+    const key = (process.env.IMGBB_API_KEY || '').trim();
+    if (!key) {
+      throw new Error('Servicio de imagenes no configurado');
     }
 
+    if (!req.file) {
+      return res.status(400).json({ error: 'Archivo no proporcionado' });
+    }
+
+    if (!isValidImageBuffer(req.file)) {
+      return res.status(400).json({ error: 'El archivo no es una imagen valida' });
+    }
 
     const form = new FormData();
-    form.append('image', req.file.buffer, {
-      filename: req.file.originalname || 'image.jpg',
-      contentType: req.file.mimetype || 'application/octet-stream'
+    const imageBlob = new Blob([req.file.buffer], { type: req.file.mimetype });
+    form.append('image', imageBlob, req.file.originalname || 'referencia.jpg');
+    form.append('name', (req.file.originalname || 'referencia').replace(/\.[^.]+$/, ''));
+
+    const response = await fetchWithTimeout(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(key)}`, {
+      method: 'POST',
+      body: form
     });
 
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${key}`, {
-        method: 'POST',
-        body: form,
-        headers: form.getHeaders()
-    });
+    const rawResponse = await response.text();
+    let data = null;
+    try {
+      data = rawResponse ? JSON.parse(rawResponse) : null;
+    } catch (_error) {
+      data = null;
+    }
 
-    const data = await response.json();
-
-    if (!data.success || !data.data?.url) {
+    if (!response.ok || !data.success || !data.data?.url) {
+      console.error('Upload provider error:', response.status, rawResponse);
       return res.status(400).json({
-        error: data.error?.message || 'Error en el proveedor de imágenes'
+        error: data?.error?.message || 'Error en el proveedor de imagenes'
       });
     }
 
-    res.json({ url: data.data.url });
-  } catch (e) {
-    console.error('Upload Error:', e.message);
-    res.status(500).json({ error: 'Error interno al procesar la imagen' });
+    return res.json({ url: data.data.url });
+  } catch (error) {
+    console.error('Upload error full:', error);
+    const isNetworkError = error?.cause?.code === 'ENOTFOUND' || error?.cause?.code === 'ECONNRESET' || error?.name === 'AbortError';
+    return res.status(500).json({
+      error: isNetworkError
+        ? 'No se pudo conectar con el servicio de imagenes en este momento'
+        : (error?.message || 'Error interno al procesar la imagen')
+    });
   }
 });
 
-// Manejo de rutas no encontradas
-app.use((req, res) => res.status(404).send('Not Found'));
+app.post('/api/submit-quote', submitLimiter, async (req, res) => {
+  const token = sanitizeText(req.body?.token, 4000);
+  const quote = buildQuotePayload(req.body?.params);
+  const serviceId = (process.env.EMAILJS_SERVICE_ID || '').trim();
+  const templateId = (process.env.EMAILJS_TEMPLATE_ID || '').trim();
+  const publicKey = (process.env.EMAILJS_PUBLIC_KEY || '').trim();
+
+  if (!quote) {
+    return res.status(400).json({ error: 'Los datos de la cotizacion son invalidos o estan incompletos.' });
+  }
+
+  if (!serviceId || !templateId || !publicKey) {
+    return res.status(500).json({ error: 'El servicio de cotizaciones no esta configurado.' });
+  }
+
+  const verification = await verifyRecaptchaToken(token, req.ip);
+  if (!verification.success || verification.action !== 'submit_quote') {
+    return res.status(400).json({ error: 'No se pudo validar que la solicitud provenga de una persona.' });
+  }
+
+  try {
+    const response = await fetchWithTimeout('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id: serviceId,
+        template_id: templateId,
+        user_id: publicKey,
+        template_params: quote
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Quote submit error:', errorText);
+      return res.status(502).json({ error: 'No fue posible enviar la cotizacion al proveedor de correo.' });
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Quote submit error:', error.message);
+    return res.status(500).json({ error: 'Error interno al enviar la cotizacion.' });
+  }
+});
+
+app.use((_req, res) => res.status(404).send('Not Found'));
 
 app.listen(PORT, () => {
   console.log(`Servidor operativo en puerto ${PORT}`);

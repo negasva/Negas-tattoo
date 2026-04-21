@@ -4,20 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Negas Ink | Tattoo Studio</title>
-    
-    <!-- SEO & Meta Tags -->
-    <meta name="description" content="Estudio de tatuajes especializado en Blackwork y piezas de alto contraste en Sabaneta, Medellín. Cotiza tu próximo proyecto con Negas Ink.">
-    <meta name="keywords" content="Tattoo Medellín, Blackwork Sabaneta, Tatuajes Medellín, Negas Ink">
+
+    <meta name="description" content="Estudio de tatuajes especializado en Blackwork y piezas de alto contraste en Sabaneta, Medellin. Cotiza tu proximo proyecto con Negas Ink.">
+    <meta name="keywords" content="Tattoo Medellin, Blackwork Sabaneta, Tatuajes Medellin, Negas Ink">
     <link rel="canonical" href="https://negasink.com">
 
-    <!-- Open Graph / WhatsApp / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://negasink.com">
     <meta property="og:title" content="Negas Ink | Tattoo Studio">
-    <meta property="og:description" content="Transformamos tus ideas en piezas permanentes de alto contraste. Técnica impecable en Medellín.">
+    <meta property="og:description" content="Transformamos tus ideas en piezas permanentes de alto contraste. Tecnica impecable en Medellin.">
     <meta property="og:image" content="https://i.ibb.co/gbt230bD/657596602-18195058267358960-7783419555348968370-n.jpg">
 
-    <!-- Meta Pixel Code -->
     <script>
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -32,7 +29,6 @@
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
@@ -47,7 +43,7 @@
             font-size: 11px !important;
             text-transform: uppercase !important;
             letter-spacing: 2px !important;
-            color: #71717a; /* zinc-400 */
+            color: #71717a;
             margin-bottom: 1rem;
             display: block;
             font-weight: 800;
@@ -76,7 +72,6 @@
     <main>
     <section id="hero" class="reveal-section min-h-screen flex flex-col justify-center px-8 md:px-20 lg:px-32 py-4">
         <div class="max-w-7xl mx-auto w-full flex flex-col items-center text-center">
-            <!-- Metadatos estilo Póster -->
             <div class="w-full flex justify-between items-end mb-12 uppercase font-black italic text-[10px] tracking-[0.3em] border-b border-white/20 pb-4">
                 <div class="text-left leading-tight">
                     Sabaneta<br>Antioquia
@@ -118,15 +113,13 @@
     </section>
 
     <section id="booking" class="max-w-5xl mx-auto px-10 md:px-24 lg:px-48 py-6">
-        
-        <!-- Cabecera de Formulario estilo Póster -->
         <div class="w-full flex justify-between items-end mb-10 uppercase font-black italic text-[10px] tracking-[0.3em] border-b border-white/20 pb-4 reveal-item">
-            <div class="text-left leading-tight">SOLICITUD<br>DE DISEÑO</div>
+            <div class="text-left leading-tight">SOLICITUD<br>DE DISENO</div>
             <div class="text-red-600 text-lg">PROCESO</div>
-            <div class="text-right leading-tight">ESTIMACIÓN<br>INSTANTÁNEA</div>
+            <div class="text-right leading-tight">ESTIMACION<br>INSTANTANEA</div>
         </div>
 
-        <h3 class="section-header main-title-header reveal-item mb-10">Cotización</h3>
+        <h3 class="section-header main-title-header reveal-item mb-10">Cotizacion</h3>
 
         <form id="tattoo-form" class="space-y-6 mb-12">
             <input type="hidden" name="estimated_price" id="form-estimated-price">
@@ -134,22 +127,21 @@
             <input type="hidden" name="fecha_cita" id="form-fecha-cita">
             <input type="hidden" name="recaptcha_token" id="recaptcha_token">
 
-            <!-- SECCIÓN 1: EL PROYECTO -->
             <div id="section-proyecto" class="space-y-4 reveal-item">
                 <h2 class="section-header text-center">TU TATUAJE</h2>
-                
+
                 <div class="poster-card">
                     <label class="field-label">Estilo de tatuaje</label>
                     <div class="custom-dropdown relative">
                         <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-none py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
-                            <span class="dropdown-label opacity-50">Selecciona una opción...</span>
+                            <span class="dropdown-label opacity-50">Selecciona una opcion...</span>
                             <svg class="dropdown-icon w-5 h-5 text-zinc-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
                         <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-none overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1.2">Blackwork</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1">Botánico(Flores)</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1">Botanico (Flores)</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1">Minimalismo</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1.2">Lettering</div>
                         </div>
@@ -158,8 +150,8 @@
                 </div>
 
                 <div class="poster-card">
-                    <label class="field-label">Cuéntame tu idea</label>
-                    <textarea name="message" rows="4" required maxlength="500" placeholder="Describe tu diseño, estilo, referencias..." class="w-full py-3 px-0 resize-none border-b border-zinc-700 focus:border-white transition-colors text-lg italic"></textarea>
+                    <label class="field-label">Cuentame tu idea</label>
+                    <textarea name="message" rows="4" required maxlength="500" placeholder="Describe tu diseno, estilo, referencias..." class="w-full py-3 px-0 resize-none border-b border-zinc-700 focus:border-white transition-colors text-lg italic"></textarea>
                     <span id="charCount" class="absolute bottom-4 right-6 text-[10px] text-zinc-500 font-mono">0/500</span>
                 </div>
 
@@ -175,7 +167,7 @@
                         <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-none overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Brazo">Brazo</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Antebrazo">Antebrazo</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Muñeca">Muñeca</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Muneca">Muneca</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Tobillo">Tobillo</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Pantorrilla">Pantorrilla</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Muslo">Muslo</div>
@@ -188,10 +180,9 @@
                     </div>
                 </div>
 
-                <!-- CUADRO UNIFICADO DE TAMAÑO E INVERSIÓN -->
                 <div id="price-card" class="poster-card border-red-600 space-y-4">
                     <div>
-                        <label class="field-label">Tamaño en centímetros</label>
+                        <label class="field-label">Tamano en centimetros</label>
                         <div class="flex items-center gap-6 h-16">
                             <div id="slider-pulse-wrapper" class="flex-1 flex items-center">
                                 <input type="range" id="size" min="2" max="60" value="10" class="w-full h-1 bg-zinc-800 appearance-none cursor-pointer accent-[#D20000] hover:accent-white transition-all">
@@ -218,45 +209,44 @@
                             <p class="text-[14px] text-zinc-600 mt-2 uppercase tracking-widest">PRECIO APROXIMADO</p>
                         </div>
 
-                        <p id="disclaimer-msg" class="text-[12px] text-zinc-500 mt-6 italic transition-opacity duration-300">⚠️ Completa todos los campos para ver tu cotización.</p>
+                        <p id="disclaimer-msg" class="text-[12px] text-zinc-500 mt-6 italic transition-opacity duration-300">Completa todos los campos para ver tu cotizacion.</p>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <label class="field-label">Referencia Visual</label>
-                    <input type="file" id="fotoTatuaje" accept="image/*" class="hidden" onchange="handleImagePreview(this)">
-                    <div id="upload-zone" onclick="document.getElementById('fotoTatuaje').click()" 
+                    <input type="file" id="fotoTatuaje" accept="image/jpeg,image/png,image/webp" class="hidden">
+                    <div id="upload-zone"
                          class="relative group cursor-pointer border-2 border-dashed border-white/20 hover:border-red-600 bg-black rounded-none p-12 transition-all duration-500 flex flex-col items-center justify-center min-h-[220px] overflow-hidden">
-                        
+
                         <div id="upload-placeholder" class="flex flex-col items-center text-center transition-all duration-500 group-hover:scale-105">
                             <svg class="w-16 h-16 mb-4 text-[#D20000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v5m0 0l-2-2m2 2l2-2" />
                             </svg>
-                            <span class="text-white font-black italic tracking-tighter text-2xl uppercase">Sube tu referencia visual aquí</span>
+                            <span class="text-white font-black italic tracking-tighter text-2xl uppercase">Sube tu referencia visual aqui</span>
                             <p class="text-[#D20000] text-[10px] font-bold uppercase mt-3 tracking-[0.2em] opacity-80">Una imagen nos ayuda a capturar tu idea de forma precisa</p>
                         </div>
 
                         <div id="upload-preview" class="hidden absolute inset-0 bg-black">
-                            <img id="preview-img" src="" 
+                            <img id="preview-img" src=""
                                  class="w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-700" alt="Vista previa de referencia">
                         </div>
                     </div>
-                    <p class="text-[11px] text-zinc-600 italic">⚠️ El archivo debe ser menor a 20MB.</p>
+                    <p class="text-[11px] text-zinc-600 italic">El archivo debe ser JPG, PNG o WEBP y menor a 10MB.</p>
                 </div>
             </div>
 
-            <!-- SECCIÓN 2: DATOS PERSONALES -->
             <div id="section-datos" class="space-y-6 pt-8 mt-8 border-t border-[#1a1a1a] reveal-item">
                 <h2 class="section-header text-center">DATOS PERSONALES</h2>
-                
+
                 <div>
                     <label class="field-label">Nombre Completo</label>
                     <input type="text" name="user_name" required class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
                 </div>
 
                 <div>
-                    <label class="field-label">WhatsApp <span class="text-zinc-600 normal-case tracking-normal font-normal text-sm italic">(10 dígitos)</span></label>
+                    <label class="field-label">WhatsApp <span class="text-zinc-600 normal-case tracking-normal font-normal text-sm italic">(10 digitos)</span></label>
                     <input type="tel" name="user_phone" required pattern="[0-9]{10}" maxlength="10" class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
                 </div>
 
@@ -276,16 +266,15 @@
                         </button>
                         <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-none overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Sabaneta">Sabaneta</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Medellín">Medellín</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Medellin">Medellin</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Envigado">Envigado</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Itaguí">Itaguí</div>
+                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Itagui">Itagui</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Poblado">Poblado</div>
                             <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Otro">Otro</div>
                         </div>
                         <input type="hidden" id="ciudad" name="ciudad" data-label="Ciudad" required>
                     </div>
                 </div>
-
             </div>
 
             <button type="submit" id="submit-btn" class="reveal-item w-full text-white py-8 rounded-none text-3xl font-black uppercase italic tracking-tighter mt-4">
@@ -299,66 +288,66 @@
                 <div class="accordion-line top-line" style="top:0; bottom:auto;"></div>
                 <div class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">¿Cuál es el valor mínimo de una cotización?</span>
+                        <span class="accordion-title">Cual es el valor minimo de una cotizacion?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">El valor mínimo depende del tamaño y complejidad del diseño. Para piezas pequeñas comenzamos desde $180.000 COP. Te recomendamos usar el cotizador para obtener una estimación inicial.</p>
+                        <p class="accordion-text">El valor minimo depende del tamano y complejidad del diseno. Para piezas pequenas comenzamos desde $180.000 COP. Te recomendamos usar el cotizador para obtener una estimacion inicial.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </div>
 
                 <article class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">¿Puedo modificar el diseño después de cotizado?</span>
+                        <span class="accordion-title">Puedo modificar el diseno despues de cotizado?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">Claro, los diseños pueden ajustarse según tus preferencias. Cambios menores no tienen costo adicional. Modificaciones significativas pueden afectar el valor final de la cotización.</p>
+                        <p class="accordion-text">Claro, los disenos pueden ajustarse segun tus preferencias. Cambios menores no tienen costo adicional. Modificaciones significativas pueden afectar el valor final de la cotizacion.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </article>
 
                 <article class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">¿Cuánto tiempo tarda realizar un tatuaje?</span>
+                        <span class="accordion-title">Cuanto tiempo tarda realizar un tatuaje?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">El tiempo depende del tamaño, complejidad y ubicación del diseño. Pueden ser desde 30 minutos para piezas pequeñas, hasta varias horas para trabajos más complejos. La duración se especifica en tu cotización.</p>
+                        <p class="accordion-text">El tiempo depende del tamano, complejidad y ubicacion del diseno. Pueden ser desde 30 minutos para piezas pequenas, hasta varias horas para trabajos mas complejos. La duracion se especifica en tu cotizacion.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </article>
 
                 <article class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">¿Qué cuidados debo tener después del tatuaje?</span>
+                        <span class="accordion-title">Que cuidados debo tener despues del tatuaje?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">Mantén el área limpia e hidratada. Evita la exposición al sol durante las primeras semanas. No nades en piscinas o playas durante el proceso de cicatrización. Usa bloqueador a partir de la segunda semana. Evita ropa muy ajustada sobre la zona tatuada.</p>
+                        <p class="accordion-text">Manten el area limpia e hidratada. Evita la exposicion al sol durante las primeras semanas. No nades en piscinas o playas durante el proceso de cicatrizacion. Usa bloqueador a partir de la segunda semana. Evita ropa muy ajustada sobre la zona tatuada.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </article>
 
                 <article class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">¿Hacen tatuajes de cobertura?</span>
+                        <span class="accordion-title">Hacen tatuajes de cobertura?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">No hago coberturas, mi trabajo usa el contraste de la piel con la tinta para crear espacios de luz, tiendo a no rellenar sólido con tinta, por esto es imposible hacer coberturas con mi estilo de tatuaje.</p>
+                        <p class="accordion-text">No hago coberturas, mi trabajo usa el contraste de la piel con la tinta para crear espacios de luz, tiendo a no rellenar solido con tinta, por esto es imposible hacer coberturas con mi estilo de tatuaje.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </article>
 
                 <article class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">¿Cuál es la política de cancelación de citas?</span>
+                        <span class="accordion-title">Cual es la politica de cancelacion de citas?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">Las cotizaciones no requieren depósito. Para confirmar tu cita, es necesario un abono de 50.000 pesos. No reembolsamos el abono en caso de cancelación, es posible reagendar si se avisa con mínimo 48 horas de anticipación. Reagendaciones posteriores están sujetas a disponibilidad.</p>
+                        <p class="accordion-text">Las cotizaciones no requieren deposito. Para confirmar tu cita, es necesario un abono de 50.000 pesos. No reembolsamos el abono en caso de cancelacion, es posible reagendar si se avisa con minimo 48 horas de anticipacion. Reagendaciones posteriores estan sujetas a disponibilidad.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </article>
@@ -367,11 +356,11 @@
 
         <div class="pt-20 reveal-item">
             <div class="max-w-2xl mx-auto text-center">
-                <p class="text-zinc-500 text-sm leading-relaxed mb-8">Si tienes dudas sobre tu cotización, contáctame directamente a través de WhatsApp.</p>
-                
+                <p class="text-zinc-500 text-sm leading-relaxed mb-8">Si tienes dudas sobre tu cotizacion, contactame directamente a traves de WhatsApp.</p>
+
                 <div class="flex justify-center">
                     <a href="#" target="_blank" rel="noopener" class="js-wa btn-poster bg-[#D20000] text-white py-8 px-12 block w-full text-center text-3xl font-black uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500">
-                        Pregunta aquí
+                        Pregunta aqui
                     </a>
                 </div>
             </div>
@@ -379,10 +368,9 @@
     </section>
     </main>
 
-    <!-- Estructura del Lightbox para el Portfolio -->
     <div id="lightbox" class="fixed inset-0 z-[200] cursor-pointer bg-black/95 backdrop-blur-md flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-        <button type="button" 
-                class="absolute top-6 left-6 md:top-8 md:left-8 text-white z-[250] flex items-center gap-2 group transition-all p-4 bg-black/20 rounded-full backdrop-blur-md" 
+        <button type="button"
+                class="absolute top-6 left-6 md:top-8 md:left-8 text-white z-[250] flex items-center gap-2 group transition-all p-4 bg-black/20 rounded-full backdrop-blur-md"
                 aria-label="Volver">
             <svg class="w-7 h-7 md:w-9 md:h-9 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -399,23 +387,22 @@
                 <a href="#" target="_blank" rel="noopener" class="js-wa hover:text-white/50 transition duration-300">WhatsApp</a>
             </div>
             <p class="text-[11px] text-[#444] tracking-[0.3em] uppercase font-light">
-                Negas Ink — Sabaneta, Medellín — 2026
+                Negas Ink - Sabaneta, Medellin - 2026
             </p>
         </div>
     </footer>
 
-    <!-- Popup de Advertencia para Ciudad "Otro" -->
     <div id="city-warning" class="fixed inset-0 z-[300] hidden items-center justify-center p-6">
-        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" onclick="document.getElementById('city-warning').classList.add('hidden'); document.getElementById('city-warning').classList.remove('flex');"></div>
+        <div id="city-warning-overlay" class="absolute inset-0 bg-black/90 backdrop-blur-md"></div>
         <div class="poster-card max-w-lg w-full z-10 border-red-600 text-center space-y-6">
-            <h4 class="text-3xl font-black italic uppercase tracking-tighter">¡Aviso Importante!</h4>
+            <h4 class="text-3xl font-black italic uppercase tracking-tighter">Aviso Importante</h4>
             <p class="text-zinc-300 italic leading-relaxed">
-                ¡Hola! Qué alegría que consideres mi trabajo. 🖤 Solo quería recordarte que mi estudio está ubicado únicamente en <strong>Sabaneta, Antioquia</strong> (justo a las afueras de Medellín). Si tienes la disponibilidad para viajar y llegar hasta aquí, ¡estás más que invitado a enviar tu solicitud! Estaré encantado de agendar tu cita y tatuarte.
+                Hola. Que alegria que consideres mi trabajo. Solo queria recordarte que mi estudio esta ubicado unicamente en <strong>Sabaneta, Antioquia</strong>. Si tienes la disponibilidad para viajar y llegar hasta aqui, estas mas que invitado a enviar tu solicitud.
             </p>
-            <button type="button" 
-                    onclick="document.getElementById('city-warning').classList.add('hidden'); document.getElementById('city-warning').classList.remove('flex');" 
+            <button type="button"
+                    id="city-warning-close"
                     class="bg-white text-black px-8 py-4 font-black uppercase italic tracking-tighter hover:bg-red-600 hover:text-white transition-all w-full">
-                Entendido, ¡allá llegaré!
+                Entendido, alla llegare
             </button>
         </div>
     </div>
@@ -423,18 +410,18 @@
     <script src="script.js" defer></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            // Validación visual del botón de envío
             const form = document.getElementById('tattoo-form');
             const submitBtn = document.getElementById('submit-btn');
-            
+            const fileInput = document.getElementById('fotoTatuaje');
+
             const checkForm = () => {
                 const isValid = form.checkValidity();
                 submitBtn.classList.toggle('form-valid', isValid);
             };
 
-            if(form) form.addEventListener('input', checkForm);
-            
-            // El carrusel necesita inicializarse después de que el DOM esté listo
+            if (form) form.addEventListener('input', checkForm);
+            if (fileInput) fileInput.addEventListener('change', () => window.handleImagePreview(fileInput));
+
             setTimeout(() => {
                 if (typeof layout === 'function') layout(true);
             }, 100);

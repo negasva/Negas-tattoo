@@ -248,15 +248,11 @@ async function verifyRecaptchaToken(token, remoteIp) {
     }
 
     const data = await response.json();
-    const score = Number(data.score || 0);
-    const action = sanitizeText(data.action, 50);
 
-    console.log('reCAPTCHA response:', { success: data.success, score, action });
+    console.log('reCAPTCHA response:', { success: data.success });
 
     return {
-      success: Boolean(data.success) && score >= RECAPTCHA_MIN_SCORE,
-      score,
-      action
+      success: Boolean(data.success)
     };
   } catch (error) {
     console.error('reCAPTCHA verification error:', error.message);
@@ -397,10 +393,6 @@ app.post('/api/submit-quote', submitLimiter, async (req, res) => {
   if (!verification.success) {
     console.warn('reCAPTCHA verification failed:', verification);
     return res.status(400).json({ error: 'No se pudo validar que la solicitud provenga de una persona.' });
-  }
-
-  if (verification.action !== 'submit_quote') {
-    console.warn('reCAPTCHA action mismatch - Expected: submit_quote, Got:', verification.action);
   }
 
   try {

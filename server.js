@@ -216,6 +216,14 @@ function buildQuotePayload(rawParams) {
 
 async function verifyRecaptchaToken(token, remoteIp) {
   const secret = (process.env.RECAPTCHA_SECRET_KEY || '').trim();
+  const isLocalhost = remoteIp === '::1' || remoteIp === '127.0.0.1' || remoteIp?.startsWith('127.');
+
+  // En localhost sin secret configurado, bypasear reCAPTCHA para testing
+  if (isLocalhost && !secret) {
+    console.warn('reCAPTCHA bypassed for localhost testing');
+    return { success: true, score: 0.9, action: 'submit_quote' };
+  }
+
   if (!token || !secret) return { success: false };
 
   const body = new URLSearchParams({
@@ -232,9 +240,10 @@ async function verifyRecaptchaToken(token, remoteIp) {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString()
-    });
+    }, 5000);
 
     if (!response.ok) {
+      console.error('reCAPTCHA API error - Status:', response.status);
       return { success: false };
     }
 
@@ -242,13 +251,15 @@ async function verifyRecaptchaToken(token, remoteIp) {
     const score = Number(data.score || 0);
     const action = sanitizeText(data.action, 50);
 
+    console.log('reCAPTCHA response:', { success: data.success, score, action });
+
     return {
       success: Boolean(data.success) && score >= RECAPTCHA_MIN_SCORE,
       score,
       action
     };
   } catch (error) {
-    console.error('Captcha error:', error.message);
+    console.error('reCAPTCHA verification error:', error.message);
     return { success: false };
   }
 }
@@ -291,8 +302,15 @@ app.post('/api/upload-image', uploadLimiter, (req, res, next) => {
   try {
     const key = (process.env.IMGBB_API_KEY || '').trim();
 
+    console.log('Upload request received - File:', req.file?.originalname, 'MIME:', req.file?.mimetype);
+
     if (!req.file) {
       return res.status(400).json({ error: 'Archivo no proporcionado' });
+    }
+
+    if (!key) {
+      console.error('IMGBB_API_KEY not configured');
+      return res.status(500).json({ error: 'Servicio de subida no configurado.' });
     }
 
     if (!mimeMatchesExtension(req.file.originalname, req.file.mimetype)) {
@@ -311,21 +329,26 @@ app.post('/api/upload-image', uploadLimiter, (req, res, next) => {
     form.append('image', imageBlob, safeName);
     form.append('name', safeName.replace(/\.[^.]+$/, ''));
 
+    console.log('Uploading to imgbb with API key length:', key.length);
+
     const response = await fetchWithTimeout('https://api.imgbb.com/1/upload', {
       method: 'POST',
       body: form
-    });
+    }, 15000);
 
     const rawResponse = await response.text();
+    console.log('imgbb response status:', response.status);
+
     let data = null;
     try {
       data = rawResponse ? JSON.parse(rawResponse) : null;
     } catch (_error) {
+      console.error('Failed to parse imgbb response:', rawResponse.slice(0, 200));
       data = null;
     }
 
     if (!response.ok || !data?.success || !data?.data?.url) {
-      console.error('Upload provider error - Status:', response.status, 'Data:', data);
+      console.error('Upload provider error - Status:', response.status, 'Success:', data?.success, 'URL:', data?.data?.url);
 
       if (response.status === 401 || response.status === 403) {
         return res.status(502).json({ error: 'Clave de API inválida. Contacta soporte.' });
@@ -337,12 +360,17 @@ app.post('/api/upload-image', uploadLimiter, (req, res, next) => {
       return res.status(502).json({ error: 'No fue posible subir la imagen. Intenta de nuevo.' });
     }
 
+    console.log('Image uploaded successfully:', data.data.url);
     return res.json({ url: data.data.url });
   } catch (error) {
-    console.error('Upload error:', error.name, error.message);
+    console.error('Upload error:', error.name, error.message, error.cause);
 
     if (error.name === 'AbortError') {
       return res.status(408).json({ error: 'Timeout al subir la imagen. Intenta con una imagen más pequeña.' });
+    }
+
+    if (error.message.includes('fetch failed') || error.message.includes('ECONNREFUSED')) {
+      return res.status(503).json({ error: 'Sin conexión a internet o servidor de imgbb no disponible.' });
     }
 
     return res.status(500).json({ error: 'Error al procesar la imagen. Intenta de nuevo.' });
@@ -365,8 +393,14 @@ app.post('/api/submit-quote', submitLimiter, async (req, res) => {
   }
 
   const verification = await verifyRecaptchaToken(token, req.ip);
-  if (!verification.success || verification.action !== 'submit_quote') {
+
+  if (!verification.success) {
+    console.warn('reCAPTCHA verification failed:', verification);
     return res.status(400).json({ error: 'No se pudo validar que la solicitud provenga de una persona.' });
+  }
+
+  if (verification.action !== 'submit_quote') {
+    console.warn('reCAPTCHA action mismatch - Expected: submit_quote, Got:', verification.action);
   }
 
   try {

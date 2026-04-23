@@ -324,13 +324,18 @@ if (form) {
             if (file) {
                 const fd = new FormData();
                 fd.append('image', file);
-                const uploadRes = await fetch('/api/upload-image', { method: 'POST', body: fd });
-                const uploadData = await uploadRes.json().catch(() => ({}));
-                if (!uploadRes.ok) {
-                    console.warn('Image upload skipped:', uploadData.error || 'unknown upload error');
-                    showSubmitWarning((uploadData.error || 'No fue posible subir la imagen de referencia.') + '. La cotizacion se enviara sin imagen.');
-                } else {
-                    imageUrl = uploadData.url || '';
+                try {
+                    const uploadRes = await fetch('/api/upload-image', { method: 'POST', body: fd });
+                    const uploadData = await uploadRes.json().catch(() => ({}));
+                    if (!uploadRes.ok) {
+                        console.warn('Image upload skipped:', uploadData.error || 'unknown upload error');
+                        showSubmitWarning((uploadData.error || 'No fue posible subir la imagen de referencia.') + '. La cotizacion se enviara sin imagen.');
+                    } else {
+                        imageUrl = uploadData.url || '';
+                    }
+                } catch (uploadError) {
+                    console.warn('Image upload failed:', uploadError.message);
+                    showSubmitWarning('No fue posible subir la imagen. La cotizacion se enviara sin imagen.');
                 }
             }
 

@@ -40,10 +40,11 @@ const corsOptions = {
     console.warn('CORS blocked origin:', origin);
     return callback(null, false);
   },
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: false,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  maxAge: 86400
 };
 
 const imageFileFilter = (_req, file, callback) => {
@@ -112,11 +113,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       'default-src': ["'self'"],
-      'script-src': ["'self'", "'unsafe-eval'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://www.google.com', 'https://www.gstatic.com', 'https://connect.facebook.net'],
+      'script-src': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://www.google.com', 'https://www.gstatic.com', 'https://connect.facebook.net'],
       'script-src-attr': ["'none'"],
       'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       'img-src': ["'self'", 'data:', 'blob:', 'https://i.ibb.co', 'https://*.ibb.co'],
-      'connect-src': ["'self'", 'https://api.imgbb.com', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.facebook.com'],
+      'connect-src': ["'self'", 'https://api.imgbb.com', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.facebook.com', 'https://api.emailjs.com', 'https://cdn.jsdelivr.net'],
       'font-src': ["'self'", 'https://fonts.gstatic.com'],
       'frame-src': ["'self'", 'https://www.google.com', 'https://recaptcha.google.com'],
       'object-src': ["'none'"],
@@ -324,13 +325,26 @@ app.post('/api/upload-image', uploadLimiter, (req, res, next) => {
     }
 
     if (!response.ok || !data?.success || !data?.data?.url) {
-      console.error('Upload provider error:', response.status);
+      console.error('Upload provider error - Status:', response.status, 'Data:', data);
+
+      if (response.status === 401 || response.status === 403) {
+        return res.status(502).json({ error: 'Clave de API inválida. Contacta soporte.' });
+      }
+      if (response.status === 429) {
+        return res.status(429).json({ error: 'Demasiados intentos. Espera unos minutos.' });
+      }
+
       return res.status(502).json({ error: 'No fue posible subir la imagen. Intenta de nuevo.' });
     }
 
     return res.json({ url: data.data.url });
   } catch (error) {
     console.error('Upload error:', error.name, error.message);
+
+    if (error.name === 'AbortError') {
+      return res.status(408).json({ error: 'Timeout al subir la imagen. Intenta con una imagen más pequeña.' });
+    }
+
     return res.status(500).json({ error: 'Error al procesar la imagen. Intenta de nuevo.' });
   }
 });
@@ -369,7 +383,15 @@ app.post('/api/submit-quote', submitLimiter, async (req, res) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Quote submit error:', errorText);
+      console.error('Quote submit error - Status:', response.status, 'Response:', errorText);
+
+      if (response.status === 401 || response.status === 403) {
+        return res.status(502).json({ error: 'Error de autenticacion con EmailJS. Verifica las credenciales.' });
+      }
+      if (response.status === 400) {
+        return res.status(502).json({ error: 'Datos invalidos enviados a EmailJS. Contacta soporte.' });
+      }
+
       return res.status(502).json({ error: 'No fue posible enviar la cotizacion al proveedor de correo.' });
     }
 

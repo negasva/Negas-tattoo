@@ -109,6 +109,16 @@ const globalLimiter = rateLimit({
 app.use(cors(corsOptions));
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
+  permissionsPolicy: {
+    geolocation: [],
+    microphone: [],
+    camera: [],
+    usb: [],
+    magnetometer: [],
+    gyroscope: [],
+    accelerometer: [],
+    paymentHandler: []
+  },
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   contentSecurityPolicy: {
     directives: {

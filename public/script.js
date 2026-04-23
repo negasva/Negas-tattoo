@@ -70,16 +70,11 @@ function applyConfig() {
 
     if (recaptchaSiteKey && !document.querySelector('script[data-recaptcha-loader="true"]')) {
         const scriptRecaptcha = document.createElement('script');
-        scriptRecaptcha.src = 'https://www.google.com/recaptcha/api.js';
+        scriptRecaptcha.src = 'https://www.google.com/recaptcha/api.js?render=' + encodeURIComponent(recaptchaSiteKey);
         scriptRecaptcha.async = true;
         scriptRecaptcha.defer = true;
         scriptRecaptcha.dataset.recaptchaLoader = 'true';
         document.head.appendChild(scriptRecaptcha);
-
-        const recaptchaDiv = document.querySelector('.g-recaptcha');
-        if (recaptchaDiv) {
-            recaptchaDiv.dataset.sitekey = recaptchaSiteKey;
-        }
     }
 }
 
@@ -145,20 +140,13 @@ function bindDeepLinkAnchors() {
 }
 
 async function getRecaptchaToken() {
-    if (!window.grecaptcha) {
+    const siteKey = configuracionApp.recaptchaSiteKey;
+    if (!siteKey || !window.grecaptcha) {
         throw new Error('reCAPTCHA no disponible');
     }
 
     await new Promise(resolve => window.grecaptcha.ready(resolve));
-
-    // v2 Checkbox - obtener token del widget
-    const token = window.grecaptcha.getResponse();
-
-    if (!token) {
-        throw new Error('Por favor completa el reCAPTCHA');
-    }
-
-    return token;
+    return window.grecaptcha.execute(siteKey, { action: 'submit_quote' });
 }
 
 function showSubmitError(message) {

@@ -31,7 +31,7 @@ if (process.env.TRUST_PROXY) {
 const corsOptions = {
   origin(origin, callback) {
     const isLocalOrigin = typeof origin === 'string'
-      && /^https:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+  && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
 
     if (!origin || isLocalOrigin || allowedOrigins.includes(origin)) {
       return callback(null, true);

@@ -216,11 +216,11 @@ function buildQuotePayload(rawParams) {
 
 async function verifyRecaptchaToken(token, remoteIp) {
   const secret = (process.env.RECAPTCHA_SECRET_KEY || '').trim();
-  const isLocalhost = remoteIp === '::1' || remoteIp === '127.0.0.1' || remoteIp?.startsWith('127.');
+  const skipRecaptcha = process.env.SKIP_RECAPTCHA === 'true';
 
-  // En localhost sin secret configurado, bypasear reCAPTCHA para testing
-  if (isLocalhost && !secret) {
-    console.warn('reCAPTCHA bypassed for localhost testing');
+  // Bypass reCAPTCHA si SKIP_RECAPTCHA=true (desarrollo)
+  if (skipRecaptcha) {
+    console.warn('⚠️  reCAPTCHA SKIPPED - Only for development!');
     return { success: true, score: 0.9, action: 'submit_quote' };
   }
 

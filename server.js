@@ -1,4 +1,10 @@
 require('dotenv').config();
+
+const REQUIRED_ENV = ['RECAPTCHA_SECRET_KEY', 'IMGBB_API_KEY', 'EMAILJS_SERVICE_ID', 'EMAILJS_TEMPLATE_ID', 'EMAILJS_PUBLIC_KEY'];
+for (const v of REQUIRED_ENV) {
+  if (!process.env[v]?.trim()) { console.error(`Missing required env var: ${v}`); process.exit(1); }
+}
+
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -25,7 +31,7 @@ if (process.env.TRUST_PROXY) {
 const corsOptions = {
   origin(origin, callback) {
     const isLocalOrigin = typeof origin === 'string'
-      && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+      && /^https:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
 
     if (!origin || isLocalOrigin || allowedOrigins.includes(origin)) {
       return callback(null, true);
@@ -91,13 +97,22 @@ const submitLimiter = rateLimit({
   message: { error: 'Has enviado demasiadas solicitudes. Espera antes de reintentar.' }
 });
 
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes.' }
+});
+
 app.use(cors(corsOptions));
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   contentSecurityPolicy: {
     directives: {
       'default-src': ["'self'"],
-      'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://www.google.com', 'https://www.gstatic.com', 'https://connect.facebook.net'],
+      'script-src': ["'self'", "'unsafe-eval'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://www.google.com', 'https://www.gstatic.com', 'https://connect.facebook.net'],
       'script-src-attr': ["'none'"],
       'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       'img-src': ["'self'", 'data:', 'blob:', 'https://i.ibb.co', 'https://*.ibb.co'],
@@ -107,12 +122,14 @@ app.use(helmet({
       'object-src': ["'none'"],
       'base-uri': ["'self'"],
       'form-action': ["'self'"],
-      'upgrade-insecure-requests': null
+      'upgrade-insecure-requests': []
     }
   },
   referrerPolicy: { policy: 'no-referrer' }
 }));
 app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ limit: '100kb', extended: false }));
+app.use(globalLimiter);
 app.use(express.static(PUBLIC_PATH, { index: false }));
 
 function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
@@ -142,6 +159,24 @@ function sanitizeText(value, maxLength) {
     .slice(0, maxLength);
 }
 
+const MIME_TO_EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
+const MIME_VALID_EXTS = { 'image/jpeg': new Set(['.jpg', '.jpeg']), 'image/png': new Set(['.png']), 'image/webp': new Set(['.webp']) };
+
+function mimeMatchesExtension(filename, mimetype) {
+  const ext = path.extname(filename || '').toLowerCase();
+  return MIME_VALID_EXTS[mimetype]?.has(ext) ?? false;
+}
+
+function sanitizeImageUrl(value) {
+  const str = sanitizeText(value, 500);
+  if (!str) return '';
+  try {
+    const url = new URL(str);
+    if (!/^i\.ibb\.co$/i.test(url.hostname)) return '';
+    return str;
+  } catch { return ''; }
+}
+
 function buildQuotePayload(rawParams) {
   const params = rawParams && typeof rawParams === 'object' ? rawParams : {};
   const quote = {
@@ -154,7 +189,7 @@ function buildQuotePayload(rawParams) {
     descripcion_referencia: sanitizeText(params.descripcion_referencia, 500),
     cotizacion_estimada: sanitizeText(params.cotizacion_estimada, 40),
     tamano_final: sanitizeText(params.tamano_final, 40),
-    link_referencia: sanitizeText(params.link_referencia, 500)
+    link_referencia: sanitizeImageUrl(params.link_referencia)
   };
 
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(quote.user_email);
@@ -253,33 +288,29 @@ app.post('/api/upload-image', uploadLimiter, (req, res, next) => {
   });
 }, async (req, res) => {
   try {
-    console.log('Upload request received:', {
-      hasFile: Boolean(req.file),
-      origin: req.headers.origin || null,
-      mimeType: req.file?.mimetype || null,
-      size: req.file?.size || null,
-      name: req.file?.originalname || null
-    });
-
     const key = (process.env.IMGBB_API_KEY || '').trim();
-    if (!key) {
-      throw new Error('Servicio de imagenes no configurado');
-    }
 
     if (!req.file) {
       return res.status(400).json({ error: 'Archivo no proporcionado' });
+    }
+
+    if (!mimeMatchesExtension(req.file.originalname, req.file.mimetype)) {
+      return res.status(400).json({ error: 'Tipo de archivo no permitido' });
     }
 
     if (!isValidImageBuffer(req.file)) {
       return res.status(400).json({ error: 'El archivo no es una imagen valida' });
     }
 
+    const safeExt = MIME_TO_EXT[req.file.mimetype] || '.jpg';
+    const safeName = `ref_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${safeExt}`;
     const form = new FormData();
     const imageBlob = new Blob([req.file.buffer], { type: req.file.mimetype });
-    form.append('image', imageBlob, req.file.originalname || 'referencia.jpg');
-    form.append('name', (req.file.originalname || 'referencia').replace(/\.[^.]+$/, ''));
+    form.append('key', key);
+    form.append('image', imageBlob, safeName);
+    form.append('name', safeName.replace(/\.[^.]+$/, ''));
 
-    const response = await fetchWithTimeout(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(key)}`, {
+    const response = await fetchWithTimeout('https://api.imgbb.com/1/upload', {
       method: 'POST',
       body: form
     });
@@ -292,22 +323,15 @@ app.post('/api/upload-image', uploadLimiter, (req, res, next) => {
       data = null;
     }
 
-    if (!response.ok || !data.success || !data.data?.url) {
-      console.error('Upload provider error:', response.status, rawResponse);
-      return res.status(400).json({
-        error: data?.error?.message || 'Error en el proveedor de imagenes'
-      });
+    if (!response.ok || !data?.success || !data?.data?.url) {
+      console.error('Upload provider error:', response.status);
+      return res.status(502).json({ error: 'No fue posible subir la imagen. Intenta de nuevo.' });
     }
 
     return res.json({ url: data.data.url });
   } catch (error) {
-    console.error('Upload error full:', error);
-    const isNetworkError = error?.cause?.code === 'ENOTFOUND' || error?.cause?.code === 'ECONNRESET' || error?.name === 'AbortError';
-    return res.status(500).json({
-      error: isNetworkError
-        ? 'No se pudo conectar con el servicio de imagenes en este momento'
-        : (error?.message || 'Error interno al procesar la imagen')
-    });
+    console.error('Upload error:', error.name, error.message);
+    return res.status(500).json({ error: 'Error al procesar la imagen. Intenta de nuevo.' });
   }
 });
 

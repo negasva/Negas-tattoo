@@ -361,7 +361,7 @@ if (form) {
                 throw new Error(data.error || 'No fue posible enviar la cotizacion.');
             }
 
-            localStorage.setItem('ultimaCotizacion', JSON.stringify({
+            sessionStorage.setItem('ultimaCotizacion', JSON.stringify({
                 cliente_nombre: params.cliente_nombre,
                 zona_tatuaje: params.zona_tatuaje,
                 tamano_final: params.tamano_final,

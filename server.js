@@ -384,11 +384,14 @@ app.post('/api/submit-quote', submitLimiter, async (req, res) => {
   const templateId = (process.env.EMAILJS_TEMPLATE_ID || '').trim();
   const publicKey = (process.env.EMAILJS_PUBLIC_KEY || '').trim();
 
+  console.log('📧 EmailJS Config - ServiceID:', serviceId.length > 0 ? '✓' : '✗', 'TemplateID:', templateId.length > 0 ? '✓' : '✗', 'PublicKey:', publicKey.length > 0 ? '✓' : '✗');
+
   if (!quote) {
     return res.status(400).json({ error: 'Los datos de la cotizacion son invalidos o estan incompletos.' });
   }
 
   if (!serviceId || !templateId || !publicKey) {
+    console.error('❌ Missing EmailJS credentials - Check Render environment variables');
     return res.status(500).json({ error: 'El servicio de cotizaciones no esta configurado.' });
   }
 

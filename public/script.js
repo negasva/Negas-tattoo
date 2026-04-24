@@ -307,6 +307,10 @@ if (form) {
                 }
             }
 
+            const estiloRaw = document.querySelector('#complexity')?.closest('.custom-dropdown')?.querySelector('.dropdown-label')?.textContent?.trim();
+            const estiloLabel = (estiloRaw && estiloRaw !== 'Selecciona una opcion...') ? estiloRaw : '';
+
+            const estimatedPrice = document.getElementById('form-estimated-price')?.value || '';
             const leadData = {
                 name: form.user_name.value.trim(),
                 email: form.user_email.value.trim(),
@@ -320,14 +324,12 @@ if (form) {
             };
 
             await saveLead(leadData);
-
-            const estiloLabel = document.querySelector('#complexity')?.closest('.custom-dropdown')?.querySelector('.dropdown-label')?.textContent?.trim();
             sessionStorage.setItem('ultimaCotizacion', JSON.stringify({
                 cliente_nombre: leadData.name,
                 zona_tatuaje: leadData.tattoo_zone,
                 tamano_final: leadData.size,
-                complejidad_diseno: estiloLabel || '',
-                cotizacion_estimada: document.getElementById('form-estimated-price')?.value || ''
+                complejidad_diseno: estiloLabel,
+                cotizacion_estimada: estimatedPrice
             }));
             window.location.href = 'resumen.html';
         } catch (error) {
@@ -609,6 +611,7 @@ loadConfig();
 bindDeepLinkAnchors();
 
 document.getElementById('size')?.addEventListener('input', calculatePrice);
+calculatePrice();
 
 const ta = document.querySelector('textarea[name="message"]');
 if (ta) {

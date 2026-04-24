@@ -227,7 +227,54 @@ function typeWriter(text, colorClass = 'text-zinc-500', shake = false) {
     type();
 }
 
-window.calculatePrice = function() {};
+window.calculatePrice = function() {
+    const selectorSize = document.getElementById('size');
+    const selectorComp = document.getElementById('complexity');
+    const displaySize = document.getElementById('size-display-val');
+    const displayPrice = document.getElementById('price-display');
+    const contenedorResultado = document.getElementById('price-result');
+    const spinner = document.getElementById('terminal-spinner');
+    const disclaimer = document.getElementById('disclaimer-msg');
+    const terminal = document.getElementById('terminal-container');
+
+    if (!selectorSize || !selectorComp || !displaySize || !displayPrice || !contenedorResultado) return;
+
+    const valorTamano = Number(selectorSize.value);
+    displaySize.textContent = valorTamano + 'cm';
+    document.getElementById('form-size').value = valorTamano + 'cm';
+
+    const valorComplejidad = parseFloat(selectorComp.value);
+    const ideaProyecto = document.querySelector('textarea[name="message"]')?.value.trim();
+    const estiloSeleccionado = !Number.isNaN(valorComplejidad);
+    const ideaValida = Boolean(ideaProyecto);
+
+    clearTimeout(tiempoCalculo);
+
+    if (!estiloSeleccionado || !ideaValida) {
+        if (spinner) spinner.classList.add('hidden');
+        if (terminal) terminal.classList.remove('hidden');
+        typeWriter('Completa los campos requeridos', 'text-zinc-500');
+        contenedorResultado.classList.add('hidden', 'opacity-0');
+        if (disclaimer) disclaimer.classList.remove('hidden');
+    } else {
+        if (spinner) spinner.classList.remove('hidden');
+        if (terminal) terminal.classList.remove('hidden');
+        typeWriter('Procesando...', 'text-emerald-500/80');
+        tiempoCalculo = setTimeout(() => {
+            if (spinner) spinner.classList.add('hidden');
+            if (terminal) terminal.classList.add('hidden');
+            const base = 90000;
+            const factorPequeno = 33000;
+            const factorGrande = 45000;
+            const total = base + Math.min(valorTamano, 15) * factorPequeno * valorComplejidad + Math.max(0, valorTamano - 15) * factorGrande * valorComplejidad;
+            displayPrice.textContent = '$' + total.toLocaleString('es-CO');
+            document.getElementById('form-estimated-price').value = '$' + total.toLocaleString('es-CO');
+            contenedorResultado.classList.remove('hidden');
+            if (disclaimer) disclaimer.classList.add('hidden');
+            setTimeout(() => contenedorResultado.classList.remove('opacity-0'), 10);
+        }, 800);
+    }
+};
 
 import { supabase, uploadReferenceImage, saveLead } from './supabase.js'
 
@@ -558,16 +605,13 @@ document.querySelectorAll('.accordion-header').forEach(header => {
 loadConfig();
 bindDeepLinkAnchors();
 
-document.getElementById('size')?.addEventListener('input', () => {
-    const val = document.getElementById('size').value;
-    document.getElementById('size-display-val').textContent = val + 'cm';
-    document.getElementById('form-size').value = val + 'cm';
-});
+document.getElementById('size')?.addEventListener('input', calculatePrice);
 
 const ta = document.querySelector('textarea[name="message"]');
 if (ta) {
     ta.oninput = function() {
         document.getElementById('charCount').textContent = this.value.length + '/500';
+        calculatePrice();
     };
 }
 

@@ -212,9 +212,19 @@
             loadDashboard()
         }
 
+        const HIDDEN_KEY = 'hidden_leads'
+        function getHidden() { return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]')) }
+        function hideLead(id) {
+            const h = getHidden(); h.add(String(id))
+            localStorage.setItem(HIDDEN_KEY, JSON.stringify([...h]))
+        }
+
+        let allLeads = []
+
         async function loadDashboard() {
             try {
                 const [leads, stats] = await Promise.all([getLeads(), getStats()])
+                allLeads = leads
                 document.getElementById('stat-leads').textContent = stats.totalLeads
                 document.getElementById('stat-clients').textContent = stats.totalClients
                 document.getElementById('stat-recurring').textContent = stats.recurringClients
@@ -227,11 +237,17 @@
 
         function renderLeads(leads) {
             const filter = document.getElementById('filter-status').value
-            const filtered = filter ? leads.filter(l => l.status === filter) : leads
+            const hidden = getHidden()
+            const filtered = leads
+                .filter(l => !hidden.has(String(l.id)))
+                .filter(l => !filter || l.status === filter)
             document.getElementById('leads-count').textContent = filtered.length + ' registros'
             document.getElementById('leads-table').innerHTML = filtered.map(lead => `
                 <tr class="lead-row">
-                    <td class="px-6 py-4 font-bold italic cursor-pointer hover:text-red-500 transition" data-fill-name="${(lead.name || '').replace(/"/g, '&quot;')}" data-lead-id="${lead.id}" data-lead-status="${lead.status}">${lead.name || '—'}</td>
+                    <td class="px-6 py-4">
+                        <button class="hide-lead text-zinc-600 hover:text-red-600 transition text-xs font-black mr-2" data-hide-id="${lead.id}" title="Ocultar">✕</button>
+                        <span class="font-bold italic cursor-pointer hover:text-red-500 transition" data-fill-name="${(lead.name || '').replace(/"/g, '&quot;')}" data-lead-id="${lead.id}" data-lead-status="${lead.status}">${lead.name || '—'}</span>
+                    </td>
                     <td class="px-6 py-4 text-zinc-400 text-xs">${lead.email || '—'}</td>
                     <td class="px-6 py-4 text-zinc-400">${lead.tattoo_zone || '—'}</td>
                     <td class="px-6 py-4 text-zinc-400">${lead.size || '—'}</td>
@@ -253,6 +269,12 @@
         let selectedLeadStatus = null
 
         document.getElementById('leads-table').addEventListener('click', (e) => {
+            const hideBtn = e.target.closest('.hide-lead')
+            if (hideBtn) {
+                hideLead(hideBtn.dataset.hideId)
+                renderLeads(allLeads)
+                return
+            }
             const cell = e.target.closest('[data-fill-name]')
             if (!cell) return
             selectedLeadId = cell.dataset.leadId
@@ -310,7 +332,15 @@
                 await saveDocument(docData)
 
                 if (selectedLeadId) {
-                    const newStatus = selectedLeadStatus === 'lead' ? 'client' : selectedLeadStatus === 'client' ? 'recurring' : null
+                    const nameMatch = (allLeads || []).filter(l =>
+                        String(l.id) !== String(selectedLeadId) &&
+                        (l.status === 'client' || l.status === 'recurring') &&
+                        (l.name || '').toLowerCase() === name.toLowerCase()
+                    )
+                    const newStatus = nameMatch.length > 0 ? 'recurring'
+                        : selectedLeadStatus === 'lead' ? 'client'
+                        : selectedLeadStatus === 'client' ? 'recurring'
+                        : null
                     if (newStatus) {
                         await updateLeadStatus(selectedLeadId, newStatus)
                         selectedLeadId = null

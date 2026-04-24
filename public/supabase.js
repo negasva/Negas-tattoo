@@ -17,9 +17,11 @@ export async function saveLead(leadData) {
   if (error) throw error
 }
 
-export async function uploadDocument(file, clientName, tatuador) {
-  const filename = `${Date.now()}-${clientName.replace(/\s+/g, '-')}.${file.name.split('.').pop()}`
-  const { data, error } = await supabase.storage.from('signed-documents').upload(filename, file)
+export async function uploadDocument(file, clientName) {
+  const ext = file.name.split('.').pop().toLowerCase()
+  const filename = `${Date.now()}-${clientName.replace(/\s+/g, '-')}.${ext}`
+  const contentType = file.type || 'application/octet-stream'
+  const { data, error } = await supabase.storage.from('signed-documents').upload(filename, file, { contentType })
   if (error) throw error
   return data.path
 }

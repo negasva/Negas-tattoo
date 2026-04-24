@@ -149,7 +149,10 @@
             <div class="border border-white/10">
                 <div class="flex justify-between items-end px-6 py-4 border-b border-white/10">
                     <h2 class="text-2xl font-black italic uppercase tracking-tighter">Leads</h2>
-                    <span id="leads-count" class="text-red-600 text-[10px] uppercase tracking-widest font-black">0 registros</span>
+                    <div class="flex gap-4 items-center">
+                        <span id="leads-count" class="text-red-600 text-[10px] uppercase tracking-widest font-black">0 registros</span>
+                        <button id="deleted-leads-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-xs font-black uppercase rounded transition">Ver Eliminados</button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
@@ -168,6 +171,22 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- DELETED LEADS MODAL -->
+    <div id="deleted-leads-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-6 z-50">
+        <div class="bg-[#1a1a1a] border border-white/10 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center px-6 py-4 border-b border-white/10">
+                <h2 class="text-2xl font-black italic uppercase tracking-tighter">Leads Eliminados</h2>
+                <button id="close-deleted-modal" class="text-zinc-500 hover:text-white transition text-xl">✕</button>
+            </div>
+            <div id="deleted-leads-list" class="overflow-y-auto flex-1 divide-y divide-white/10">
+                <!-- Leads eliminados aquí -->
+            </div>
+            <div class="px-6 py-4 border-t border-white/10 text-[11px] text-zinc-500">
+                <p id="deleted-count">0 leads eliminados</p>
+            </div>
         </div>
     </div>
 
@@ -212,11 +231,15 @@
             loadDashboard()
         }
 
-        const HIDDEN_KEY = 'hidden_leads'
-        function getHidden() { return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]')) }
-        function hideLead(id) {
-            const h = getHidden(); h.add(String(id))
-            localStorage.setItem(HIDDEN_KEY, JSON.stringify([...h]))
+        const DELETED_KEY = 'deleted_leads'
+        function getDeleted() { return new Set(JSON.parse(localStorage.getItem(DELETED_KEY) || '[]')) }
+        function deleteLead(id) {
+            const d = getDeleted(); d.add(String(id))
+            localStorage.setItem(DELETED_KEY, JSON.stringify([...d]))
+        }
+        function recoverLead(id) {
+            const d = getDeleted(); d.delete(String(id))
+            localStorage.setItem(DELETED_KEY, JSON.stringify([...d]))
         }
 
         let allLeads = []
@@ -237,15 +260,15 @@
 
         function renderLeads(leads) {
             const filter = document.getElementById('filter-status').value
-            const hidden = getHidden()
+            const deleted = getDeleted()
             const filtered = leads
-                .filter(l => !hidden.has(String(l.id)))
+                .filter(l => !deleted.has(String(l.id)))
                 .filter(l => !filter || l.status === filter)
             document.getElementById('leads-count').textContent = filtered.length + ' registros'
             document.getElementById('leads-table').innerHTML = filtered.map(lead => `
                 <tr class="lead-row">
                     <td class="px-6 py-4">
-                        <button class="hide-lead text-zinc-600 hover:text-red-600 transition text-xs font-black mr-2" data-hide-id="${lead.id}" title="Ocultar">✕</button>
+                        <button class="delete-lead text-zinc-600 hover:text-red-600 transition text-xs font-black mr-2" data-delete-id="${lead.id}" title="Eliminar">✕</button>
                         <span class="font-bold italic cursor-pointer hover:text-red-500 transition" data-fill-name="${(lead.name || '').replace(/"/g, '&quot;')}" data-lead-id="${lead.id}" data-lead-status="${lead.status}">${lead.name || '—'}</span>
                     </td>
                     <td class="px-6 py-4 text-zinc-400 text-xs">${lead.email || '—'}</td>
@@ -269,9 +292,9 @@
         let selectedLeadStatus = null
 
         document.getElementById('leads-table').addEventListener('click', (e) => {
-            const hideBtn = e.target.closest('.hide-lead')
-            if (hideBtn) {
-                hideLead(hideBtn.dataset.hideId)
+            const deleteBtn = e.target.closest('.delete-lead')
+            if (deleteBtn) {
+                deleteLead(deleteBtn.dataset.deleteId)
                 renderLeads(allLeads)
                 return
             }
@@ -372,6 +395,60 @@
         document.getElementById('filter-status').addEventListener('change', async () => {
             const leads = await getLeads()
             renderLeads(leads)
+        })
+
+        function renderDeletedModal() {
+            const deleted = getDeleted()
+            const deletedLeads = allLeads.filter(l => deleted.has(String(l.id)))
+            const listEl = document.getElementById('deleted-leads-list')
+            const countEl = document.getElementById('deleted-count')
+
+            countEl.textContent = deletedLeads.length + ' leads eliminados'
+
+            if (deletedLeads.length === 0) {
+                listEl.innerHTML = '<div class="px-6 py-8 text-center text-zinc-500">No hay leads eliminados</div>'
+                return
+            }
+
+            listEl.innerHTML = deletedLeads.map(lead => `
+                <div class="px-6 py-4 flex justify-between items-center hover:bg-white/5 transition">
+                    <div class="flex-1">
+                        <p class="font-bold italic text-white">${lead.name || '—'}</p>
+                        <p class="text-xs text-zinc-500">${lead.email || '—'}</p>
+                    </div>
+                    <button class="recover-lead bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 text-xs font-black uppercase rounded transition" data-recover-id="${lead.id}">Recuperar</button>
+                </div>
+            `).join('')
+
+            document.querySelectorAll('.recover-lead').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    recoverLead(e.target.dataset.recoverId)
+                    loadDashboard()
+                    renderDeletedModal()
+                })
+            })
+        }
+
+        const deletedModal = document.getElementById('deleted-leads-modal')
+        const deletedBtn = document.getElementById('deleted-leads-btn')
+        const closeDeletedBtn = document.getElementById('close-deleted-modal')
+
+        deletedBtn?.addEventListener('click', () => {
+            renderDeletedModal()
+            deletedModal.classList.remove('hidden')
+            deletedModal.classList.add('flex')
+        })
+
+        closeDeletedBtn?.addEventListener('click', () => {
+            deletedModal.classList.add('hidden')
+            deletedModal.classList.remove('flex')
+        })
+
+        deletedModal?.addEventListener('click', (e) => {
+            if (e.target === deletedModal) {
+                deletedModal.classList.add('hidden')
+                deletedModal.classList.remove('flex')
+            }
         })
 
         document.getElementById('login-btn').addEventListener('click', login)

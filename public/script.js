@@ -652,7 +652,16 @@ cityWarningClose?.addEventListener('click', closeCityWarning);
 // GALLERY — filter + lightbox (reuses existing #lightbox)
 // ═══════════════════════════════════════════════
 (function() {
-    const ALL_IMGS = [
+    function shuffleArray(arr) {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+    }
+
+    const ALL_IMGS_ORIGINAL = [
         {src:'https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg',   cat:'Blackwork', cls:'gal-cs2rs2'},
         {src:'https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg', cat:'Blackwork', cls:''},
         {src:'https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg',          cat:'Blackwork', cls:''},
@@ -674,6 +683,8 @@ cityWarningClose?.addEventListener('click', closeCityWarning);
         {src:'https://i.ibb.co/ynWN6Cj1/IMG-0065.png',               cat:'Blackwork', cls:''},
         {src:'https://i.ibb.co/pBjNrfVs/IMG-0063.png',               cat:'Blackwork', cls:''},
     ];
+
+    let ALL_IMGS = shuffleArray(ALL_IMGS_ORIGINAL);
 
     const galGrid   = document.getElementById('galGrid');
     const galCount  = document.getElementById('galCount');

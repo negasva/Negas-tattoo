@@ -6,7 +6,13 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git revert *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Read(//c/Users/nvz9/Desktop/**)",
+      "Read(//c/Users/nvz9/Desktop//**)",
+      "Bash(git -C \"/c/Users/nvz9/Desktop/negas tattoo/\" remote -v)",
+      "Bash(git -C \"/c/Users/nvz9/Desktop/negas.ink/\" remote -v)",
+      "Bash(python3 \"C:/Users/nvz9/Desktop/cotizaciones/patch.py\")",
+      "Bash(python3 \"C:/Users/nvz9/Desktop/cotizaciones/patch_css.py\")"
     ]
   }
 }

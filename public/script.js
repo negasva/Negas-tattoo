@@ -646,3 +646,74 @@ const closeCityWarning = () => {
 
 cityWarningOverlay?.addEventListener('click', closeCityWarning);
 cityWarningClose?.addEventListener('click', closeCityWarning);
+
+
+// ═══════════════════════════════════════════════
+// GALLERY — filter + lightbox (reuses existing #lightbox)
+// ═══════════════════════════════════════════════
+(function() {
+    const ALL_IMGS = [
+        {src:'https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg',   cat:'Blackwork', cls:'gal-cs2rs2'},
+        {src:'https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg', cat:'Blackwork', cls:''},
+        {src:'https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg',          cat:'Blackwork', cls:''},
+        {src:'https://i.ibb.co/s93WWvNq/Tatttoo-Angel-copy-7.jpg',   cat:'Blackwork', cls:'gal-rs2'},
+        {src:'https://i.ibb.co/35ggTM1t/Tatttoo-pierna-completa-copy-2.jpg', cat:'Blackwork', cls:''},
+        {src:'https://i.ibb.co/x8MJ4tW3/Tatttoo-mask-copy.jpg',      cat:'Blackwork', cls:''},
+        {src:'https://i.ibb.co/CKMdBXVC/Tatttoo-mask.jpg',           cat:'Blackwork', cls:''},
+        {src:'https://i.ibb.co/4n31ng5r/Tatttoo-Angel-copy-2.jpg',   cat:'Blackwork', cls:'gal-cs2'},
+        {src:'https://i.ibb.co/Z6LmS5WK/Tatttoo-tigre.jpg',          cat:'Blackwork', cls:''},
+        {src:'https://i.ibb.co/C3MCJJFW/Tatttoo-pierna-completa.jpg',cat:'Blackwork', cls:''},
+        {src:'https://i.ibb.co/dFYtWP4/tatuaje-mariposa.jpg',        cat:'Bot\u00e1nico', cls:'gal-rs2'},
+        {src:'https://i.ibb.co/FLGJ9Q23/tatuaje-bebe.jpg',           cat:'Bot\u00e1nico', cls:''},
+        {src:'https://i.ibb.co/6RCSYkN4/tatuaje-letras.jpg',         cat:'Lettering', cls:'gal-cs2'},
+        {src:'https://i.ibb.co/wZhYZ7TN/tatuaje-letras-copy.jpg',    cat:'Lettering', cls:''},
+        {src:'https://i.ibb.co/FLhCmFhg/Tatttoo-eye.jpg',            cat:'Blackwork', cls:''},
+        {src:'https://i.ibb.co/fdPZLNzG/Tatttoo-Elefante.jpg',       cat:'Blackwork', cls:''},
+        {src:'https://i.ibb.co/tMJQbKZW/IMG-0066.png',               cat:'Blackwork', cls:''},
+        {src:'https://i.ibb.co/hF1pjnd9/IMG-0067.png',               cat:'Blackwork', cls:'gal-cs2'},
+        {src:'https://i.ibb.co/ynWN6Cj1/IMG-0065.png',               cat:'Blackwork', cls:''},
+        {src:'https://i.ibb.co/pBjNrfVs/IMG-0063.png',               cat:'Blackwork', cls:''},
+    ];
+
+    const galGrid   = document.getElementById('galGrid');
+    const galCount  = document.getElementById('galCount');
+    if (!galGrid) return;
+
+    function renderGallery(filter) {
+        const shown = filter === 'All' ? ALL_IMGS : ALL_IMGS.filter(i => i.cat === filter);
+        galGrid.innerHTML = '';
+        shown.forEach(it => {
+            const el = document.createElement('div');
+            el.className = 'gal-item' + (it.cls ? ' ' + it.cls : '');
+            const img = document.createElement('img');
+            img.src = it.src;
+            img.alt = 'Tatuaje ' + it.cat + ' - Negas Ink Sabaneta';
+            img.loading = 'lazy';
+            const overlay = document.createElement('div');
+            overlay.className = 'gal-overlay';
+            const cat = document.createElement('div');
+            cat.className = 'gal-cat';
+            cat.textContent = it.cat;
+            el.appendChild(img);
+            el.appendChild(overlay);
+            el.appendChild(cat);
+            el.addEventListener('click', () => {
+                if (typeof openLightbox === 'function') {
+                    openLightbox(it.src, el);
+                }
+            });
+            galGrid.appendChild(el);
+        });
+        if (galCount) galCount.textContent = shown.length + ' / ' + ALL_IMGS.length + ' piezas';
+    }
+
+    document.querySelectorAll('.gal-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.gal-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            renderGallery(this.dataset.filter);
+        });
+    });
+
+    renderGallery('All');
+})();

@@ -21,7 +21,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
         body {
@@ -91,13 +91,116 @@
         </div>
     </section>
 
-    <section id="portfolio" class="py-8 border-y border-white/5">
-        <div class="sc">
-            <div class="sc-viewport" id="vp"></div>
-            <div class="sc-dots" id="dots"></div>
-            <div class="sc-nav mt-8">
-                <button class="sc-btn" id="prev">&#8592;</button>
-                <button class="sc-btn" id="next">&#8594;</button>
+    <!-- MARQUEE -->
+    <section class="mq-section">
+        <div class="mq-track">
+            <div class="mq-group">
+                <span class="mq-word">Blackwork</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Fine line</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Bot&#225;nico</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Lettering</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Private studio</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">By appointment</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Custom design</span><span class="mq-star">&#10022;</span>
+            </div>
+            <div class="mq-group" aria-hidden="true">
+                <span class="mq-word">Blackwork</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Fine line</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Bot&#225;nico</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Lettering</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Private studio</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">By appointment</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Custom design</span><span class="mq-star">&#10022;</span>
+            </div>
+            <div class="mq-group" aria-hidden="true">
+                <span class="mq-word">Blackwork</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Fine line</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Bot&#225;nico</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Lettering</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Private studio</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">By appointment</span><span class="mq-star">&#10022;</span>
+                <span class="mq-word">Custom design</span><span class="mq-star">&#10022;</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- SERVICE CARDS -->
+    <section class="svc-section">
+        <div class="svc-grid">
+            <div class="svc-card">
+                <div class="svc-card-top">
+                    <span class="svc-num">01</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svc-icon"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.28 3.76S3 11.09 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0014 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 01-11.91 4.97"/></svg>
+                </div>
+                <h3 class="svc-card-title">Blackwork</h3>
+                <p class="svc-card-desc">Negro denso, contraste brutal, geometr&#237;a que aguanta los a&#241;os. Mi especialidad &#8212; tambi&#233;n mi obsesi&#243;n.</p>
+                <div class="svc-card-foot">
+                    <span class="svc-tag">Signature</span>
+                    <span class="svc-arrow">&#8599;</span>
+                </div>
+            </div>
+            <div class="svc-card">
+                <div class="svc-card-top">
+                    <span class="svc-num">02</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svc-icon"><path d="M11 20A7 7 0 014 13V8a5 5 0 015-5h11v7a7 7 0 01-7 7h-2z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>
+                </div>
+                <h3 class="svc-card-title">Bot&#225;nico</h3>
+                <p class="svc-card-desc">Flores, ramas, ra&#237;ces. L&#237;nea fina con sombra suave para piezas que respiran en la piel.</p>
+                <div class="svc-card-foot">
+                    <span class="svc-tag">Delicado</span>
+                    <span class="svc-arrow">&#8599;</span>
+                </div>
+            </div>
+            <div class="svc-card">
+                <div class="svc-card-top">
+                    <span class="svc-num">03</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svc-icon"><path d="M5 12h14"/></svg>
+                </div>
+                <h3 class="svc-card-title">Fine line</h3>
+                <p class="svc-card-desc">Trazos m&#237;nimos, cero desperdicio. Dise&#241;os peque&#241;os que no se ven como stickers de feria.</p>
+                <div class="svc-card-foot">
+                    <span class="svc-tag">Minimal</span>
+                    <span class="svc-arrow">&#8599;</span>
+                </div>
+            </div>
+            <div class="svc-card">
+                <div class="svc-card-top">
+                    <span class="svc-num">04</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svc-icon"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+                </div>
+                <h3 class="svc-card-title">Lettering</h3>
+                <p class="svc-card-desc">Tipograf&#237;a custom, nunca una fuente descargada. Si va a estar en tu piel, merece ser original.</p>
+                <div class="svc-card-foot">
+                    <span class="svc-tag">Custom</span>
+                    <span class="svc-arrow">&#8599;</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GALLERY -->
+    <a id="portfolio" style="position:absolute;visibility:hidden;pointer-events:none"></a>
+    <section id="work" class="gal-section">
+        <div class="gal-inner">
+            <div class="gal-header">
+                <div>
+                    <div class="gal-label">Portfolio / Archive</div>
+                    <h2 class="gal-title" style="text-align:left!important">EL <span>ARCHIVO.</span></h2>
+                </div>
+                <div class="gal-filters">
+                    <button class="gal-btn active" data-filter="All">All</button>
+                    <button class="gal-btn" data-filter="Blackwork">Blackwork</button>
+                    <button class="gal-btn" data-filter="Bot&#225;nico">Bot&#225;nico</button>
+                    <button class="gal-btn" data-filter="Lettering">Lettering</button>
+                </div>
+            </div>
+            <div class="gal-grid" id="galGrid"></div>
+            <div class="gal-foot">
+                <span id="galCount"></span>
+                <a href="https://www.instagram.com/negas.tattoo" target="_blank" rel="noopener">
+                    @negas.tattoo
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;display:inline;vertical-align:middle"><path d="M7 17L17 7M7 7h10v10"/></svg>
+                </a>
             </div>
         </div>
     </section>
@@ -370,15 +473,51 @@
         <img id="lb-img" src="" class="max-w-[90%] max-h-[85%] object-contain cursor-default shadow-2xl transition-all duration-500" alt="Negas Ink Portfolio Zoom">
     </div>
 
-    <footer class="bg-black py-10 border-t border-white/5 w-full">
-        <div class="max-w-2xl mx-auto text-center space-y-8">
-            <div class="flex justify-center gap-12 text-[12px] uppercase tracking-[0.5em] font-medium">
-                <a href="#" target="_blank" rel="noopener" class="js-ig hover:text-white/50 transition duration-300">Instagram</a>
-                <a href="#" target="_blank" rel="noopener" class="js-wa hover:text-white/50 transition duration-300">WhatsApp</a>
+    <footer id="contact" class="nfooter">
+        <div class="nfooter-inner">
+            <div class="nfooter-grid">
+                <div class="nfooter-col-wide">
+                    <div class="nfooter-logo">
+                        <span class="nfooter-logo-dot"></span>
+                        <span class="nfooter-logo-text">NEGAS<span>.</span>INK</span>
+                    </div>
+                    <p class="nfooter-desc">Estudio privado de tatuaje en Sabaneta. Cita previa, una sola persona a la vez. Nos vemos cuando est&#233;s listo.</p>
+                    <div class="nfooter-socials">
+                        <a href="https://www.instagram.com/negas.tattoo" target="_blank" rel="noopener" aria-label="Instagram" class="nfooter-soc js-ig">IG</a>
+                        <a href="https://wa.me/573046796003" target="_blank" rel="noopener" aria-label="WhatsApp" class="nfooter-soc js-wa">WA</a>
+                        <a href="https://www.facebook.com/negas.ink" target="_blank" rel="noopener" aria-label="Facebook" class="nfooter-soc js-fb">FB</a>
+                    </div>
+                </div>
+                <div>
+                    <div class="nfooter-col-title">Navegaci&#243;n</div>
+                    <div class="nfooter-links">
+                        <a href="#work">Portafolio</a>
+                        <a href="#booking">Cotizar</a>
+                    </div>
+                </div>
+                <div>
+                    <div class="nfooter-col-title">Contacto</div>
+                    <p class="nfooter-contact-txt">Sabaneta, Antioquia<br>Colombia</p>
+                    <a href="https://wa.me/573046796003" target="_blank" rel="noopener" class="nfooter-contact-lnk js-wa">WhatsApp directo</a>
+                    <a href="https://www.instagram.com/negas.tattoo" target="_blank" rel="noopener" class="nfooter-contact-lnk js-ig">@negas.tattoo</a>
+                </div>
+                <div>
+                    <div class="nfooter-col-title">Horario</div>
+                    <div class="nfooter-sched">
+                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">Mar&#8211;Vie</span><span class="nfooter-sched-time">10:00 &#8212; 19:00</span></div>
+                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">S&#225;bado</span><span class="nfooter-sched-time">11:00 &#8212; 16:00</span></div>
+                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">Dom&#8211;Lun</span><span class="nfooter-sched-time">Cerrado</span></div>
+                    </div>
+                    <div class="nfooter-badge"><span class="nfooter-badge-dot"></span>Abierto ahora</div>
+                </div>
             </div>
-            <p class="text-[11px] text-[#444] tracking-[0.3em] uppercase font-light">
-                Negas Ink - Sabaneta, Medellin - 2026
-            </p>
+            <div class="nfooter-bottom">
+                <div>&#169; 2026 Negas Ink &#8212; Todos los derechos, ninguna licencia para copiar dise&#241;os.</div>
+                <div class="nfooter-bottom-links">
+                    <a href="#">Privacidad</a>
+                    <a href="#">Cuidados post-tatuaje</a>
+                </div>
+            </div>
         </div>
     </footer>
 

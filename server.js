@@ -46,6 +46,7 @@ app.use(helmet({
       'default-src': ["'self'"],
       'script-src': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'],
       'script-src-elem': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'],
+      'script-src-attr': ["'unsafe-inline'"],
       'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       'img-src': ["'self'", 'data:', 'blob:', 'https://*.supabase.co', 'https://i.ibb.co', 'https://*.ibb.co'],
       'connect-src': ["'self'", 'https://qiyfydnwdwygbrpavdjb.supabase.co', 'https://cdn.jsdelivr.net'],

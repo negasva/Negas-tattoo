@@ -310,7 +310,9 @@ if (form) {
             const estiloRaw = document.querySelector('#complexity')?.closest('.custom-dropdown')?.querySelector('.dropdown-label')?.textContent?.trim();
             const estiloLabel = (estiloRaw && estiloRaw !== 'Selecciona una opcion...') ? estiloRaw : '';
 
-            const estimatedPrice = document.getElementById('form-estimated-price')?.value || '';
+            const estimatedPrice = document.getElementById('form-estimated-price')?.value
+                || document.getElementById('price-display')?.textContent?.trim()
+                || '';
             const leadData = {
                 name: form.user_name.value.trim(),
                 email: form.user_email.value.trim(),

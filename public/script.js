@@ -36,8 +36,7 @@ async function loadConfig() {
         configuracionApp = await res.json();
         applyConfig();
     } catch (error) {
-        console.error('Error cargando configuracion:', error);
-        typeWriter('Configuracion no disponible', 'text-red-500', true);
+        console.error('Error loading config:', error);
     }
 
     if (botonEnvio) botonEnvio.disabled = false;
@@ -139,15 +138,6 @@ function bindDeepLinkAnchors() {
     });
 }
 
-async function getRecaptchaToken() {
-    const siteKey = configuracionApp.recaptchaSiteKey;
-    if (!siteKey || !window.grecaptcha) {
-        throw new Error('reCAPTCHA no disponible');
-    }
-
-    await new Promise(resolve => window.grecaptcha.ready(resolve));
-    return window.grecaptcha.execute(siteKey, { action: 'submit_quote' });
-}
 
 function showSubmitError(message) {
     alert(message);
@@ -302,6 +292,8 @@ window.calculatePrice = function() {
     }
 };
 
+import { supabase, uploadReferenceImage, saveLead } from './supabase.js'
+
 const form = document.getElementById('tattoo-form');
 if (form) {
     form.onsubmit = async e => {
@@ -314,75 +306,52 @@ if (form) {
         try {
             if (!form.checkValidity()) {
                 form.reportValidity();
-                throw new Error('Revisa los campos obligatorios antes de enviar.');
+                throw new Error('Complete all required fields');
             }
 
-            let imageUrl = '';
+            let referenceImgUrl = null;
             const fileInput = document.getElementById('fotoTatuaje');
             const file = fileInput?.files?.[0];
 
             if (file) {
-                const fd = new FormData();
-                fd.append('image', file);
                 try {
-                    const uploadRes = await fetch('/api/upload-image', { method: 'POST', body: fd });
-                    const uploadData = await uploadRes.json().catch(() => ({}));
-                    if (!uploadRes.ok) {
-                        console.warn('Image upload skipped:', uploadData.error || 'unknown upload error');
-                        showSubmitWarning((uploadData.error || 'No fue posible subir la imagen de referencia.') + '. La cotizacion se enviara sin imagen.');
-                    } else {
-                        imageUrl = uploadData.url || '';
-                    }
+                    const path = await uploadReferenceImage(file);
+                    const { data } = supabase.storage.from('reference-images').getPublicUrl(path);
+                    referenceImgUrl = data.publicUrl;
                 } catch (uploadError) {
                     console.warn('Image upload failed:', uploadError.message);
-                    showSubmitWarning('No fue posible subir la imagen. La cotizacion se enviara sin imagen.');
                 }
             }
 
-            const recaptchaToken = await getRecaptchaToken();
-            document.getElementById('recaptcha_token').value = recaptchaToken;
-
-            const params = {
-                cliente_nombre: form.user_name.value.trim(),
-                cliente_whatsapp: form.user_phone.value.trim(),
-                user_email: form.user_email.value.trim(),
-                ciudad: document.getElementById('ciudad').value,
-                zona_tatuaje: document.getElementById('tattoo_zone').value,
-                complejidad_diseno: document.querySelector('#complexity').closest('.custom-dropdown').querySelector('.dropdown-label').textContent.trim(),
-                descripcion_referencia: form.message.value.trim(),
-                cotizacion_estimada: document.getElementById('form-estimated-price').value.trim(),
-                tamano_final: document.getElementById('form-size').value.trim(),
-                link_referencia: imageUrl
+            const leadData = {
+                name: form.user_name.value.trim(),
+                email: form.user_email.value.trim(),
+                phone: form.user_phone.value.trim(),
+                tattoo_zone: document.getElementById('tattoo_zone').value,
+                size: document.getElementById('form-size').value.trim(),
+                description: form.message.value.trim(),
+                reference_img_url: referenceImgUrl,
+                status: 'lead',
+                created_at: new Date().toISOString()
             };
 
-            const response = await fetch('/api/submit-quote', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: recaptchaToken, params })
-            });
-            const data = await response.json().catch(() => ({}));
-
-            if (!response.ok) {
-                throw new Error(data.error || 'No fue posible enviar la cotizacion.');
-            }
+            await saveLead(leadData);
 
             sessionStorage.setItem('ultimaCotizacion', JSON.stringify({
-                cliente_nombre: params.cliente_nombre,
-                zona_tatuaje: params.zona_tatuaje,
-                tamano_final: params.tamano_final,
-                complejidad_diseno: params.complejidad_diseno,
-                cotizacion_estimada: params.cotizacion_estimada
+                cliente_nombre: leadData.name,
+                zona_tatuaje: leadData.tattoo_zone,
+                tamano_final: leadData.size
             }));
             window.location.href = 'resumen.html';
         } catch (error) {
             console.error('Submit error:', error);
-            showSubmitError(error.message || 'Error al enviar. Intenta de nuevo.');
-            btn.textContent = 'REINTENTAR';
+            showSubmitError(error.message || 'Error sending. Try again.');
+            btn.textContent = 'RETRY';
             btn.disabled = false;
             return;
         }
 
-        btn.textContent = 'ENVIADO';
+        btn.textContent = 'SENT';
     };
 }
 

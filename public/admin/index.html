@@ -97,7 +97,29 @@
                         <input id="doc-name" type="text" class="input" placeholder="Juan Perez">
                     </div>
                     <div>
-                        <label class="field-label">Archivo / Foto</label>
+                        <label class="field-label">Cedula</label>
+                        <input id="doc-cedula" type="text" class="input" placeholder="123456789">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input id="doc-menor" type="checkbox" class="w-4 h-4 accent-red-600 cursor-pointer">
+                        <label for="doc-menor" class="field-label mb-0 cursor-pointer">Menor de edad</label>
+                    </div>
+                    <div id="acudiente-section" class="hidden space-y-4 border-l-2 border-red-600 pl-4">
+                        <div>
+                            <label class="field-label">Nombre del acudiente</label>
+                            <input id="doc-acudiente-nombre" type="text" class="input" placeholder="Maria Perez">
+                        </div>
+                        <div>
+                            <label class="field-label">Cedula del acudiente</label>
+                            <input id="doc-acudiente-cedula" type="text" class="input" placeholder="987654321">
+                        </div>
+                        <div>
+                            <label class="field-label">Documento acudiente / Foto</label>
+                            <input id="doc-acudiente-file" type="file" accept="image/*,.heic,.heif" class="w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#D20000] file:text-white file:font-bold file:text-xs file:uppercase file:cursor-pointer">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="field-label">Archivo / Foto del cliente</label>
                         <input id="doc-file" type="file" accept="image/*,.heic,.heif" class="w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#D20000] file:text-white file:font-bold file:text-xs file:uppercase file:cursor-pointer">
                     </div>
                     <button id="upload-doc-btn" class="btn-red">Subir Documento</button>
@@ -134,8 +156,8 @@
                             <tr class="border-b border-white/10">
                                 <th class="text-left px-6 py-3 field-label">Nombre</th>
                                 <th class="text-left px-6 py-3 field-label">Email</th>
-                                <th class="text-left px-6 py-3 field-label hidden md:table-cell">Zona</th>
-                                <th class="text-left px-6 py-3 field-label hidden md:table-cell">Tamaño</th>
+                                <th class="text-left px-6 py-3 field-label">Zona</th>
+                                <th class="text-left px-6 py-3 field-label">Tamaño</th>
                                 <th class="text-left px-6 py-3 field-label">Estado</th>
                                 <th class="text-left px-6 py-3 field-label">Cambiar</th>
                             </tr>
@@ -208,10 +230,10 @@
             document.getElementById('leads-count').textContent = filtered.length + ' registros'
             document.getElementById('leads-table').innerHTML = filtered.map(lead => `
                 <tr class="lead-row">
-                    <td class="px-6 py-4 font-bold italic">${lead.name || '—'}</td>
+                    <td class="px-6 py-4 font-bold italic cursor-pointer hover:text-red-500 transition" data-fill-name="${(lead.name || '').replace(/"/g, '&quot;')}">${lead.name || '—'}</td>
                     <td class="px-6 py-4 text-zinc-400 text-xs">${lead.email || '—'}</td>
-                    <td class="px-6 py-4 text-zinc-400 hidden md:table-cell">${lead.tattoo_zone || '—'}</td>
-                    <td class="px-6 py-4 text-zinc-400 hidden md:table-cell">${lead.size || '—'}</td>
+                    <td class="px-6 py-4 text-zinc-400">${lead.tattoo_zone || '—'}</td>
+                    <td class="px-6 py-4 text-zinc-400">${lead.size || '—'}</td>
                     <td class="px-6 py-4">
                         <span class="px-3 py-1 text-xs font-black uppercase status-${lead.status}">${lead.status}</span>
                     </td>
@@ -226,6 +248,17 @@
             `).join('')
         }
 
+        document.getElementById('leads-table').addEventListener('click', (e) => {
+            const cell = e.target.closest('[data-fill-name]')
+            if (!cell) return
+            document.getElementById('doc-name').value = cell.dataset.fillName
+            document.getElementById('doc-name').scrollIntoView({ behavior: 'smooth', block: 'center' })
+        })
+
+        document.getElementById('doc-menor').addEventListener('change', (e) => {
+            document.getElementById('acudiente-section').classList.toggle('hidden', !e.target.checked)
+        })
+
         document.getElementById('leads-table').addEventListener('change', async (e) => {
             if (!e.target.classList.contains('status-select')) return
             const leadId = e.target.dataset.leadId
@@ -236,23 +269,50 @@
         document.getElementById('upload-doc-btn').addEventListener('click', async () => {
             const file = document.getElementById('doc-file').files[0]
             const name = document.getElementById('doc-name').value.trim()
+            const cedula = document.getElementById('doc-cedula').value.trim()
+            const esMenor = document.getElementById('doc-menor').checked
             const statusEl = document.getElementById('doc-status')
             const btn = document.getElementById('upload-doc-btn')
 
-            if (!file || !name) { alert('Completa todos los campos'); return }
+            if (!file || !name) { alert('Completa nombre y archivo'); return }
 
             btn.textContent = 'Subiendo...'
             btn.disabled = true
 
             try {
                 const filePath = await uploadDocument(file, name, 'Negas')
-                await saveDocument({ client_name: name, tatuador: 'Negas', file_url: filePath, date: new Date().toISOString() })
+
+                const docData = {
+                    client_name: name,
+                    cedula: cedula || null,
+                    es_menor: esMenor,
+                    tatuador: 'Negas',
+                    file_url: filePath,
+                    date: new Date().toISOString()
+                }
+
+                if (esMenor) {
+                    const acudienteFile = document.getElementById('doc-acudiente-file').files[0]
+                    docData.acudiente_nombre = document.getElementById('doc-acudiente-nombre').value.trim() || null
+                    docData.acudiente_cedula = document.getElementById('doc-acudiente-cedula').value.trim() || null
+                    if (acudienteFile) {
+                        const acudientePath = await uploadDocument(acudienteFile, name + '-acudiente', 'Negas')
+                        docData.acudiente_file_url = acudientePath
+                    }
+                }
+
+                await saveDocument(docData)
                 statusEl.textContent = '✓ Documento subido'
                 statusEl.className = 'text-[11px] uppercase tracking-widest text-emerald-400'
                 statusEl.classList.remove('hidden')
                 document.getElementById('doc-file').value = ''
                 document.getElementById('doc-name').value = ''
-                document.getElementById('doc-tatuador').value = ''
+                document.getElementById('doc-cedula').value = ''
+                document.getElementById('doc-menor').checked = false
+                document.getElementById('acudiente-section').classList.add('hidden')
+                document.getElementById('doc-acudiente-nombre').value = ''
+                document.getElementById('doc-acudiente-cedula').value = ''
+                document.getElementById('doc-acudiente-file').value = ''
             } catch (err) {
                 statusEl.textContent = '✗ Error al subir'
                 statusEl.className = 'text-[11px] uppercase tracking-widest text-red-500'

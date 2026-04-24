@@ -5,158 +5,225 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Negas Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { background: #0f0f0f; color: #fff; }
-        .status-lead { background: #374151; }
-        .status-client { background: #059669; }
-        .status-recurring { background: #d20000; }
+        body { font-family: 'Inter', sans-serif; background: #121212; color: #fff; }
+        .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #71717a; font-weight: 800; display: block; margin-bottom: 0.5rem; }
+        .input { width: 100%; background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 0.875rem 1rem; font-family: 'Inter', sans-serif; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+        .input:focus { border-color: #fff; }
+        .btn-red { background: #D20000; color: #fff; padding: 1rem; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.05em; font-size: 1.1rem; border: none; cursor: pointer; transition: background 0.3s; width: 100%; }
+        .btn-red:hover { background: #b00000; }
+        .btn-red:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status-lead { background: #27272a; color: #a1a1aa; }
+        .status-client { background: #064e3b; color: #6ee7b7; }
+        .status-recurring { background: #7f1d1d; color: #fca5a5; }
+        .stat-card { background: #1a1a1a; border: 1px solid #222; padding: 1.5rem; }
+        .stat-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #71717a; font-weight: 800; margin-bottom: 0.5rem; }
+        .stat-card p:last-child { font-size: 2.5rem; font-weight: 900; font-style: italic; letter-spacing: -0.05em; line-height: 1; }
+        select.input { cursor: pointer; }
+        .lead-row { border-bottom: 1px solid #1a1a1a; transition: background 0.15s; }
+        .lead-row:hover { background: #1a1a1a; }
     </style>
 </head>
-<body class="bg-black text-white min-h-screen p-4">
-    <div id="login-screen" class="flex items-center justify-center min-h-screen">
-        <div class="bg-[#1a1a1a] p-8 rounded-lg w-full max-w-sm">
-            <h1 class="text-3xl font-black mb-8 text-center">NEGAS<br><span class="text-red-600">ADMIN</span></h1>
-            <input id="email" type="email" placeholder="Email" class="w-full bg-[#333] p-3 mb-4 rounded border border-[#555]" required>
-            <input id="password" type="password" placeholder="Password" class="w-full bg-[#333] p-3 mb-6 rounded border border-[#555]" required>
-            <button id="login-btn" class="w-full bg-red-600 hover:bg-red-700 p-3 rounded font-bold">Login</button>
-            <p id="login-error" class="text-red-500 text-sm mt-2 hidden"></p>
+<body class="selection:bg-white selection:text-black">
+
+    <!-- LOGIN -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center px-6">
+        <div class="w-full max-w-sm">
+            <div class="border-b border-white/20 pb-4 mb-10 flex justify-between items-end uppercase font-black italic text-[10px] tracking-[0.3em]">
+                <span>Sabaneta<br>Antioquia</span>
+                <span class="text-red-600 text-lg">2026</span>
+                <span class="text-right">Estudio<br>Privado</span>
+            </div>
+
+            <h1 class="text-[5rem] leading-[0.75] font-black uppercase italic tracking-tighter mb-12">
+                <span class="block">Negas</span>
+                <span class="block text-red-600">Admin</span>
+            </h1>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="field-label">Email</label>
+                    <input id="email" type="email" class="input" placeholder="admin@negas.tattoo">
+                </div>
+                <div>
+                    <label class="field-label">Password</label>
+                    <input id="password" type="password" class="input" placeholder="••••••••">
+                </div>
+                <p id="login-error" class="text-red-500 text-[11px] uppercase tracking-widest hidden">Credenciales incorrectas</p>
+                <button id="login-btn" class="btn-red mt-2">Entrar</button>
+            </div>
         </div>
     </div>
 
-    <div id="admin-screen" class="hidden">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-black">ADMIN PANEL</h1>
-            <button id="logout-btn" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded">Logout</button>
+    <!-- ADMIN PANEL -->
+    <div id="admin-screen" class="hidden min-h-screen">
+        <div class="border-b border-white/10 px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-black italic uppercase tracking-tighter">Negas <span class="text-red-600">Admin</span></h1>
+            <button id="logout-btn" class="text-[11px] uppercase tracking-[0.2em] font-black text-zinc-500 hover:text-white transition">Salir</button>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-[#1a1a1a] p-4 rounded">
-                <p class="text-gray-400 text-sm">Total Leads</p>
-                <p id="stat-leads" class="text-3xl font-black">0</p>
-            </div>
-            <div class="bg-[#1a1a1a] p-4 rounded">
-                <p class="text-gray-400 text-sm">Clients</p>
-                <p id="stat-clients" class="text-3xl font-black">0</p>
-            </div>
-            <div class="bg-[#1a1a1a] p-4 rounded">
-                <p class="text-gray-400 text-sm">Recurring</p>
-                <p id="stat-recurring" class="text-3xl font-black">0</p>
-            </div>
-            <div class="bg-[#1a1a1a] p-4 rounded">
-                <p class="text-gray-400 text-sm">Conversion</p>
-                <p id="stat-conversion" class="text-3xl font-black">0%</p>
-            </div>
-        </div>
+        <div class="px-6 py-8 max-w-6xl mx-auto space-y-10">
 
-        <div class="grid md:grid-cols-2 gap-8 mb-8">
-            <div class="bg-[#1a1a1a] p-6 rounded">
-                <h2 class="text-xl font-black mb-4">Upload Document</h2>
-                <input id="doc-name" type="text" placeholder="Client Name" class="w-full bg-[#333] p-3 mb-3 rounded border border-[#555]">
-                <input id="doc-tatuador" type="text" placeholder="Tatuador" class="w-full bg-[#333] p-3 mb-3 rounded border border-[#555]">
-                <input id="doc-file" type="file" accept="image/*" class="w-full mb-3">
-                <button id="upload-doc-btn" class="w-full bg-red-600 hover:bg-red-700 p-3 rounded font-bold">Upload</button>
+            <!-- STATS -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="stat-card">
+                    <p>Total Leads</p>
+                    <p id="stat-leads">0</p>
+                </div>
+                <div class="stat-card">
+                    <p>Clientes</p>
+                    <p id="stat-clients" class="text-emerald-400">0</p>
+                </div>
+                <div class="stat-card">
+                    <p>Recurrentes</p>
+                    <p id="stat-recurring" class="text-red-500">0</p>
+                </div>
+                <div class="stat-card">
+                    <p>Conversion</p>
+                    <p id="stat-conversion" class="text-white">0%</p>
+                </div>
             </div>
 
-            <div class="bg-[#1a1a1a] p-6 rounded">
-                <h2 class="text-xl font-black mb-4">Filter Leads</h2>
-                <select id="filter-status" class="w-full bg-[#333] p-3 rounded border border-[#555]">
-                    <option value="">All Statuses</option>
-                    <option value="lead">Lead</option>
-                    <option value="client">Client</option>
-                    <option value="recurring">Recurring</option>
-                </select>
-            </div>
-        </div>
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- UPLOAD DOC -->
+                <div class="border border-white/10 p-6 space-y-4">
+                    <div class="flex justify-between items-end border-b border-white/10 pb-4">
+                        <h2 class="text-2xl font-black italic uppercase tracking-tighter">Subir<br>Documento</h2>
+                        <span class="text-red-600 text-[10px] uppercase tracking-widest font-black">Firmado</span>
+                    </div>
+                    <div>
+                        <label class="field-label">Nombre del cliente</label>
+                        <input id="doc-name" type="text" class="input" placeholder="Juan Perez">
+                    </div>
+                    <div>
+                        <label class="field-label">Tatuador</label>
+                        <input id="doc-tatuador" type="text" class="input" placeholder="Negas">
+                    </div>
+                    <div>
+                        <label class="field-label">Archivo / Foto</label>
+                        <input id="doc-file" type="file" accept="image/*" class="w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#D20000] file:text-white file:font-bold file:text-xs file:uppercase file:cursor-pointer">
+                    </div>
+                    <button id="upload-doc-btn" class="btn-red">Subir Documento</button>
+                    <p id="doc-status" class="text-[11px] uppercase tracking-widest hidden"></p>
+                </div>
 
-        <div class="bg-[#1a1a1a] p-6 rounded overflow-x-auto">
-            <h2 class="text-xl font-black mb-4">Leads</h2>
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b border-[#333]">
-                        <th class="text-left p-2">Name</th>
-                        <th class="text-left p-2">Email</th>
-                        <th class="text-left p-2">Phone</th>
-                        <th class="text-left p-2">Zone</th>
-                        <th class="text-left p-2">Status</th>
-                        <th class="text-left p-2">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="leads-table"></tbody>
-            </table>
+                <!-- FILTER -->
+                <div class="border border-white/10 p-6 space-y-4">
+                    <div class="flex justify-between items-end border-b border-white/10 pb-4">
+                        <h2 class="text-2xl font-black italic uppercase tracking-tighter">Filtrar<br>Leads</h2>
+                        <span class="text-red-600 text-[10px] uppercase tracking-widest font-black">Estado</span>
+                    </div>
+                    <div>
+                        <label class="field-label">Estado</label>
+                        <select id="filter-status" class="input">
+                            <option value="">Todos</option>
+                            <option value="lead">Lead</option>
+                            <option value="client">Cliente</option>
+                            <option value="recurring">Recurrente</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LEADS TABLE -->
+            <div class="border border-white/10">
+                <div class="flex justify-between items-end px-6 py-4 border-b border-white/10">
+                    <h2 class="text-2xl font-black italic uppercase tracking-tighter">Leads</h2>
+                    <span id="leads-count" class="text-red-600 text-[10px] uppercase tracking-widest font-black">0 registros</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-white/10">
+                                <th class="text-left px-6 py-3 field-label">Nombre</th>
+                                <th class="text-left px-6 py-3 field-label">Email</th>
+                                <th class="text-left px-6 py-3 field-label hidden md:table-cell">Zona</th>
+                                <th class="text-left px-6 py-3 field-label hidden md:table-cell">Tamaño</th>
+                                <th class="text-left px-6 py-3 field-label">Estado</th>
+                                <th class="text-left px-6 py-3 field-label">Cambiar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leads-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
     <script type="module">
         import { supabase, getLeads, updateLeadStatus, getStats, uploadDocument, saveDocument } from '../supabase.js'
 
-        let currentUser = null
         const loginScreen = document.getElementById('login-screen')
         const adminScreen = document.getElementById('admin-screen')
-        const loginBtn = document.getElementById('login-btn')
-        const logoutBtn = document.getElementById('logout-btn')
-        const filterStatus = document.getElementById('filter-status')
-        const uploadDocBtn = document.getElementById('upload-doc-btn')
 
         async function login() {
             const email = document.getElementById('email').value
             const password = document.getElementById('password').value
             const errorEl = document.getElementById('login-error')
+            const btn = document.getElementById('login-btn')
+
+            btn.textContent = 'Entrando...'
+            btn.disabled = true
+            errorEl.classList.add('hidden')
 
             try {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+                const { error } = await supabase.auth.signInWithPassword({ email, password })
                 if (error) throw error
-                currentUser = data.user
-                loginScreen.classList.add('hidden')
-                adminScreen.classList.remove('hidden')
-                loadDashboard()
-            } catch (err) {
-                errorEl.textContent = 'Login failed'
+                showAdmin()
+            } catch {
                 errorEl.classList.remove('hidden')
+                btn.textContent = 'Entrar'
+                btn.disabled = false
             }
         }
 
         async function logout() {
             await supabase.auth.signOut()
-            currentUser = null
             loginScreen.classList.remove('hidden')
             adminScreen.classList.add('hidden')
             document.getElementById('email').value = ''
             document.getElementById('password').value = ''
         }
 
+        function showAdmin() {
+            loginScreen.classList.add('hidden')
+            adminScreen.classList.remove('hidden')
+            loadDashboard()
+        }
+
         async function loadDashboard() {
             try {
                 const [leads, stats] = await Promise.all([getLeads(), getStats()])
-
                 document.getElementById('stat-leads').textContent = stats.totalLeads
                 document.getElementById('stat-clients').textContent = stats.totalClients
                 document.getElementById('stat-recurring').textContent = stats.recurringClients
                 document.getElementById('stat-conversion').textContent = stats.conversionRate + '%'
-
                 renderLeads(leads)
             } catch (err) {
-                console.error('Error loading dashboard:', err)
+                console.error(err)
             }
         }
 
         function renderLeads(leads) {
-            const filter = filterStatus.value
+            const filter = document.getElementById('filter-status').value
             const filtered = filter ? leads.filter(l => l.status === filter) : leads
-            const tbody = document.getElementById('leads-table')
-            tbody.innerHTML = filtered.map(lead => `
-                <tr class="border-b border-[#333]">
-                    <td class="p-2">${lead.name}</td>
-                    <td class="p-2">${lead.email}</td>
-                    <td class="p-2">${lead.phone}</td>
-                    <td class="p-2">${lead.tattoo_zone}</td>
-                    <td class="p-2">
-                        <span class="px-3 py-1 rounded text-xs font-bold status-${lead.status}">${lead.status}</span>
+            document.getElementById('leads-count').textContent = filtered.length + ' registros'
+            document.getElementById('leads-table').innerHTML = filtered.map(lead => `
+                <tr class="lead-row">
+                    <td class="px-6 py-4 font-bold italic">${lead.name || '—'}</td>
+                    <td class="px-6 py-4 text-zinc-400 text-xs">${lead.email || '—'}</td>
+                    <td class="px-6 py-4 text-zinc-400 hidden md:table-cell">${lead.tattoo_zone || '—'}</td>
+                    <td class="px-6 py-4 text-zinc-400 hidden md:table-cell">${lead.size || '—'}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 text-xs font-black uppercase status-${lead.status}">${lead.status}</span>
                     </td>
-                    <td class="p-2">
-                        <select class="bg-[#333] p-1 rounded text-xs" onchange="changeStatus(${lead.id}, this.value)">
+                    <td class="px-6 py-4">
+                        <select class="bg-[#1a1a1a] border border-[#333] text-white text-xs p-1 font-bold uppercase cursor-pointer" onchange="window.changeStatus(${lead.id}, this.value)">
                             <option value="lead" ${lead.status === 'lead' ? 'selected' : ''}>Lead</option>
-                            <option value="client" ${lead.status === 'client' ? 'selected' : ''}>Client</option>
-                            <option value="recurring" ${lead.status === 'recurring' ? 'selected' : ''}>Recurring</option>
+                            <option value="client" ${lead.status === 'client' ? 'selected' : ''}>Cliente</option>
+                            <option value="recurring" ${lead.status === 'recurring' ? 'selected' : ''}>Recurrente</option>
                         </select>
                     </td>
                 </tr>
@@ -164,69 +231,53 @@
         }
 
         window.changeStatus = async (leadId, status) => {
-            try {
-                await updateLeadStatus(leadId, status)
-                loadDashboard()
-            } catch (err) {
-                console.error('Error updating status:', err)
-            }
+            await updateLeadStatus(leadId, status)
+            loadDashboard()
         }
 
-        uploadDocBtn.addEventListener('click', async () => {
+        document.getElementById('upload-doc-btn').addEventListener('click', async () => {
             const file = document.getElementById('doc-file').files[0]
-            const name = document.getElementById('doc-name').value
-            const tatuador = document.getElementById('doc-tatuador').value
+            const name = document.getElementById('doc-name').value.trim()
+            const tatuador = document.getElementById('doc-tatuador').value.trim()
+            const statusEl = document.getElementById('doc-status')
+            const btn = document.getElementById('upload-doc-btn')
 
-            if (!file || !name || !tatuador) {
-                alert('Complete all fields')
-                return
-            }
+            if (!file || !name || !tatuador) { alert('Completa todos los campos'); return }
+
+            btn.textContent = 'Subiendo...'
+            btn.disabled = true
 
             try {
-                uploadDocBtn.disabled = true
-                uploadDocBtn.textContent = 'Uploading...'
                 const filePath = await uploadDocument(file, name, tatuador)
-                await saveDocument({
-                    client_name: name,
-                    tatuador,
-                    file_url: filePath,
-                    date: new Date().toISOString()
-                })
+                await saveDocument({ client_name: name, tatuador, file_url: filePath, date: new Date().toISOString() })
+                statusEl.textContent = '✓ Documento subido'
+                statusEl.className = 'text-[11px] uppercase tracking-widest text-emerald-400'
+                statusEl.classList.remove('hidden')
                 document.getElementById('doc-file').value = ''
                 document.getElementById('doc-name').value = ''
                 document.getElementById('doc-tatuador').value = ''
-                uploadDocBtn.textContent = 'Upload'
-                uploadDocBtn.disabled = false
             } catch (err) {
-                console.error('Error uploading document:', err)
-                uploadDocBtn.textContent = 'Upload'
-                uploadDocBtn.disabled = false
+                statusEl.textContent = '✗ Error al subir'
+                statusEl.className = 'text-[11px] uppercase tracking-widest text-red-500'
+                statusEl.classList.remove('hidden')
             }
+
+            btn.textContent = 'Subir Documento'
+            btn.disabled = false
         })
 
-        filterStatus.addEventListener('change', async () => {
+        document.getElementById('filter-status').addEventListener('change', async () => {
             const leads = await getLeads()
             renderLeads(leads)
         })
 
-        loginBtn.addEventListener('click', login)
-        logoutBtn.addEventListener('click', logout)
+        document.getElementById('login-btn').addEventListener('click', login)
+        document.getElementById('logout-btn').addEventListener('click', logout)
+        document.getElementById('email').addEventListener('keypress', e => e.key === 'Enter' && login())
+        document.getElementById('password').addEventListener('keypress', e => e.key === 'Enter' && login())
 
-        document.getElementById('email').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') login()
-        })
-        document.getElementById('password').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') login()
-        })
-
-        supabase.auth.onAuthStateChanged((user) => {
-            if (user) {
-                currentUser = user
-                loginScreen.classList.add('hidden')
-                adminScreen.classList.remove('hidden')
-                loadDashboard()
-            }
-        })
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) showAdmin()
     </script>
 </body>
 </html>

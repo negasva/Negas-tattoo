@@ -321,10 +321,13 @@ if (form) {
 
             await saveLead(leadData);
 
+            const estiloLabel = document.querySelector('#complexity')?.closest('.custom-dropdown')?.querySelector('.dropdown-label')?.textContent?.trim();
             sessionStorage.setItem('ultimaCotizacion', JSON.stringify({
                 cliente_nombre: leadData.name,
                 zona_tatuaje: leadData.tattoo_zone,
-                tamano_final: leadData.size
+                tamano_final: leadData.size,
+                complejidad_diseno: estiloLabel || '',
+                cotizacion_estimada: document.getElementById('form-estimated-price')?.value || ''
             }));
             window.location.href = 'resumen.html';
         } catch (error) {

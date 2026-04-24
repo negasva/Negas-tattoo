@@ -13,9 +13,8 @@ export async function uploadReferenceImage(file) {
 }
 
 export async function saveLead(leadData) {
-  const { data, error } = await supabase.from('leads').insert([leadData])
+  const { error } = await supabase.from('leads').insert([leadData])
   if (error) throw error
-  return data[0]
 }
 
 export async function uploadDocument(file, clientName, tatuador) {
@@ -26,9 +25,8 @@ export async function uploadDocument(file, clientName, tatuador) {
 }
 
 export async function saveDocument(docData) {
-  const { data, error } = await supabase.from('signed_documents').insert([docData])
+  const { error } = await supabase.from('signed_documents').insert([docData])
   if (error) throw error
-  return data[0]
 }
 
 export async function getLeads() {
@@ -38,9 +36,8 @@ export async function getLeads() {
 }
 
 export async function updateLeadStatus(leadId, status) {
-  const { data, error } = await supabase.from('leads').update({ status }).eq('id', leadId)
+  const { error } = await supabase.from('leads').update({ status }).eq('id', leadId)
   if (error) throw error
-  return data[0]
 }
 
 export async function getStats() {

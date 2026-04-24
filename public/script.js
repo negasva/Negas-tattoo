@@ -691,7 +691,8 @@ cityWarningClose?.addEventListener('click', closeCityWarning);
     if (!galGrid) return;
 
     function renderGallery(filter) {
-        const shown = filter === 'All' ? ALL_IMGS : ALL_IMGS.filter(i => i.cat === filter);
+        const base = filter === 'All' ? ALL_IMGS : ALL_IMGS.filter(i => i.cat === filter);
+        const shown = shuffleArray([...base]);
         galGrid.innerHTML = '';
         shown.forEach(it => {
             const el = document.createElement('div');

@@ -50,11 +50,12 @@ export async function getStats() {
   const totalLeads = leads.data?.length || 0
   const totalClients = clients.data?.length || 0
   const recurringClients = recurring.data?.length || 0
+  const converted = totalClients + recurringClients
 
   return {
     totalLeads,
     totalClients,
     recurringClients,
-    conversionRate: totalLeads ? Math.round((totalClients / totalLeads) * 100) : 0
+    conversionRate: totalLeads ? Math.round((converted / totalLeads) * 100) : 0
   }
 }

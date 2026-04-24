@@ -9,6 +9,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; background: #121212; color: #fff; }
         .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #71717a; font-weight: 800; display: block; margin-bottom: 0.5rem; }
+        th.field-label { display: table-cell; margin-bottom: 0; }
         .input { width: 100%; background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 0.875rem 1rem; font-family: 'Inter', sans-serif; font-size: 1rem; outline: none; transition: border-color 0.2s; }
         .input:focus { border-color: #fff; }
         .btn-red { background: #D20000; color: #fff; padding: 1rem; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.05em; font-size: 1.1rem; border: none; cursor: pointer; transition: background 0.3s; width: 100%; }
@@ -230,7 +231,7 @@
             document.getElementById('leads-count').textContent = filtered.length + ' registros'
             document.getElementById('leads-table').innerHTML = filtered.map(lead => `
                 <tr class="lead-row">
-                    <td class="px-6 py-4 font-bold italic cursor-pointer hover:text-red-500 transition" data-fill-name="${(lead.name || '').replace(/"/g, '&quot;')}">${lead.name || '—'}</td>
+                    <td class="px-6 py-4 font-bold italic cursor-pointer hover:text-red-500 transition" data-fill-name="${(lead.name || '').replace(/"/g, '&quot;')}" data-lead-id="${lead.id}" data-lead-status="${lead.status}">${lead.name || '—'}</td>
                     <td class="px-6 py-4 text-zinc-400 text-xs">${lead.email || '—'}</td>
                     <td class="px-6 py-4 text-zinc-400">${lead.tattoo_zone || '—'}</td>
                     <td class="px-6 py-4 text-zinc-400">${lead.size || '—'}</td>
@@ -248,9 +249,14 @@
             `).join('')
         }
 
+        let selectedLeadId = null
+        let selectedLeadStatus = null
+
         document.getElementById('leads-table').addEventListener('click', (e) => {
             const cell = e.target.closest('[data-fill-name]')
             if (!cell) return
+            selectedLeadId = cell.dataset.leadId
+            selectedLeadStatus = cell.dataset.leadStatus
             document.getElementById('doc-name').value = cell.dataset.fillName
             document.getElementById('doc-name').scrollIntoView({ behavior: 'smooth', block: 'center' })
         })
@@ -302,6 +308,16 @@
                 }
 
                 await saveDocument(docData)
+
+                if (selectedLeadId) {
+                    const newStatus = selectedLeadStatus === 'lead' ? 'client' : selectedLeadStatus === 'client' ? 'recurring' : null
+                    if (newStatus) {
+                        await updateLeadStatus(selectedLeadId, newStatus)
+                        selectedLeadId = null
+                        selectedLeadStatus = null
+                    }
+                }
+
                 statusEl.textContent = '✓ Documento subido'
                 statusEl.className = 'text-[11px] uppercase tracking-widest text-emerald-400'
                 statusEl.classList.remove('hidden')

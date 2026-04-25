@@ -54,7 +54,7 @@ h3,
 }
 
 #hero-title {
-    font-size: 16vw;
+    font-size: 20.5vw;
     /* Ajustado para ~65% del ancho en PC */
     line-height: 0.82;
     white-space: normal;
@@ -466,26 +466,32 @@ select:focus {
     }
 
     #hero {
-        height: 100svh !important;
+        min-height: 100svh !important;
+        height: auto !important;
         padding: 1rem 1.25rem 0.5rem 1.25rem !important;
         display: block;
         /* Cambiado para permitir sticky */
         position: relative;
-        overflow: clip;
-        /* Más eficiente que hidden para scrolls modernos */
+        overflow: visible;
+        /* Permitir que el contenido se expanda */
     }
 
     #hero>div {
-        position: sticky;
-        top: 1rem;
+        /* Eliminado position: sticky y top: 1rem */
         display: flex !important;
         flex-direction: column;
-        height: calc(100svh - 5.5rem);
-        justify-content: center;
+        height: 100% !important;
+        /* Ocupar toda la altura disponible */
+        justify-content: space-between;
+        /* Distribuir espacio entre elementos */
         /* Centrado vertical para impacto visual */
-        gap: 0.25rem !important;
+        /* Eliminado gap: 0.25rem */
         will-change: transform;
         /* Estabiliza el sticky en móviles */
+        padding-top: 1rem;
+        /* Margen superior para el contenido del hero */
+        padding-bottom: 1rem;
+        /* Margen inferior para el contenido del hero */
     }
 
     #hero-img-container {
@@ -505,7 +511,7 @@ select:focus {
     }
 
     #hero h1 {
-        font-size: 26vw !important;
+        font-size: 25vw !important;
         /* Aumento drástico: ocupa casi todo el ancho */
         font-weight: 900 !important;
         line-height: 0.72 !important;
@@ -516,9 +522,9 @@ select:focus {
         text-align: center;
         box-sizing: border-box;
         padding: 0 0.5rem;
-        overflow: visible;
-        word-break: normal;
-        white-space: normal !important;
+        overflow: visible !important;
+        /* word-break: normal !important; Eliminado para evitar conflictos */
+        /* white-space: normal !important; Eliminado para evitar conflictos */
     }
 
     #hero #hero-btn-container {
@@ -535,7 +541,8 @@ select:focus {
     #hero-desc {
         display: block !important;
         text-align: center;
-        margin-top: 0.5rem;
+        margin-top: 1rem;
+        /* Pequeño margen arriba de los textos */
         font-size: 0.85rem;
         color: var(--zinc);
         letter-spacing: 0.1em;
@@ -1454,24 +1461,5 @@ input[type="range"]::-moz-range-thumb {
         right: 8px;
         padding: 0.8rem 0.95rem;
         font-size: 0.72rem;
-    }
-}
-
-#hero h1 {
-    font-size: 17vw !important;
-    /* Ajuste automático para PC (65% width aprox) */
-    line-height: 0.9 !important;
-    white-space: normal !important;
-    width: 100% !important;
-    margin: 0 auto !important;
-    overflow: visible !important;
-}
-
-@media (max-width: 768px) {
-    #hero h1 {
-        font-size: 25vw !important;
-        /* Ajuste automático para Móvil (100% width) */
-        line-height: 0.82 !important;
-        word-break: normal !important;
     }
 }

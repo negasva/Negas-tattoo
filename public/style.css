@@ -48,21 +48,6 @@ h1, h2, h3, .section-header {
     overflow-wrap: break-word;
 }
 
-#hero h1 {
-    display: grid;
-    gap: 0;
-    overflow: visible;
-    width: min(100%, 1200px);
-    margin-inline: auto;
-}
-
-#hero h1 .hero-word {
-    line-height: 0.82;
-    overflow: visible;
-    white-space: nowrap;
-    transform-origin: center;
-}
-
 .text-stroke { -webkit-text-stroke: 1px rgba(255, 255, 255, .3); color: transparent; }
 
 /* --- FORM ELEMENTS --- */
@@ -309,11 +294,6 @@ input:focus, select:focus { border-color: #fff !important; outline: none; }
         padding: 0 0.5rem;
         overflow: visible;
         word-break: break-word;
-    }
-
-    #hero h1 .hero-word {
-        white-space: normal;
-        text-wrap: balance;
     }
 
     #hero #hero-btn-container {

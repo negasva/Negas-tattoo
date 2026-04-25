@@ -584,6 +584,42 @@ heroTl
     .to('#hero-negas', { y: 0, opacity: 1, duration: 0.5, ease: 'power4.out' }, '-=0.35')
     .to('#hero-btn-container', { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out' }, '-=0.1');
 
+const floatingCta = document.getElementById('floating-cta');
+const heroSection = document.getElementById('hero');
+const bookingSection = document.getElementById('booking');
+let heroVisible = true;
+let bookingVisible = false;
+
+function updateFloatingCta() {
+    if (!floatingCta) return;
+    const shouldShow = !heroVisible && !bookingVisible;
+    floatingCta.classList.toggle('is-visible', shouldShow);
+    floatingCta.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+}
+
+if (floatingCta && heroSection && bookingSection && 'IntersectionObserver' in window) {
+    const observerOptions = {
+        root: null,
+        threshold: 0.12,
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+            if (entry.target === heroSection) {
+                heroVisible = entry.isIntersecting;
+            }
+            if (entry.target === bookingSection) {
+                bookingVisible = entry.isIntersecting;
+            }
+        }
+        updateFloatingCta();
+    }, observerOptions);
+
+    observer.observe(heroSection);
+    observer.observe(bookingSection);
+    updateFloatingCta();
+}
+
 gsap.utils.toArray('.reveal-item').forEach(el => {
     gsap.to(el, {
         opacity: 1,

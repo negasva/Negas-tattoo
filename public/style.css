@@ -48,6 +48,18 @@ h1, h2, h3, .section-header {
     overflow-wrap: break-word;
 }
 
+#hero-title {
+    font-size: clamp(3.35rem, 14vw, 11.5rem);
+    line-height: 0.9;
+    white-space: nowrap;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+#hero-title .hero-word {
+    line-height: 0.82;
+}
+
 .text-stroke { -webkit-text-stroke: 1px rgba(255, 255, 255, .3); color: transparent; }
 
 /* --- FORM ELEMENTS --- */
@@ -506,3 +518,74 @@ input[type="range"]::-moz-range-thumb {
 .nfooter-bottom-links{display:flex;gap:1.5rem}
 .nfooter-bottom-links a{color:#3f3f46;text-decoration:none;transition:color .2s;font-style:normal;font-weight:400}
 .nfooter-bottom-links a:hover{color:#fff}
+
+#hero-title {
+    font-size: clamp(3.35rem, 14vw, 11.5rem);
+    line-height: 0.9;
+    white-space: nowrap;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+#hero-title .hero-word {
+    line-height: 0.82;
+}
+
+.floating-cta {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 250;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.95rem 1.1rem;
+    background: #D20000;
+    color: #fff;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-style: italic;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    font-size: 0.8rem;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.floating-cta.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.floating-cta:hover {
+    background: #b00000;
+}
+
+@media (max-width: 768px) {
+    .floating-cta {
+        top: 8px;
+        right: 8px;
+        padding: 0.8rem 0.95rem;
+        font-size: 0.72rem;
+    }
+}
+
+#hero h1 {
+    font-size: clamp(3.35rem, 14vw, 11.5rem) !important;
+    line-height: 0.9 !important;
+    white-space: nowrap !important;
+    width: fit-content !important;
+    margin: 0 auto !important;
+    overflow: visible !important;
+}
+
+@media (max-width: 768px) {
+    #hero h1 {
+        font-size: clamp(3rem, 16vw, 7.5rem) !important;
+        line-height: 0.86 !important;
+        word-break: normal !important;
+    }
+}

@@ -54,15 +54,18 @@ h3,
 }
 
 #hero-title {
-    font-size: 14vw;
+    font-size: 17vw;
     /* Ajustado para ~65% del ancho en PC */
     line-height: 0.82;
     white-space: normal;
     width: 100%;
     margin: 0 auto;
+    display: block;
 }
 
 #hero-title .hero-word {
+    display: block;
+    white-space: nowrap;
     line-height: 0.82;
 }
 
@@ -514,7 +517,8 @@ select:focus {
         box-sizing: border-box;
         padding: 0 0.5rem;
         overflow: visible;
-        word-break: break-word;
+        word-break: normal;
+        white-space: normal !important;
     }
 
     #hero #hero-btn-container {
@@ -529,7 +533,12 @@ select:focus {
     }
 
     #hero-desc {
-        display: none;
+        display: block !important;
+        text-align: center;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--zinc);
+        letter-spacing: 0.1em;
     }
 
     /* Oculto en móvil para priorizar Título + Botón Above the Fold */
@@ -1449,7 +1458,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 #hero h1 {
-    font-size: 14vw !important;
+    font-size: 17vw !important;
     /* Ajuste automático para PC (65% width aprox) */
     line-height: 0.9 !important;
     white-space: normal !important;

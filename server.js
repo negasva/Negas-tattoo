@@ -11,6 +11,10 @@ const PORT = Number(process.env.PORT) || 3780;
 const PUBLIC_PATH = path.join(__dirname, 'public');
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qiyfydnwdwygbrpavdjb.supabase.co';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const SUPABASE_KEEPALIVE_TABLES = (process.env.SUPABASE_KEEPALIVE_TABLES || 'leads,signed_documents')
+  .split(',')
+  .map((table) => table.trim())
+  .filter(Boolean);
 const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false }
@@ -96,18 +100,25 @@ app.get('/api/keepalive', async (_req, res) => {
   }
 
   try {
-    const [leadCheck, docCheck] = await Promise.all([
-      supabaseAdmin.from('leads').select('id', { count: 'exact', head: true }).limit(1),
-      supabaseAdmin.from('signed_documents').select('id', { count: 'exact', head: true }).limit(1)
-    ]);
+    const touched = [];
 
-    if (leadCheck.error) throw leadCheck.error;
-    if (docCheck.error) throw docCheck.error;
+    for (const table of SUPABASE_KEEPALIVE_TABLES) {
+      const { error } = await supabaseAdmin
+        .from(table)
+        .select('id', { head: true })
+        .limit(1);
+
+      if (error) {
+        throw new Error(`Keepalive query failed for table "${table}": ${error.message}`);
+      }
+
+      touched.push(table);
+    }
 
     return res.json({
       ok: true,
       timestamp: new Date().toISOString(),
-      touched: ['leads', 'signed_documents']
+      touched
     });
   } catch (error) {
     console.error('Keepalive failed:', error);

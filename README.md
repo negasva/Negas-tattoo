@@ -18,9 +18,18 @@ Ese endpoint ejecuta consultas reales contra Supabase usando `SUPABASE_SERVICE_R
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_KEEPALIVE_TABLES`
 
 ## Ejemplo de monitor
 
 Punto de entrada recomendado:
 
 `https://tu-dominio.com/api/keepalive`
+
+## Configuración sugerida
+
+Para empezar, usa:
+
+`SUPABASE_KEEPALIVE_TABLES=leads,signed_documents`
+
+Si alguna de esas tablas no existe en tu proyecto, cámbiala por una tabla real que sí exista.

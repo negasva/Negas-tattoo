@@ -4,10 +4,18 @@ const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const cors = require('cors');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3780;
 const PUBLIC_PATH = path.join(__dirname, 'public');
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qiyfydnwdwygbrpavdjb.supabase.co';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    })
+  : null;
 
 const corsOptions = {
   origin(origin, callback) {
@@ -77,6 +85,37 @@ app.get('/api/config', (_req, res) => {
     waPhone: (process.env.WHATSAPP_PHONE || '').trim(),
     instagramUrl: (process.env.INSTAGRAM_URL || '').trim()
   });
+});
+
+app.get('/api/keepalive', async (_req, res) => {
+  if (!supabaseAdmin) {
+    return res.status(500).json({
+      ok: false,
+      error: 'SUPABASE_SERVICE_ROLE_KEY is not configured'
+    });
+  }
+
+  try {
+    const [leadCheck, docCheck] = await Promise.all([
+      supabaseAdmin.from('leads').select('id', { count: 'exact', head: true }).limit(1),
+      supabaseAdmin.from('signed_documents').select('id', { count: 'exact', head: true }).limit(1)
+    ]);
+
+    if (leadCheck.error) throw leadCheck.error;
+    if (docCheck.error) throw docCheck.error;
+
+    return res.json({
+      ok: true,
+      timestamp: new Date().toISOString(),
+      touched: ['leads', 'signed_documents']
+    });
+  } catch (error) {
+    console.error('Keepalive failed:', error);
+    return res.status(500).json({
+      ok: false,
+      error: error.message || 'Keepalive failed'
+    });
+  }
 });
 
 app.use((_req, res) => res.status(404).send('Not Found'));

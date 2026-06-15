@@ -737,6 +737,43 @@ if (floatingCta && heroSection && bookingSection && 'IntersectionObserver' in wi
     updateFloatingCta();
 }
 
+// En mobile el shake del botón flotante corre una sola vez cada 12 s.
+// En desktop lo maneja .animate-shake con CSS (bucle normal, menos intrusivo).
+if (floatingCta && isMobileDevice()) {
+    const SHAKE_INTERVAL_MS = 12000;
+    let shakeTimer = null;
+
+    function triggerFloatingShake() {
+        if (!floatingCta.classList.contains('is-visible')) return;
+        floatingCta.classList.remove('animate-shake');
+        // forzar reflow para reiniciar la animacion CSS
+        void floatingCta.offsetWidth;
+        floatingCta.classList.add('animate-shake');
+        // quitar la clase al terminar la animacion (1.5 s) para que no quede en bucle
+        floatingCta.addEventListener('animationend', () => {
+            floatingCta.classList.remove('animate-shake');
+        }, { once: true });
+    }
+
+    function startShakePulse() {
+        clearInterval(shakeTimer);
+        shakeTimer = setInterval(triggerFloatingShake, SHAKE_INTERVAL_MS);
+    }
+
+    // Arrancar el pulso cuando el botón se muestra; parar cuando se oculta.
+    const origUpdate = updateFloatingCta;
+    updateFloatingCta = function () {
+        origUpdate();
+        const isVisible = floatingCta.classList.contains('is-visible');
+        if (isVisible) {
+            startShakePulse();
+        } else {
+            clearInterval(shakeTimer);
+            floatingCta.classList.remove('animate-shake');
+        }
+    };
+}
+
 gsap.utils.toArray('.reveal-item').forEach(el => {
     gsap.to(el, {
         opacity: 1,

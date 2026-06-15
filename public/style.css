@@ -616,6 +616,13 @@ select:focus {
     animation: shake 1.5s ease-in-out infinite;
 }
 
+/* En mobile el shake del floating-cta lo controla JS (pulse cada 12s) */
+@media (max-width: 768px) {
+    .floating-cta.animate-shake {
+        animation: shake 1.5s ease-in-out 1;
+    }
+}
+
 /* --- UTILS --- */
 .grecaptcha-badge {
     visibility: hidden !important;

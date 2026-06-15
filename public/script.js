@@ -43,7 +43,10 @@ async function loadConfig() {
 }
 
 function applyConfig() {
-    const { waPhone, instagramUrl, facebookUrl, recaptchaSiteKey } = configuracionApp;
+    const { waPhone, instagramUrl, facebookUrl, recaptchaSiteKey, emailjsPublicKey } = configuracionApp;
+
+    if (recaptchaSiteKey) loadRecaptcha(recaptchaSiteKey);
+    if (emailjsPublicKey) loadEmailJS(emailjsPublicKey);
 
     if (waPhone) {
         const whatsappWebUrl = 'https://wa.me/' + waPhone;
@@ -67,6 +70,84 @@ function applyConfig() {
 
     if (facebookUrl) document.querySelectorAll('a.js-fb').forEach(a => { a.href = facebookUrl; });
 
+}
+
+// --- reCAPTCHA v3 (carga dinamica segun la site key del backend) ---
+let recaptchaReady = null;
+function loadRecaptcha(siteKey) {
+    if (!siteKey || recaptchaReady) return recaptchaReady;
+    recaptchaReady = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://www.google.com/recaptcha/api.js?render=' + encodeURIComponent(siteKey);
+        script.async = true;
+        script.onload = () => {
+            if (window.grecaptcha && window.grecaptcha.ready) {
+                window.grecaptcha.ready(() => resolve());
+            } else {
+                reject(new Error('grecaptcha no disponible'));
+            }
+        };
+        script.onerror = () => reject(new Error('No se pudo cargar reCAPTCHA'));
+        document.head.appendChild(script);
+    });
+    return recaptchaReady;
+}
+
+async function getRecaptchaToken() {
+    const siteKey = configuracionApp?.recaptchaSiteKey;
+    if (!siteKey) return '';
+    try {
+        if (recaptchaReady) await recaptchaReady;
+        if (!window.grecaptcha) return '';
+        return await window.grecaptcha.execute(siteKey, { action: 'submit_quote' });
+    } catch (error) {
+        console.warn('reCAPTCHA token error:', error);
+        return '';
+    }
+}
+
+// --- EmailJS (carga dinamica + correo de confirmacion al cliente) ---
+let emailjsReady = null;
+function loadEmailJS(publicKey) {
+    if (!publicKey || emailjsReady) return emailjsReady;
+    emailjsReady = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+        script.async = true;
+        script.onload = () => {
+            try {
+                window.emailjs.init({ publicKey });
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        };
+        script.onerror = () => reject(new Error('No se pudo cargar EmailJS'));
+        document.head.appendChild(script);
+    });
+    return emailjsReady;
+}
+
+// Dispara el correo de confirmacion. Nunca lanza: si falla, no debe romper el
+// flujo de exito (el lead ya quedo guardado en el backend).
+async function sendConfirmationEmail(params) {
+    const { emailjsServiceId, emailjsTemplateId } = configuracionApp || {};
+    if (!emailjsServiceId || !emailjsTemplateId) return;
+    try {
+        if (emailjsReady) await emailjsReady;
+        if (!window.emailjs) return;
+        await window.emailjs.send(emailjsServiceId, emailjsTemplateId, {
+            to_name: params.name,
+            to_email: params.email,
+            reply_to: params.email,
+            zona: params.zone,
+            tamano: params.size,
+            estilo: params.style,
+            precio: params.price
+        });
+    } catch (error) {
+        console.warn('EmailJS send failed:', error);
+    }
 }
 
 function isMobileDevice() {
@@ -276,7 +357,7 @@ window.calculatePrice = function() {
     }
 };
 
-import { supabase, uploadReferenceImage, saveLead } from './supabase.js'
+import { supabase, uploadReferenceImage } from './supabase.js'
 
 const form = document.getElementById('tattoo-form');
 if (form) {
@@ -284,15 +365,18 @@ if (form) {
         e.preventDefault();
 
         const btn = document.getElementById('submit-btn');
+        const originalLabel = btn.textContent;
         btn.textContent = 'ENVIANDO...';
         btn.disabled = true;
 
         try {
             if (!form.checkValidity()) {
                 form.reportValidity();
-                throw new Error('Complete all required fields');
+                throw new Error('Completa todos los campos requeridos.');
             }
 
+            // 1) Subida de imagen con control estricto: si falla, abortamos el
+            //    envio para no mandar la cotizacion en silencio sin la imagen.
             let referenceImgUrl = null;
             const fileInput = document.getElementById('fotoTatuaje');
             const file = fileInput?.files?.[0];
@@ -303,9 +387,18 @@ if (form) {
                     const { data } = supabase.storage.from('reference-images').getPublicUrl(path);
                     referenceImgUrl = data.publicUrl;
                 } catch (uploadError) {
-                    console.warn('Image upload failed:', uploadError.message);
+                    console.error('Image upload failed:', uploadError);
+                    alert('No pudimos subir tu imagen de referencia. Revisa tu conexion y que el archivo sea JPG/PNG/WEBP (max 10MB), luego intenta de nuevo.');
+                    btn.textContent = originalLabel;
+                    btn.disabled = false;
+                    return;
                 }
             }
+
+            // 2) Token reCAPTCHA v3 (lo valida el backend antes de guardar).
+            const recaptchaToken = await getRecaptchaToken();
+            const tokenField = document.getElementById('recaptcha_token');
+            if (tokenField) tokenField.value = recaptchaToken;
 
             const estiloRaw = document.querySelector('#complexity')?.closest('.custom-dropdown')?.querySelector('.dropdown-label')?.textContent?.trim();
             const estiloLabel = (estiloRaw && estiloRaw !== 'Selecciona una opcion...') ? estiloRaw : '';
@@ -321,11 +414,35 @@ if (form) {
                 size: document.getElementById('form-size').value.trim(),
                 description: form.message.value.trim(),
                 reference_img_url: referenceImgUrl,
-                status: 'lead',
-                created_at: new Date().toISOString()
+                recaptchaToken
             };
 
-            await saveLead(leadData);
+            // 3) Enviar al endpoint seguro del backend (ya no a Supabase directo).
+            const res = await fetch('/api/submit-quote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(leadData)
+            });
+
+            if (!res.ok) {
+                let serverMsg = 'No se pudo enviar tu cotizacion. Intenta de nuevo.';
+                try {
+                    const body = await res.json();
+                    if (body?.error) serverMsg = body.error;
+                } catch (_) { /* respuesta sin JSON */ }
+                throw new Error(serverMsg);
+            }
+
+            // 4) Flujo de exito: correo de confirmacion al cliente via EmailJS.
+            await sendConfirmationEmail({
+                name: leadData.name,
+                email: leadData.email,
+                zone: leadData.tattoo_zone,
+                size: leadData.size,
+                style: estiloLabel,
+                price: estimatedPrice
+            });
+
             sessionStorage.setItem('ultimaCotizacion', JSON.stringify({
                 cliente_nombre: leadData.name,
                 zona_tatuaje: leadData.tattoo_zone,
@@ -336,13 +453,13 @@ if (form) {
             window.location.href = 'resumen.html';
         } catch (error) {
             console.error('Submit error:', error);
-            showSubmitError(error.message || 'Error sending. Try again.');
-            btn.textContent = 'RETRY';
+            showSubmitError(error.message || 'Error al enviar. Intenta de nuevo.');
+            btn.textContent = 'REINTENTAR';
             btn.disabled = false;
             return;
         }
 
-        btn.textContent = 'SENT';
+        btn.textContent = 'ENVIADO';
     };
 }
 

@@ -84,15 +84,15 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       'default-src': ["'self'"],
-      'script-src': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'],
-      'script-src-elem': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'],
+      'script-src': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com'],
+      'script-src-elem': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com'],
       'script-src-attr': ["'unsafe-inline'"],
       'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       'img-src': ["'self'", 'data:', 'blob:', 'https://*.supabase.co', 'https://i.ibb.co', 'https://*.ibb.co'],
-      'connect-src': ["'self'", 'https://qiyfydnwdwygbrpavdjb.supabase.co', 'https://cdn.jsdelivr.net'],
+      'connect-src': ["'self'", 'https://qiyfydnwdwygbrpavdjb.supabase.co', 'https://cdn.jsdelivr.net', 'https://api.emailjs.com', 'https://www.google.com'],
       'worker-src': ["'self'", 'blob:'],
       'font-src': ["'self'", 'https://fonts.gstatic.com'],
-      'frame-src': ["'self'"],
+      'frame-src': ["'self'", 'https://www.google.com'],
       'object-src': ["'none'"],
       'base-uri': ["'self'"],
       'form-action': ["'self'"],
@@ -117,7 +117,10 @@ app.get('/api/config', apiLimiter, (_req, res) => {
     waPhone: (process.env.WHATSAPP_PHONE || '').trim(),
     instagramUrl: (process.env.INSTAGRAM_URL || '').trim(),
     facebookUrl: (process.env.FACEBOOK_URL || '').trim(),
-    recaptchaSiteKey: RECAPTCHA_SITE_KEY
+    recaptchaSiteKey: RECAPTCHA_SITE_KEY,
+    emailjsPublicKey: (process.env.EMAILJS_PUBLIC_KEY || '').trim(),
+    emailjsServiceId: (process.env.EMAILJS_SERVICE_ID || '').trim(),
+    emailjsTemplateId: (process.env.EMAILJS_TEMPLATE_ID || '').trim()
   });
 });
 

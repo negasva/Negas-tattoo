@@ -232,8 +232,133 @@ app.get('/api/health', apiLimiter, async (_req, res) => {
   });
 
   const ok = pendientes.length === 0;
-  res.status(ok ? 200 : 503).json({ ok, variables: checks, base_de_datos: db, pendientes });
+  res.status(ok ? 200 : 503).json({
+    ok,
+    variables: checks,
+    clave_service_role: describeServiceKey(),
+    base_de_datos: db,
+    pendientes
+  });
 });
+
+// ─── Diagnostico profundo ────────────────────────────────────────────────────
+// /api/health solo hace SELECTs, y un SELECT bloqueado por RLS devuelve una
+// lista vacia SIN error: por eso puede salir todo verde mientras el INSERT
+// falla. Este endpoint hace el INSERT de verdad (la misma fila que manda
+// /api/lead/start), borra la fila de prueba y devuelve el error crudo de
+// Postgres: codigo, mensaje, details y hint.
+//
+//   https://negas.tattoo/api/health/insert
+//
+// Si defines HEALTH_DEBUG_KEY en Vercel, hay que llamarlo con ?key=ESE_VALOR.
+app.get('/api/health/insert', apiLimiter, async (req, res) => {
+  const debugKey = (process.env.HEALTH_DEBUG_KEY || '').trim();
+  if (debugKey && String(req.query.key || '') !== debugKey) {
+    return res.status(403).json({ ok: false, error: 'Clave de diagnostico incorrecta.' });
+  }
+  if (!supabaseAdmin) {
+    return res.status(500).json({ ok: false, error: 'Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY.' });
+  }
+
+  const now = new Date().toISOString();
+  const probeToken = `health-probe-${crypto.randomBytes(8).toString('hex')}`;
+  const fila = {
+    name: 'PRUEBA DIAGNOSTICO',
+    phone: '3000000000',
+    email: null,
+    description: null,
+    reference_img_url: null,
+    status: 'lead',
+    stage: 'partial',
+    consent: true,
+    consent_at: now,
+    update_token: probeToken,
+    source: 'health-probe',
+    utm_source: null,
+    utm_medium: null,
+    utm_campaign: null,
+    created_at: now
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from('leads')
+    .insert([fila])
+    .select('id')
+    .single();
+
+  if (error) {
+    // Traducimos los codigos de Postgres/PostgREST mas comunes a algo accionable.
+    const pistas = {
+      '23502': 'Hay una columna NOT NULL en `leads` que el servidor no esta enviando. Mira el campo "column" del error y ponle un DEFAULT o quitale el NOT NULL.',
+      '23514': 'Un CHECK de la tabla rechaza los valores que manda el servidor (status = "lead", stage = "partial"). Ajusta el CHECK o los valores.',
+      '23505': 'Hay un indice UNIQUE que se esta violando (probablemente sobre phone). Es esperable si ya existe ese numero.',
+      '42501': 'PERMISO DENEGADO: la peticion esta pasando por RLS. Casi seguro SUPABASE_SERVICE_ROLE_KEY en Vercel NO tiene la service role key, sino la anon/publishable key. Copiala de Supabase → Settings → API → service_role (secret) y vuelve a desplegar.',
+      '42703': 'Falta una columna en `leads`. Vuelve a correr migrations/EJECUTAR-ESTE-EN-SUPABASE.sql.',
+      '42P01': 'La tabla `leads` no existe en el esquema public.',
+      'PGRST204': 'PostgREST no encuentra una columna en su cache de esquema. Supabase → Settings → API → "Reload schema cache", o vuelve a correr la migracion.',
+      'PGRST301': 'JWT invalido o expirado: revisa el valor de SUPABASE_SERVICE_ROLE_KEY.'
+    };
+
+    return res.status(500).json({
+      ok: false,
+      paso: 'insert',
+      clave_service_role: describeServiceKey(),
+      error: {
+        code: error.code || null,
+        message: error.message || null,
+        details: error.details || null,
+        hint: error.hint || null
+      },
+      diagnostico: pistas[error.code] || 'Codigo no catalogado. El campo error.message de arriba dice exactamente que rechazo Postgres.'
+    });
+  }
+
+  // El INSERT funciono: limpiamos la fila de prueba.
+  const cleanup = await supabaseAdmin.from('leads').delete().eq('id', data.id);
+
+  return res.json({
+    ok: true,
+    clave_service_role: describeServiceKey(),
+    mensaje: 'El INSERT en `leads` funciona correctamente. El formulario deberia guardar.',
+    fila_de_prueba_borrada: !cleanup.error,
+    aviso_limpieza: cleanup.error ? cleanup.error.message : null,
+    siguiente_paso: 'Si el formulario sigue fallando, el error esta en reCAPTCHA o en la validacion. Revisa los Runtime Logs de Vercel al enviar el formulario.'
+  });
+});
+
+// Mira el rol que declara SUPABASE_SERVICE_ROLE_KEY sin revelar la clave.
+// Una service role key legitima es un JWT cuyo payload trae role="service_role"
+// (o una clave nueva con prefijo sb_secret_). Si aqui sale "anon", esa es la
+// causa: RLS se aplica y todos los INSERT se bloquean.
+function describeServiceKey() {
+  const key = SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return { presente: false };
+
+  if (key.startsWith('sb_secret_')) return { presente: true, formato: 'sb_secret', rol: 'service_role', correcta: true };
+  if (key.startsWith('sb_publishable_')) {
+    return { presente: true, formato: 'sb_publishable', rol: 'anon', correcta: false,
+      problema: 'Es la clave PUBLICA. Necesitas la secreta (sb_secret_...).' };
+  }
+
+  const parts = key.split('.');
+  if (parts.length !== 3) return { presente: true, formato: 'desconocido', correcta: false, problema: 'No parece un JWT ni una clave sb_secret_.' };
+
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
+    const rol = payload.role || null;
+    return {
+      presente: true,
+      formato: 'jwt',
+      rol,
+      correcta: rol === 'service_role',
+      problema: rol === 'service_role'
+        ? null
+        : `El JWT declara role="${rol}". Vercel tiene la clave equivocada en SUPABASE_SERVICE_ROLE_KEY: copia la de Supabase → Settings → API → service_role (secret) y vuelve a desplegar.`
+    };
+  } catch (_) {
+    return { presente: true, formato: 'jwt-ilegible', correcta: false, problema: 'No se pudo leer el payload del JWT.' };
+  }
+}
 
 // Mantiene el proyecto de Supabase despierto: los proyectos gratuitos se
 // pausan tras ~7 dias sin actividad. Lo llama el cron de Vercel a diario.
@@ -435,7 +560,14 @@ app.post('/api/lead/start', leadStartLimiter, async (req, res) => {
 
     return res.status(201).json({ ok: true, leadId: data.id, token: updateToken });
   } catch (error) {
-    console.error('Lead start failed:', error.message);
+    // Log detallado: sin el code/details, en los Runtime Logs de Vercel solo
+    // se veia un mensaje generico imposible de diagnosticar.
+    console.error('Lead start failed:', JSON.stringify({
+      code: error.code || null,
+      message: error.message || null,
+      details: error.details || null,
+      hint: error.hint || null
+    }));
     return res.status(500).json({ ok: false, error: 'No pudimos guardar tus datos. Intenta de nuevo.' });
   }
 });

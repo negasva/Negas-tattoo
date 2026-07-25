@@ -14,7 +14,7 @@
     <meta property="og:title" content="Cuidados post-tatuaje | Negas Tattoo">
     <meta property="og:description" content="Paso a paso simple para cuidar tu tatuaje nuevo.">
 
-    <!-- Meta Pixel Code -->
+    <!-- Meta Pixel — el ID llega desde /api/config (variable META_PIXEL_ID). -->
     <script>
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -24,13 +24,8 @@
     t.src=v;s=b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1467646508235189');
-    fbq('track', 'PageView');
     </script>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
-    /></noscript>
-    <!-- End Meta Pixel Code -->
+    <!-- End Meta Pixel -->
 
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -197,13 +192,22 @@
     </div>
 
     <script>
+        // WhatsApp y Meta Pixel salen de /api/config: sin credenciales en el HTML.
         fetch('/api/config')
             .then(res => res.ok ? res.json() : null)
             .then(config => {
-                if (!config?.waPhone) return;
-                document.querySelectorAll('a.js-wa').forEach(a => {
-                    a.href = 'https://wa.me/' + config.waPhone;
-                });
+                if (!config) return;
+                if (config.waPhone) {
+                    document.querySelectorAll('a.js-wa').forEach(a => {
+                        a.href = 'https://wa.me/' + config.waPhone;
+                        a.target = '_blank';
+                        a.rel = 'noopener';
+                    });
+                }
+                if (config.metaPixelId && typeof window.fbq === 'function') {
+                    window.fbq('init', config.metaPixelId);
+                    window.fbq('track', 'PageView');
+                }
             })
             .catch(() => {});
     </script>

@@ -11,12 +11,21 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = Number(process.env.PORT) || 3780;
 const PUBLIC_PATH = path.join(__dirname, 'public');
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qiyfydnwdwygbrpavdjb.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const SUPABASE_KEEPALIVE_TABLES = (process.env.SUPABASE_KEEPALIVE_TABLES || 'leads,signed_documents')
+
+// Nada de credenciales escritas en el codigo. Todo sale del entorno.
+// Si falta SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY, /api/health lo dice.
+const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
+const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
+const SUPABASE_SERVICE_ROLE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+const SUPABASE_KEEPALIVE_TABLES = (process.env.SUPABASE_KEEPALIVE_TABLES || 'leads,gallery_images')
   .split(',')
   .map((table) => table.trim())
   .filter(Boolean);
+
+// El pixel de Meta es un identificador publico (va en el HTML de cualquier
+// sitio que lo use), pero lo servimos desde el entorno igual para no dejarlo
+// escrito en el repositorio.
+const META_PIXEL_ID = (process.env.META_PIXEL_ID || '').trim();
 
 // reCAPTCHA v3 (validacion server-side)
 const RECAPTCHA_SITE_KEY = (process.env.RECAPTCHA_SITE_KEY || '').trim();
@@ -124,7 +133,7 @@ app.use(helmet({
       'script-src-attr': ["'unsafe-inline'"],
       'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       'img-src': ["'self'", 'data:', 'blob:', 'https://*.supabase.co', 'https://i.ibb.co', 'https://*.ibb.co', 'https://www.facebook.com', 'https://www.google.com', 'https://www.google.com.co', 'https://googleads.g.doubleclick.net'],
-      'connect-src': ["'self'", 'https://qiyfydnwdwygbrpavdjb.supabase.co', 'https://*.supabase.co', 'https://cdn.jsdelivr.net', 'https://api.emailjs.com', 'https://www.google.com', 'https://connect.facebook.net', 'https://www.facebook.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com', 'https://googleads.g.doubleclick.net'],
+      'connect-src': ["'self'", 'https://*.supabase.co', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://connect.facebook.net', 'https://www.facebook.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com', 'https://googleads.g.doubleclick.net'],
       'worker-src': ["'self'", 'blob:'],
       'font-src': ["'self'", 'https://fonts.gstatic.com'],
       'frame-src': ["'self'", 'https://www.google.com', 'https://td.doubleclick.net'],
@@ -160,15 +169,19 @@ app.get('/cuidados', (_req, res) => {
   res.sendFile(path.join(PUBLIC_PATH, 'cuidados.html'));
 });
 
+// Configuracion publica del frontend. Aqui solo van valores que de todas
+// formas terminan en el navegador: la anon key de Supabase (protegida por
+// RLS), la site key de reCAPTCHA y los IDs de medicion. Los secretos de
+// verdad (service role, secret de reCAPTCHA) NUNCA salen de aqui.
 app.get('/api/config', apiLimiter, (_req, res) => {
   res.json({
+    supabaseUrl: SUPABASE_URL,
+    supabaseAnonKey: SUPABASE_ANON_KEY,
     waPhone: (process.env.WHATSAPP_PHONE || '').trim(),
     instagramUrl: (process.env.INSTAGRAM_URL || '').trim(),
     facebookUrl: (process.env.FACEBOOK_URL || '').trim(),
     recaptchaSiteKey: RECAPTCHA_SITE_KEY,
-    emailjsPublicKey: (process.env.EMAILJS_PUBLIC_KEY || '').trim(),
-    emailjsServiceId: (process.env.EMAILJS_SERVICE_ID || '').trim(),
-    emailjsTemplateId: (process.env.EMAILJS_TEMPLATE_ID || '').trim(),
+    metaPixelId: META_PIXEL_ID,
     googleAdsId: (process.env.GOOGLE_ADS_ID || '').trim(),
     googleAdsConversionLabel: (process.env.GOOGLE_ADS_CONVERSION_LABEL || '').trim(),
     ga4Id: (process.env.GA4_MEASUREMENT_ID || '').trim(),
@@ -176,42 +189,88 @@ app.get('/api/config', apiLimiter, (_req, res) => {
   });
 });
 
+// ─── Diagnostico ─────────────────────────────────────────────────────────────
+// Abre /api/health y te dice exactamente que falta configurar. Sin esto,
+// un fallo de base de datos se ve solo como "No pudimos guardar tus datos".
+app.get('/api/health', apiLimiter, async (_req, res) => {
+  const checks = {
+    SUPABASE_URL: Boolean(SUPABASE_URL),
+    SUPABASE_ANON_KEY: Boolean(SUPABASE_ANON_KEY),
+    SUPABASE_SERVICE_ROLE_KEY: Boolean(SUPABASE_SERVICE_ROLE_KEY),
+    WHATSAPP_PHONE: Boolean((process.env.WHATSAPP_PHONE || '').trim()),
+    RECAPTCHA_SITE_KEY: Boolean(RECAPTCHA_SITE_KEY),
+    RECAPTCHA_SECRET_KEY: Boolean(RECAPTCHA_SECRET_KEY),
+    META_PIXEL_ID: Boolean(META_PIXEL_ID)
+  };
+
+  const db = { tabla_leads: null, columnas_nuevas_de_leads: null, tabla_gallery_images: null };
+  const pendientes = [];
+
+  if (supabaseAdmin) {
+    const leads = await supabaseAdmin.from('leads').select('id').limit(1);
+    db.tabla_leads = leads.error ? `ERROR: ${leads.error.message}` : 'ok';
+
+    // Si falta una sola de estas columnas, el paso 1 del cotizador falla.
+    const cols = await supabaseAdmin
+      .from('leads')
+      .select('id,stage,consent,update_token,estimated_min,estimated_max,estimated_price')
+      .limit(1);
+    db.columnas_nuevas_de_leads = cols.error ? `FALTAN: ${cols.error.message}` : 'ok';
+
+    const gallery = await supabaseAdmin.from('gallery_images').select('id').limit(1);
+    db.tabla_gallery_images = gallery.error ? `ERROR: ${gallery.error.message}` : 'ok';
+
+    if (cols.error || gallery.error) {
+      pendientes.push('Ejecuta migrations/EJECUTAR-ESTE-EN-SUPABASE.sql en el SQL Editor de Supabase.');
+    }
+  } else {
+    pendientes.push('Falta SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en las variables de entorno.');
+  }
+
+  Object.entries(checks).forEach(([key, present]) => {
+    if (!present) pendientes.push(`Falta la variable de entorno ${key}.`);
+  });
+
+  const ok = pendientes.length === 0;
+  res.status(ok ? 200 : 503).json({ ok, variables: checks, base_de_datos: db, pendientes });
+});
+
+// Mantiene el proyecto de Supabase despierto: los proyectos gratuitos se
+// pausan tras ~7 dias sin actividad. Lo llama el cron de Vercel a diario.
+//
+// A proposito NO falla si una tabla no existe: con que UNA responda, el
+// proyecto ya cuenta como activo. Antes bastaba una tabla borrada para que
+// el keepalive devolviera 500 y dejara de cumplir su unica funcion.
 app.get('/api/keepalive', apiLimiter, async (_req, res) => {
   if (!supabaseAdmin) {
     return res.status(500).json({
       ok: false,
-      error: 'SUPABASE_SERVICE_ROLE_KEY is not configured'
+      error: 'Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en el entorno.'
     });
   }
 
-  try {
-    const touched = [];
+  const touched = [];
+  const failed = [];
 
-    for (const table of SUPABASE_KEEPALIVE_TABLES) {
-      const { error } = await supabaseAdmin
-        .from(table)
-        .select('id', { head: true })
-        .limit(1);
-
-      if (error) {
-        throw new Error(`Keepalive query failed for table "${table}": ${error.message}`);
-      }
-
-      touched.push(table);
+  for (const table of SUPABASE_KEEPALIVE_TABLES) {
+    try {
+      const { error } = await supabaseAdmin.from(table).select('id', { head: true }).limit(1);
+      if (error) failed.push(`${table}: ${error.message}`);
+      else touched.push(table);
+    } catch (error) {
+      failed.push(`${table}: ${error.message}`);
     }
-
-    return res.json({
-      ok: true,
-      timestamp: new Date().toISOString(),
-      touched
-    });
-  } catch (error) {
-    console.error('Keepalive failed:', error);
-    return res.status(500).json({
-      ok: false,
-      error: error.message || 'Keepalive failed'
-    });
   }
+
+  const ok = touched.length > 0;
+  if (!ok) console.error('Keepalive failed on every table:', failed);
+
+  return res.status(ok ? 200 : 500).json({
+    ok,
+    timestamp: new Date().toISOString(),
+    touched,
+    failed
+  });
 });
 
 // ─── reCAPTCHA ───────────────────────────────────────────────────────────────
@@ -586,6 +645,16 @@ app.delete('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
 
 app.use((_req, res) => res.status(404).send('Not Found'));
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// En Vercel este archivo se importa desde api/index.js y NO debe abrir un
+// puerto (las funciones serverless no escuchan). Con `node server.js` en un
+// servidor normal sí abre el puerto, como siempre.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    if (!SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('⚠  Falta SUPABASE_SERVICE_ROLE_KEY — revisa /api/health');
+    }
+  });
+}
+
+module.exports = app;

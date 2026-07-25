@@ -303,8 +303,10 @@
     <div id="toast" class="toast"></div>
 
     <script type="module">
+        // El cliente de Supabase se construye con la URL y la anon key que
+        // manda /api/config. Ya no hay credenciales escritas en el código.
         import {
-            supabase, getLeads, updateLeadStatus, getStats, uploadDocument, saveDocument,
+            getSupabase, getLeads, updateLeadStatus, getStats, uploadDocument, saveDocument,
             uploadGalleryImage, getGalleryImages, createGalleryImage, updateGalleryImage, deleteGalleryImage
         } from '../supabase.js'
 
@@ -339,10 +341,14 @@
             errorEl.classList.add('hidden')
 
             try {
+                const supabase = await getSupabase()
                 const { error } = await supabase.auth.signInWithPassword({ email, password })
                 if (error) throw error
                 showAdmin()
-            } catch {
+            } catch (err) {
+                errorEl.textContent = err?.message?.includes('SUPABASE')
+                    ? 'Falta configurar el servidor. Revisa /api/health.'
+                    : 'Credenciales incorrectas'
                 errorEl.classList.remove('hidden')
             } finally {
                 btn.textContent = 'Entrar'
@@ -351,6 +357,7 @@
         }
 
         async function logout() {
+            const supabase = await getSupabase()
             await supabase.auth.signOut()
             loginScreen.classList.remove('hidden')
             adminScreen.classList.add('hidden')
@@ -774,8 +781,15 @@
         $('email').addEventListener('keypress', e => e.key === 'Enter' && login())
         $('password').addEventListener('keypress', e => e.key === 'Enter' && login())
 
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) showAdmin()
+        try {
+            const supabase = await getSupabase()
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session) showAdmin()
+        } catch (err) {
+            const errorEl = $('login-error')
+            errorEl.textContent = 'No se pudo conectar con el servidor. Revisa /api/health.'
+            errorEl.classList.remove('hidden')
+        }
     </script>
 </body>
 </html>

@@ -14,28 +14,37 @@ npm start               # http://localhost:3780
 
 ---
 
-## Después de desplegar esta versión — 3 pasos obligatorios
+## Puesta en producción — 3 pasos obligatorios
 
 ### 1. Correr la migración de base de datos
 
-Supabase → **SQL Editor** → pega y ejecuta `migrations/001-leads-y-galeria.sql`.
+Supabase → **SQL Editor** → **New query** → pega y ejecuta
+`migrations/EJECUTAR-ESTE-EN-SUPABASE.sql`.
 
-Sin esto el cotizador falla al guardar y la galería sale vacía.
+> Ese es el único archivo que va en el SQL Editor. Si pegas `public/supabase.js`
+> (que empieza con `import`) obtendrás `42601: syntax error at or near "{"`.
 
-### 2. Cambiar el número de WhatsApp
+Al terminar debe salir una fila con `TODO LISTO ✓`, `fotos_en_galeria = 20` y
+`columnas_nuevas_de_6 = 6`.
 
-El número **no está en el código**: sale de la variable de entorno `WHATSAPP_PHONE`.
-En el panel de tu hosting, ponla en:
+Sin esto el cotizador falla al guardar y la galería usa el respaldo local.
 
+### 2. Cargar las variables de entorno
+
+Ninguna credencial está escrita en el código. En Vercel:
+**Project Settings → Environment Variables**. La lista completa está en
+`.env.example`; los valores te los pasaron por separado.
+
+### 3. Verificar
+
+Abre **`/api/health`**. Te dice exactamente qué falta:
+
+```json
+{ "ok": true, "variables": { ... }, "base_de_datos": { ... }, "pendientes": [] }
 ```
-WHATSAPP_PHONE=573337589442
-```
 
-### 3. Verificar el flujo
-
-- Abre `https://negas.tattoo/cotizar` → el popup debe abrir solo.
-- Completa el paso 1 → debe aparecer un lead con etapa **Incompleta** en `/admin`.
-- Termina la cotización → el mismo lead pasa a **Completa** con el rango de precio.
+Si `ok` es `true`, prueba el flujo: `/cotizar` → completa el paso 1 → debe
+aparecer un lead **Incompleta** en `/admin`; al terminar pasa a **Completa**.
 
 ---
 
@@ -67,6 +76,8 @@ manda el navegador.
 | `/admin` | Panel: leads + galería |
 | `/api/config` | Configuración pública (WhatsApp, redes, precios, IDs de medición) |
 | `/api/gallery` | Portafolio público |
+| `/api/health` | **Diagnóstico**: qué variable o tabla falta |
+| `/api/keepalive` | Mantiene Supabase despierto (lo llama el cron de Vercel) |
 
 ---
 
@@ -102,9 +113,11 @@ Ejemplo a 12 cm: `90.000 + 456.000 = 546.000` → se muestra **$520.000 – $680
 
 ## Medición
 
-- **Meta Pixel** `1467646508235189`: va directo en el `<head>` de cada página pública.
+- **Meta Pixel**: el ID sale de `META_PIXEL_ID`. El HTML solo carga la librería
+  y encola los eventos; `script.js` dispara `init` y `PageView` apenas llega
+  `/api/config`. Así el ID no queda escrito en el repositorio.
 - **Google Ads / GA4**: se activan solos cuando rellenes `GOOGLE_ADS_ID`,
-  `GOOGLE_ADS_CONVERSION_LABEL` y `GA4_MEASUREMENT_ID` en el `.env`.
+  `GOOGLE_ADS_CONVERSION_LABEL` y `GA4_MEASUREMENT_ID`.
 
 Eventos que se disparan:
 
@@ -133,18 +146,46 @@ las baraja sola en cada visita.
 
 ---
 
+## Despliegue en Vercel
+
+- `api/[...path].js` reenvía todo `/api/*` a la app de Express. Vercel enruta
+  ahí automáticamente por el nombre catch-all, conservando la ruta original.
+- `server.js` solo abre puerto con `node server.js`; importado no escucha.
+- `vercel.json` activa `cleanUrls` (así `/privacidad` sirve `privacidad.html`),
+  reescribe `/cotizar` a `/index.html` y programa el cron.
+- Los archivos de `public/` los sirve Vercel como estáticos desde el CDN.
+
+Si los estáticos dan 404, pon **Output Directory = `public`** en la
+configuración del proyecto.
+
 ## Keep-alive de Supabase
 
-Para evitar la pausa por inactividad, apunta un monitor externo (UptimeRobot) a:
+Los proyectos gratuitos de Supabase se pausan tras ~7 días sin actividad.
+`vercel.json` incluye un cron **diario** contra `/api/keepalive`:
 
-```
-GET https://negas.tattoo/api/keepalive
+```json
+"crons": [{ "path": "/api/keepalive", "schedule": "0 6 * * *" }]
 ```
 
-Usa `SUPABASE_SERVICE_ROLE_KEY`, así que esa variable debe existir en el servidor.
-Las tablas que consulta se configuran con `SUPABASE_KEEPALIVE_TABLES`.
+Diario en vez de semanal a propósito: si el cron corriera cada 7 días, un solo
+fallo dejaría el proyecto pasado del límite y las páginas caídas.
+
+El endpoint consulta las tablas de `SUPABASE_KEEPALIVE_TABLES` y responde OK si
+**al menos una** contesta, para que una tabla renombrada no lo inutilice.
+
+Si no usas Vercel, apunta un monitor externo (UptimeRobot) a esa misma URL.
 
 ---
+
+## Credenciales
+
+**No hay ninguna escrita en el código.** `public/supabase.js` pide la URL y la
+anon key a `/api/config`, que las lee del entorno.
+
+Aviso honesto: la anon key sigue siendo visible en la pestaña Red del navegador
+— es pública por diseño. Lo que se ganó es que ya no está en el repositorio de
+GitHub, donde la indexan buscadores y bots. Lo que de verdad protege los datos
+son las políticas RLS y que `SUPABASE_SERVICE_ROLE_KEY` jamás salga del servidor.
 
 ## Notas de mantenimiento
 
@@ -154,3 +195,6 @@ Las tablas que consulta se configuran con `SUPABASE_KEEPALIVE_TABLES`.
   Antes se importaba arriba del archivo, y si el CDN fallaba se caía el cotizador entero.
 - Si GSAP no carga, la página se muestra igual (hay respaldo y una red de
   seguridad a los 3 segundos).
+- Si `/api/gallery` falla, el archivo muestra un respaldo con las 20 piezas
+  originales en vez de quedar vacío. Si la API responde bien con una lista
+  vacía, se respeta: significa que se borraron a propósito desde el admin.

@@ -94,11 +94,26 @@ async function loadConfig() {
     applyConfig();
 }
 
+// Arranca el Meta Pixel con el ID que manda el servidor. El bootstrap de fbq
+// ya esta en el HTML (encola las llamadas), asi que el ID no queda escrito en
+// el repositorio y el PageView se dispara igual, apenas llega /api/config.
+function initMetaPixel(pixelId) {
+    if (!pixelId || typeof window.fbq !== 'function' || window.__pixelReady) return;
+    window.__pixelReady = true;
+    try {
+        window.fbq('init', pixelId);
+        window.fbq('track', 'PageView');
+    } catch (error) {
+        console.warn('Meta Pixel no pudo inicializar:', error);
+    }
+}
+
 function applyConfig() {
-    const { waPhone, instagramUrl, facebookUrl, recaptchaSiteKey } = appConfig;
+    const { waPhone, instagramUrl, facebookUrl, recaptchaSiteKey, metaPixelId } = appConfig;
 
     if (appConfig.pricing) pricing = { ...pricing, ...appConfig.pricing };
     if (recaptchaSiteKey) loadRecaptcha(recaptchaSiteKey);
+    initMetaPixel(metaPixelId);
     loadGoogleTags();
 
     if (waPhone) {
@@ -236,16 +251,44 @@ function shuffle(arr) {
     return copy;
 }
 
+// Respaldo: si /api/gallery falla (base sin migrar, Supabase pausado, caida
+// de red) el archivo NO se queda vacio — mostramos las piezas de siempre.
+// Ojo: solo aplica cuando la API da error. Si responde bien con una lista
+// vacia, se respeta: significa que Negas borro las piezas a proposito.
+const GALLERY_FALLBACK = [
+    { url: 'https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg',          category: 'Blackwork', span: 'gal-cs2rs2', alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg',   category: 'Blackwork', span: '',           alt: 'Tatuaje de pierna completa blackwork — Negas Tattoo' },
+    { url: 'https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg',                  category: 'Blackwork', span: '',           alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/s93WWvNq/Tatttoo-Angel-copy-7.jpg',           category: 'Blackwork', span: 'gal-rs2',    alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/35ggTM1t/Tatttoo-pierna-completa-copy-2.jpg', category: 'Blackwork', span: '',           alt: 'Tatuaje de pierna completa blackwork — Negas Tattoo' },
+    { url: 'https://i.ibb.co/x8MJ4tW3/Tatttoo-mask-copy.jpg',              category: 'Blackwork', span: '',           alt: 'Tatuaje de máscara blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/CKMdBXVC/Tatttoo-mask.jpg',                   category: 'Blackwork', span: '',           alt: 'Tatuaje de máscara blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/4n31ng5r/Tatttoo-Angel-copy-2.jpg',           category: 'Blackwork', span: 'gal-cs2',    alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/Z6LmS5WK/Tatttoo-tigre.jpg',                  category: 'Blackwork', span: '',           alt: 'Tatuaje de tigre blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/C3MCJJFW/Tatttoo-pierna-completa.jpg',        category: 'Blackwork', span: '',           alt: 'Tatuaje de pierna completa blackwork — Negas Tattoo' },
+    { url: 'https://i.ibb.co/dFYtWP4/tatuaje-mariposa.jpg',                category: 'Botánico',  span: 'gal-rs2',    alt: 'Tatuaje de mariposa botánico — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/FLGJ9Q23/tatuaje-bebe.jpg',                   category: 'Botánico',  span: '',           alt: 'Tatuaje botánico fine line — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/6RCSYkN4/tatuaje-letras.jpg',                 category: 'Fineline',  span: 'gal-cs2',    alt: 'Tatuaje de letras fine line — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/wZhYZ7TN/tatuaje-letras-copy.jpg',            category: 'Fineline',  span: '',           alt: 'Tatuaje de letras fine line — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/FLhCmFhg/Tatttoo-eye.jpg',                    category: 'Blackwork', span: '',           alt: 'Tatuaje de ojo blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/fdPZLNzG/Tatttoo-Elefante.jpg',               category: 'Blackwork', span: '',           alt: 'Tatuaje de elefante blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/tMJQbKZW/IMG-0066.png',                       category: 'Blackwork', span: '',           alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/hF1pjnd9/IMG-0067.png',                       category: 'Blackwork', span: 'gal-cs2',    alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/ynWN6Cj1/IMG-0065.png',                       category: 'Blackwork', span: '',           alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' },
+    { url: 'https://i.ibb.co/pBjNrfVs/IMG-0063.png',                       category: 'Blackwork', span: '',           alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' }
+];
+
 async function loadGallery() {
     if (!galGrid) return;
     try {
         const res = await fetch('/api/gallery');
-        if (!res.ok) throw new Error('galeria no disponible');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'respuesta inválida');
         galleryImages = Array.isArray(data.images) ? data.images : [];
     } catch (error) {
-        console.error('Error loading gallery:', error);
-        galleryImages = [];
+        console.warn('Galería: usando respaldo local —', error.message);
+        galleryImages = GALLERY_FALLBACK.map((img, i) => ({ ...img, id: 'fb' + i, sort_order: i }));
     }
     renderGallery(activeFilter);
 }
@@ -749,10 +792,8 @@ async function submitQuote({ skipImage = false } = {}) {
 
         if (file) {
             try {
-                const { supabase, uploadReferenceImage } = await import('./supabase.js');
-                const path = await uploadReferenceImage(file);
-                const { data } = supabase.storage.from('reference-images').getPublicUrl(path);
-                referenceImgUrl = data.publicUrl;
+                const { uploadReferenceImage } = await import('./supabase.js');
+                referenceImgUrl = await uploadReferenceImage(file);
             } catch (uploadError) {
                 console.error('Image upload failed:', uploadError);
                 setError('file', 'No pudimos subir tu imagen. Puedes enviarla luego por WhatsApp — toca "Omitir y enviar".');

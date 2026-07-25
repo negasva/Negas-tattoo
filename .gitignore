@@ -1,3 +1,10 @@
 .env
 node_modules/
 .claude/worktrees/strange-mcnulty-50d542
+
+# claude-seo runtime (local, no versionar)
+.claude/skills/seo/.venv/
+.claude/skills/seo/.venv.previous/
+.claude/skills/seo/.venv.next-*/
+.claude/skills/seo/ms-playwright/
+.claude/skills/seo/runtime-state.json

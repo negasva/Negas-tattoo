@@ -198,3 +198,22 @@ son las políticas RLS y que `SUPABASE_SERVICE_ROLE_KEY` jamás salga del servid
 - Si `/api/gallery` falla, el archivo muestra un respaldo con las 20 piezas
   originales en vez de quedar vacío. Si la API responde bien con una lista
   vacía, se respeta: significa que se borraron a propósito desde el admin.
+
+## Skills de Claude instaladas
+
+El repo trae skills en `.claude/skills/`. **Regla: siempre se usan.** Ver
+[`CLAUDE.md`](CLAUDE.md).
+
+- **ponytail** (+ `-review`, `-audit`, `-debt`, `-gain`, `-help`) — obligatoria
+  en todo trabajo de código: la solución más simple que funciona, YAGNI, cero
+  dependencias innecesarias. https://github.com/DietrichGebert/ponytail
+- **seo** y 23 sub-skills (`seo-local`, `seo-maps`, `seo-schema`,
+  `seo-technical`, `seo-content`, `seo-geo`, …) — obligatorias en todo trabajo
+  de contenido, marketing o páginas públicas.
+  https://github.com/AgricIDaniel/claude-seo · https://claude-seo.md
+
+Primera vez que se usan los scripts SEO:
+
+```bash
+.claude/skills/seo/bin/claude-seo setup
+```

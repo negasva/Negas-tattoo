@@ -382,6 +382,7 @@ app.post('/api/lead/start', leadStartLimiter, async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Revisa los datos e intenta de nuevo.', fields: errors });
   }
 
+  const forceCreate = body.forceCreate === true;
   const updateToken = crypto.randomBytes(24).toString('hex');
   const now = new Date().toISOString();
 
@@ -410,7 +411,13 @@ app.post('/api/lead/start', leadStartLimiter, async (req, res) => {
       .select('id')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      const isDuplicate = error.code === '23505' || (error.message && error.message.toLowerCase().includes('unique'));
+      if (isDuplicate && !forceCreate) {
+        return res.status(200).json({ ok: true, duplicate: true });
+      }
+      throw error;
+    }
 
     return res.status(201).json({ ok: true, leadId: data.id, token: updateToken });
   } catch (error) {

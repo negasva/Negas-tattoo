@@ -571,6 +571,37 @@ async function submitStepOne(button) {
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok) throw new Error(data.error || 'No pudimos guardar tus datos. Intenta de nuevo.');
 
+        if (data.duplicate) {
+            button.disabled = false;
+            button.textContent = original;
+            const confirmed = window.confirm('YA TENEMOS UNA COTIZACIÓN CON TU NÚMERO. ¿SEGURO QUIERES ENVIAR OTRA?');
+            if (!confirmed) return;
+
+            button.disabled = true;
+            button.textContent = 'Guardando...';
+            const recaptchaToken2 = await getRecaptchaToken('lead_start');
+            const res2 = await fetch('/api/lead/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name, phone, email, consent: true, recaptchaToken: recaptchaToken2,
+                    source: window.location.pathname === '/cotizar' ? 'cotizar-url' : 'landing',
+                    ...readUtm(),
+                    forceCreate: true
+                })
+            });
+            const data2 = await res2.json().catch(() => ({}));
+            if (!res2.ok || !data2.ok) throw new Error(data2.error || 'No pudimos guardar tus datos. Intenta de nuevo.');
+
+            quoteSession.leadId = data2.leadId;
+            quoteSession.token = data2.token;
+            quoteSession.name = name;
+            quoteSession.phone = phone;
+            track('Lead', { content_name: 'Cotizador paso 1 (duplicado confirmado)' });
+            showStep(2);
+            return;
+        }
+
         quoteSession.leadId = data.leadId;
         quoteSession.token = data.token;
         quoteSession.name = name;

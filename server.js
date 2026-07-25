@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const crypto = require('crypto');
 const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
@@ -21,7 +22,30 @@ const SUPABASE_KEEPALIVE_TABLES = (process.env.SUPABASE_KEEPALIVE_TABLES || 'lea
 const RECAPTCHA_SITE_KEY = (process.env.RECAPTCHA_SITE_KEY || '').trim();
 const RECAPTCHA_SECRET_KEY = (process.env.RECAPTCHA_SECRET_KEY || '').trim();
 const RECAPTCHA_MIN_SCORE = Number(process.env.RECAPTCHA_MIN_SCORE) || 0.5;
-const RECAPTCHA_EXPECTED_ACTION = (process.env.RECAPTCHA_EXPECTED_ACTION || 'submit_quote').trim();
+
+// Correos autorizados para el panel admin. Vacio = cualquier usuario autenticado
+// de Supabase puede administrar. Rellenar en produccion.
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
+  .split(',')
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+// Parametros de precio: editables por variables de entorno para poder ajustar
+// tarifas sin volver a desplegar. El frontend los recibe via /api/config.
+const PRICING = {
+  base: Number(process.env.PRICE_BASE) || 90000,
+  perCmSmall: Number(process.env.PRICE_PER_CM_SMALL) || 38000,
+  perCmLarge: Number(process.env.PRICE_PER_CM_LARGE) || 52000,
+  breakpointCm: Number(process.env.PRICE_BREAKPOINT_CM) || 15,
+  minimum: Number(process.env.PRICE_MINIMUM) || 180000,
+  rangeLow: Number(process.env.PRICE_RANGE_LOW) || 0.95,
+  rangeHigh: Number(process.env.PRICE_RANGE_HIGH) || 1.25,
+  maxCm: Number(process.env.PRICE_MAX_CM) || 60
+};
+
+const GALLERY_CATEGORIES = ['Blackwork', 'Botánico', 'Fineline'];
+const GALLERY_SPANS = ['', 'gal-cs2', 'gal-rs2', 'gal-cs2rs2'];
+
 const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false }
@@ -39,7 +63,7 @@ const corsOptions = {
     console.warn('CORS blocked origin:', origin);
     return callback(null, false);
   },
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: false,
   optionsSuccessStatus: 200,
@@ -49,22 +73,33 @@ const corsOptions = {
 // Detras de un proxy/CDN (Cloudflare, etc.) para que el rate-limit lea la IP real.
 app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
 
-// Limitador general para endpoints publicos de solo lectura (/api/config, /api/keepalive)
+// Limitador general para endpoints publicos de solo lectura.
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
-  limit: Number(process.env.RATE_LIMIT_API) || 120,
+  limit: Number(process.env.RATE_LIMIT_API) || 200,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { ok: false, error: 'Demasiadas solicitudes. Intenta de nuevo mas tarde.' }
 });
 
-// Limitador estricto para el envio de cotizaciones (anti-spam de leads)
-const submitLimiter = rateLimit({
+// Paso 1 del cotizador: captura de nombre + WhatsApp. Es el endpoint mas
+// atractivo para spam, pero tampoco puede ser tan estricto que bloquee
+// reintentos legitimos de la misma persona.
+const leadStartLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
-  limit: Number(process.env.RATE_LIMIT_SUBMIT) || 5,
+  limit: Number(process.env.RATE_LIMIT_LEAD_START) || 10,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
-  message: { ok: false, error: 'Has enviado demasiadas cotizaciones. Espera un momento antes de intentar de nuevo.' }
+  message: { ok: false, error: 'Has enviado demasiadas solicitudes. Espera un momento antes de intentar de nuevo.' }
+});
+
+// Paso final: ya viene autorizado por leadId + token, asi que puede ser mas laxo.
+const leadCompleteLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: Number(process.env.RATE_LIMIT_LEAD_COMPLETE) || 30,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { ok: false, error: 'Demasiadas solicitudes. Intenta de nuevo mas tarde.' }
 });
 
 app.use(cors(corsOptions));
@@ -84,32 +119,45 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       'default-src': ["'self'"],
-      'script-src': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com'],
-      'script-src-elem': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com'],
+      'script-src': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://connect.facebook.net', 'https://www.googletagmanager.com'],
+      'script-src-elem': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://connect.facebook.net', 'https://www.googletagmanager.com'],
       'script-src-attr': ["'unsafe-inline'"],
       'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      'img-src': ["'self'", 'data:', 'blob:', 'https://*.supabase.co', 'https://i.ibb.co', 'https://*.ibb.co'],
-      'connect-src': ["'self'", 'https://qiyfydnwdwygbrpavdjb.supabase.co', 'https://cdn.jsdelivr.net', 'https://api.emailjs.com', 'https://www.google.com'],
+      'img-src': ["'self'", 'data:', 'blob:', 'https://*.supabase.co', 'https://i.ibb.co', 'https://*.ibb.co', 'https://www.facebook.com', 'https://www.google.com', 'https://www.google.com.co', 'https://googleads.g.doubleclick.net'],
+      'connect-src': ["'self'", 'https://qiyfydnwdwygbrpavdjb.supabase.co', 'https://*.supabase.co', 'https://cdn.jsdelivr.net', 'https://api.emailjs.com', 'https://www.google.com', 'https://connect.facebook.net', 'https://www.facebook.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com', 'https://googleads.g.doubleclick.net'],
       'worker-src': ["'self'", 'blob:'],
       'font-src': ["'self'", 'https://fonts.gstatic.com'],
-      'frame-src': ["'self'", 'https://www.google.com'],
+      'frame-src': ["'self'", 'https://www.google.com', 'https://td.doubleclick.net'],
       'object-src': ["'none'"],
       'base-uri': ["'self'"],
       'form-action': ["'self'"],
     }
   },
-  referrerPolicy: { policy: 'no-referrer' }
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 
 app.use(express.json({ limit: '100kb' }));
 app.use(express.static(PUBLIC_PATH, { index: false }));
 
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_PATH, 'index.html'));
-});
+// ─── Rutas de paginas ────────────────────────────────────────────────────────
+// /cotizar sirve la misma landing. El frontend detecta el pathname y abre el
+// popup de cotizacion automaticamente. Asi tenemos una URL real para Google Ads
+// sin duplicar contenido ni mantener dos paginas separadas.
+const sendIndex = (_req, res) => res.sendFile(path.join(PUBLIC_PATH, 'index.html'));
+
+app.get('/', sendIndex);
+app.get('/cotizar', sendIndex);
 
 app.get('/admin', (_req, res) => {
   res.sendFile(path.join(PUBLIC_PATH, 'admin', 'index.html'));
+});
+
+app.get('/privacidad', (_req, res) => {
+  res.sendFile(path.join(PUBLIC_PATH, 'privacidad.html'));
+});
+
+app.get('/cuidados', (_req, res) => {
+  res.sendFile(path.join(PUBLIC_PATH, 'cuidados.html'));
 });
 
 app.get('/api/config', apiLimiter, (_req, res) => {
@@ -120,7 +168,11 @@ app.get('/api/config', apiLimiter, (_req, res) => {
     recaptchaSiteKey: RECAPTCHA_SITE_KEY,
     emailjsPublicKey: (process.env.EMAILJS_PUBLIC_KEY || '').trim(),
     emailjsServiceId: (process.env.EMAILJS_SERVICE_ID || '').trim(),
-    emailjsTemplateId: (process.env.EMAILJS_TEMPLATE_ID || '').trim()
+    emailjsTemplateId: (process.env.EMAILJS_TEMPLATE_ID || '').trim(),
+    googleAdsId: (process.env.GOOGLE_ADS_ID || '').trim(),
+    googleAdsConversionLabel: (process.env.GOOGLE_ADS_CONVERSION_LABEL || '').trim(),
+    ga4Id: (process.env.GA4_MEASUREMENT_ID || '').trim(),
+    pricing: PRICING
   });
 });
 
@@ -162,9 +214,10 @@ app.get('/api/keepalive', apiLimiter, async (_req, res) => {
   }
 });
 
+// ─── reCAPTCHA ───────────────────────────────────────────────────────────────
 // Verifica un token de reCAPTCHA v3 contra la API de Google.
 // Devuelve { ok, score, reason } sin lanzar excepciones hacia el handler.
-async function verifyRecaptcha(token, remoteIp) {
+async function verifyRecaptcha(token, remoteIp, expectedAction) {
   if (!RECAPTCHA_SECRET_KEY) {
     // Sin secret configurado no podemos validar: fallamos cerrado.
     return { ok: false, reason: 'recaptcha-not-configured' };
@@ -192,7 +245,7 @@ async function verifyRecaptcha(token, remoteIp) {
     if (!data.success) {
       return { ok: false, reason: 'verification-failed', score: data.score };
     }
-    if (RECAPTCHA_EXPECTED_ACTION && data.action && data.action !== RECAPTCHA_EXPECTED_ACTION) {
+    if (expectedAction && data.action && data.action !== expectedAction) {
       return { ok: false, reason: 'action-mismatch', score: data.score };
     }
     if (typeof data.score === 'number' && data.score < RECAPTCHA_MIN_SCORE) {
@@ -208,75 +261,326 @@ async function verifyRecaptcha(token, remoteIp) {
   }
 }
 
-// Normaliza y valida los datos del lead. Nunca confia en `status` ni `created_at`
-// que vengan del cliente: se fijan en el servidor.
-function sanitizeLead(body) {
-  const str = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const str = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
 
-  const name = str(body.name, 120);
-  const email = str(body.email, 200);
-  const phone = str(body.phone, 20).replace(/\D/g, '');
-  const tattoo_zone = str(body.tattoo_zone, 60);
-  const size = str(body.size, 20);
-  const description = str(body.description, 500);
-  let reference_img_url = str(body.reference_img_url, 600);
+// Recalcula el precio en el servidor. Nunca confiamos en el rango que manda el
+// cliente: el navegador puede alterarlo y quedaria un precio falso en la base.
+function computePriceRange(sizeCm) {
+  const cm = Math.max(0, Math.min(Number(sizeCm) || 0, PRICING.maxCm));
+  if (!cm) return { min: 0, max: 0, label: '' };
 
-  const errors = [];
-  if (!name) errors.push('name');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('email');
-  if (phone.length < 7 || phone.length > 15) errors.push('phone');
-  if (!tattoo_zone) errors.push('tattoo_zone');
-  if (!size) errors.push('size');
+  const small = Math.min(cm, PRICING.breakpointCm) * PRICING.perCmSmall;
+  const large = Math.max(0, cm - PRICING.breakpointCm) * PRICING.perCmLarge;
+  const point = Math.max(PRICING.minimum, PRICING.base + small + large);
 
-  if (reference_img_url && !/^https?:\/\//i.test(reference_img_url)) {
-    reference_img_url = '';
-  }
+  const round = (n) => Math.round(n / 10000) * 10000;
+  const min = round(point * PRICING.rangeLow);
+  const max = round(point * PRICING.rangeHigh);
 
-  const lead = {
-    name,
-    email,
-    phone,
-    tattoo_zone,
-    size,
-    description,
-    reference_img_url: reference_img_url || null,
-    status: 'lead',
-    created_at: new Date().toISOString()
+  return {
+    min,
+    max,
+    label: `$${min.toLocaleString('es-CO')} - $${max.toLocaleString('es-CO')}`
   };
-
-  return { lead, errors };
 }
 
-app.post('/api/submit-quote', submitLimiter, async (req, res) => {
+// Colombia: 10 digitos empezando por 3. Aceptamos que venga con el 57 delante.
+function normalizePhone(raw) {
+  let digits = str(String(raw ?? ''), 20).replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('57')) digits = digits.slice(2);
+  return digits;
+}
+
+// ─── Paso 1: captura del lead ────────────────────────────────────────────────
+// Se guarda apenas la persona da nombre y WhatsApp, ANTES de ver el precio.
+// Ese es el punto del rediseno: si abandona en el paso 2 o 3, el contacto ya
+// esta en la base y se puede recuperar por WhatsApp o por retargeting.
+app.post('/api/lead/start', leadStartLimiter, async (req, res) => {
   if (!supabaseAdmin) {
     return res.status(500).json({ ok: false, error: 'Servicio no disponible temporalmente.' });
   }
 
   const body = req.body || {};
-  const remoteIp = req.ip;
 
-  // 1) Validar reCAPTCHA v3 antes de tocar la base de datos.
-  const captcha = await verifyRecaptcha(body.recaptchaToken, remoteIp);
+  const captcha = await verifyRecaptcha(body.recaptchaToken, req.ip, 'lead_start');
   if (!captcha.ok) {
-    console.warn('Quote blocked by reCAPTCHA:', captcha.reason, 'score:', captcha.score);
+    console.warn('Lead start blocked by reCAPTCHA:', captcha.reason, 'score:', captcha.score);
     return res.status(403).json({ ok: false, error: 'No pudimos verificar que seas humano. Recarga la pagina e intenta de nuevo.' });
   }
 
-  // 2) Sanitizar y validar el payload.
-  const { lead, errors } = sanitizeLead(body);
+  const name = str(body.name, 120);
+  const phone = normalizePhone(body.phone);
+  const email = str(body.email, 200);
+
+  const errors = [];
+  if (name.length < 2) errors.push('name');
+  if (!/^3\d{9}$/.test(phone)) errors.push('phone');
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('email');
+  if (body.consent !== true) errors.push('consent');
+
   if (errors.length) {
-    return res.status(400).json({ ok: false, error: 'Datos incompletos o invalidos.', fields: errors });
+    return res.status(400).json({ ok: false, error: 'Revisa los datos e intenta de nuevo.', fields: errors });
   }
 
-  // 3) Insertar de forma segura con el service role key (server-side).
+  const updateToken = crypto.randomBytes(24).toString('hex');
+  const now = new Date().toISOString();
+
+  const lead = {
+    name,
+    phone,
+    email: email || null,
+    description: null,
+    reference_img_url: null,
+    status: 'lead',
+    stage: 'partial',
+    consent: true,
+    consent_at: now,
+    update_token: updateToken,
+    source: str(body.source, 60) || 'web',
+    utm_source: str(body.utm_source, 80) || null,
+    utm_medium: str(body.utm_medium, 80) || null,
+    utm_campaign: str(body.utm_campaign, 120) || null,
+    created_at: now
+  };
+
   try {
-    const { error } = await supabaseAdmin.from('leads').insert([lead]);
+    const { data, error } = await supabaseAdmin
+      .from('leads')
+      .insert([lead])
+      .select('id')
+      .single();
+
     if (error) throw error;
 
-    return res.status(201).json({ ok: true });
+    return res.status(201).json({ ok: true, leadId: data.id, token: updateToken });
   } catch (error) {
-    console.error('Lead insert failed:', error.message);
-    return res.status(500).json({ ok: false, error: 'No se pudo guardar la cotizacion. Intenta de nuevo.' });
+    console.error('Lead start failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'No pudimos guardar tus datos. Intenta de nuevo.' });
+  }
+});
+
+// ─── Paso final: completar la cotizacion ─────────────────────────────────────
+// Autorizado por leadId + update_token para que nadie pueda sobrescribir el
+// lead de otra persona conociendo solo un id secuencial.
+app.post('/api/lead/complete', leadCompleteLimiter, async (req, res) => {
+  if (!supabaseAdmin) {
+    return res.status(500).json({ ok: false, error: 'Servicio no disponible temporalmente.' });
+  }
+
+  const body = req.body || {};
+  const leadId = str(String(body.leadId ?? ''), 40);
+  const token = str(body.token, 80);
+  const description = str(body.description, 500);
+  const sizeCm = Math.max(0, Math.min(Number(body.sizeCm) || 0, PRICING.maxCm));
+  let referenceImgUrl = str(body.reference_img_url, 600);
+
+  if (!leadId || !token) {
+    return res.status(400).json({ ok: false, error: 'Sesion de cotizacion invalida. Recarga la pagina.' });
+  }
+  if (description.length < 5) {
+    return res.status(400).json({ ok: false, error: 'Cuentame un poco mas sobre tu idea.' });
+  }
+  if (!sizeCm) {
+    return res.status(400).json({ ok: false, error: 'Selecciona el tamano aproximado.' });
+  }
+  if (referenceImgUrl && !/^https?:\/\//i.test(referenceImgUrl)) {
+    referenceImgUrl = '';
+  }
+
+  const price = computePriceRange(sizeCm);
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('leads')
+      .update({
+        description,
+        size: `${sizeCm}cm`,
+        estimated_min: price.min,
+        estimated_max: price.max,
+        estimated_price: price.label,
+        reference_img_url: referenceImgUrl || null,
+        stage: 'complete',
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', leadId)
+      .eq('update_token', token)
+      .select('id')
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) {
+      return res.status(403).json({ ok: false, error: 'Sesion de cotizacion invalida. Recarga la pagina.' });
+    }
+
+    return res.json({ ok: true, price });
+  } catch (error) {
+    console.error('Lead complete failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'No se pudo guardar tu cotizacion. Intenta de nuevo.' });
+  }
+});
+
+// ─── Galeria publica ─────────────────────────────────────────────────────────
+app.get('/api/gallery', apiLimiter, async (_req, res) => {
+  if (!supabaseAdmin) {
+    return res.status(500).json({ ok: false, error: 'Servicio no disponible temporalmente.' });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('gallery_images')
+      .select('id,url,category,alt,span,sort_order')
+      .eq('active', true)
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true });
+
+    if (error) throw error;
+
+    res.set('Cache-Control', 'public, max-age=60');
+    return res.json({ ok: true, images: data || [] });
+  } catch (error) {
+    console.error('Gallery fetch failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'No se pudo cargar la galeria.' });
+  }
+});
+
+// ─── Galeria: administracion ─────────────────────────────────────────────────
+// Autenticado con el JWT de Supabase que ya usa el panel admin para iniciar
+// sesion. Se verifica server-side; el navegador nunca toca la service role key.
+async function requireAdmin(req, res, next) {
+  if (!supabaseAdmin) {
+    return res.status(500).json({ ok: false, error: 'Servicio no disponible temporalmente.' });
+  }
+
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  if (!token) {
+    return res.status(401).json({ ok: false, error: 'No autorizado.' });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !data?.user) {
+      return res.status(401).json({ ok: false, error: 'Sesion expirada. Vuelve a entrar.' });
+    }
+
+    const email = (data.user.email || '').toLowerCase();
+    if (ADMIN_EMAILS.length && !ADMIN_EMAILS.includes(email)) {
+      return res.status(403).json({ ok: false, error: 'Esta cuenta no tiene permisos de administrador.' });
+    }
+
+    req.adminUser = data.user;
+    return next();
+  } catch (error) {
+    console.error('Admin auth failed:', error.message);
+    return res.status(401).json({ ok: false, error: 'No autorizado.' });
+  }
+}
+
+function sanitizeGalleryPayload(body, { partial = false } = {}) {
+  const out = {};
+  const errors = [];
+
+  if (body.url !== undefined || !partial) {
+    const url = str(body.url, 600);
+    if (!/^https?:\/\//i.test(url)) errors.push('url');
+    else out.url = url;
+  }
+
+  if (body.category !== undefined || !partial) {
+    const category = str(body.category, 40);
+    if (!GALLERY_CATEGORIES.includes(category)) errors.push('category');
+    else out.category = category;
+  }
+
+  if (body.span !== undefined) {
+    const span = str(body.span, 20);
+    if (!GALLERY_SPANS.includes(span)) errors.push('span');
+    else out.span = span;
+  }
+
+  if (body.alt !== undefined) out.alt = str(body.alt, 200) || null;
+  if (body.sort_order !== undefined) out.sort_order = Number(body.sort_order) || 0;
+  if (body.active !== undefined) out.active = Boolean(body.active);
+
+  return { payload: out, errors };
+}
+
+app.get('/api/admin/gallery', requireAdmin, async (_req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('gallery_images')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true });
+
+    if (error) throw error;
+    return res.json({ ok: true, images: data || [] });
+  } catch (error) {
+    console.error('Admin gallery fetch failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'No se pudo cargar la galeria.' });
+  }
+});
+
+app.post('/api/admin/gallery', requireAdmin, async (req, res) => {
+  const { payload, errors } = sanitizeGalleryPayload(req.body || {});
+  if (errors.length) {
+    return res.status(400).json({ ok: false, error: 'Datos invalidos.', fields: errors });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('gallery_images')
+      .insert([{ active: true, sort_order: 0, span: '', ...payload }])
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return res.status(201).json({ ok: true, image: data });
+  } catch (error) {
+    console.error('Gallery insert failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'No se pudo guardar la imagen.' });
+  }
+});
+
+app.patch('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
+  const { payload, errors } = sanitizeGalleryPayload(req.body || {}, { partial: true });
+  if (errors.length) {
+    return res.status(400).json({ ok: false, error: 'Datos invalidos.', fields: errors });
+  }
+  if (!Object.keys(payload).length) {
+    return res.status(400).json({ ok: false, error: 'Nada que actualizar.' });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('gallery_images')
+      .update(payload)
+      .eq('id', req.params.id)
+      .select('*')
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return res.status(404).json({ ok: false, error: 'Imagen no encontrada.' });
+    return res.json({ ok: true, image: data });
+  } catch (error) {
+    console.error('Gallery update failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'No se pudo actualizar la imagen.' });
+  }
+});
+
+app.delete('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
+  try {
+    const { error } = await supabaseAdmin
+      .from('gallery_images')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (error) throw error;
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Gallery delete failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'No se pudo eliminar la imagen.' });
   }
 });
 

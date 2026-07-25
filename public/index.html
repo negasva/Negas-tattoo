@@ -3,89 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Negas Ink | Tattoo Studio</title>
+    <title>Negas Tattoo | Estudio de tatuaje en Sabaneta, Antioquia</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
-    <meta name="description" content="Estudio de tatuajes especializado en Blackwork y piezas de alto contraste en Sabaneta, Medellin. Cotiza tu proximo proyecto con Negas Ink.">
-    <meta name="keywords" content="Tattoo Medellin, Blackwork Sabaneta, Tatuajes Medellin, Negas Ink">
-    <link rel="canonical" href="https://negasink.com">
+    <meta name="description" content="Estudio privado de tatuaje en Sabaneta, Medellin. Blackwork, botanico y fine line. Cotiza en linea y recibe tu inversion aproximada al instante.">
+    <meta name="keywords" content="Tattoo Medellin, Blackwork Sabaneta, Tatuajes Medellin, Negas Tattoo, cotizar tatuaje">
+    <link rel="canonical" href="https://negas.tattoo/">
 
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://negasink.com">
-    <meta property="og:title" content="Negas Ink | Tattoo Studio">
-    <meta property="og:description" content="Transformamos tus ideas en piezas permanentes de alto contraste. Tecnica impecable en Medellin.">
+    <meta property="og:url" content="https://negas.tattoo/">
+    <meta property="og:title" content="Negas Tattoo | Estudio de tatuaje en Sabaneta">
+    <meta property="og:description" content="Transformamos tus ideas en piezas permanentes de alto contraste. Cotiza en linea y recibe tu inversion aproximada al instante.">
     <meta property="og:image" content="https://i.ibb.co/gbt230bD/657596602-18195058267358960-7783419555348968370-n.jpg">
+    <meta name="twitter:card" content="summary_large_image">
 
-    <!-- Facebook Pixel removed - causing console errors -->
+    <!-- Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1467646508235189');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
 
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            width: 100%;
-            overflow-x: hidden;
-            background-color: #121212;
-        }
-        .field-label {
-            font-size: 11px !important;
-            text-transform: uppercase !important;
-            letter-spacing: 2px !important;
-            color: #71717a;
-            margin-bottom: 1rem;
-            display: block;
-            font-weight: 800;
-            opacity: 0.8;
-        }
-        .reveal-item {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        #submit-btn, #hero-btn, .btn-poster {
-            background-color: #D20000 !important;
-            border: none !important;
-            border-radius: 0 !important;
-            color: white;
-            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            cursor: pointer;
-        }
-        #submit-btn:hover, #hero-btn:hover, .btn-poster:hover {
-            background-color: #b00000 !important;
-            color: white !important;
-        }
-    </style>
 </head>
-<body class="selection:bg-white selection:text-black">
+<body>
 
     <main>
-    <section id="hero" class="reveal-section min-h-screen flex flex-col justify-center px-8 md:px-20 lg:px-32 py-4">
-        <div class="max-w-7xl mx-auto w-full flex flex-col items-center text-center">
-            <div class="w-full flex justify-between items-end mb-12 uppercase font-black italic text-[10px] tracking-[0.3em] border-b border-white/20 pb-4">
-                <div class="text-left leading-tight">
-                    Sabaneta<br>Antioquia
-                </div>
-                <div class="text-red-600 text-lg">2026</div>
-                <div class="text-right leading-tight">
-                    Estudio<br>Privado
-                </div>
+    <!-- ══════════════ 1. HERO ══════════════ -->
+    <section id="hero" class="hero-section">
+        <div class="hero-inner">
+            <div class="meta-bar">
+                <div>Sabaneta<br>Antioquia</div>
+                <div class="meta-bar-accent">2026</div>
+                <div class="meta-bar-end">Estudio<br>Privado</div>
             </div>
 
-            <div class="relative w-full mb-12">
-                <h1 id="hero-title" class="font-black uppercase italic tracking-tighter">
-                    <span id="hero-black" class="hero-word block">Negas</span>
-                    <span id="hero-work" class="hero-word text-red-600 block italic">Tattoo</span>
-                    <span id="hero-negas" class="hero-word block">Studio</span>
+            <div class="hero-title-wrap">
+                <h1 id="hero-title">
+                    <span id="hero-black" class="hero-word">Negas</span>
+                    <span id="hero-work" class="hero-word hero-word--red">Tattoo</span>
+                    <span id="hero-negas" class="hero-word">Studio</span>
                 </h1>
             </div>
 
-            <div id="hero-btn-container" class="reveal-item w-full max-w-xl flex flex-col items-center">
-                <a href="#booking" id="hero-btn" class="px-12 py-8 block w-full text-center text-3xl font-black uppercase italic tracking-tighter transition-all duration-300">
-                    COTIZAR TATUAJE
-                </a>
-                <div class="mt-12 hero-scroll-indicator">
-                    <span class="text-white text-5xl font-light block select-none tracking-[-0.2em]">>></span>
+            <div id="hero-btn-container" class="reveal-item hero-cta-wrap">
+                <div class="hero-actions">
+                    <a href="#work" class="hero-btn hero-btn--ghost">
+                        Portafolio
+                    </a>
+                    <button type="button" class="hero-btn hero-btn--solid js-open-quote" data-origin="hero">
+                        Cotizar tatuaje
+                    </button>
+                </div>
+                <p class="hero-note">
+                    Recibe tu <span>inversi&#243;n aproximada</span> al instante &#183; sin compromiso
+                </p>
+                <div class="hero-scroll-indicator">
+                    <span>&gt;&gt;</span>
                 </div>
             </div>
         </div>
@@ -98,7 +86,6 @@
                 <span class="mq-word">Blackwork</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Fine line</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Bot&#225;nico</span><span class="mq-star">&#10022;</span>
-                <span class="mq-word">Lettering</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Private studio</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">By appointment</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Custom design</span><span class="mq-star">&#10022;</span>
@@ -107,7 +94,6 @@
                 <span class="mq-word">Blackwork</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Fine line</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Bot&#225;nico</span><span class="mq-star">&#10022;</span>
-                <span class="mq-word">Lettering</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Private studio</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">By appointment</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Custom design</span><span class="mq-star">&#10022;</span>
@@ -116,7 +102,6 @@
                 <span class="mq-word">Blackwork</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Fine line</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Bot&#225;nico</span><span class="mq-star">&#10022;</span>
-                <span class="mq-word">Lettering</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Private studio</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">By appointment</span><span class="mq-star">&#10022;</span>
                 <span class="mq-word">Custom design</span><span class="mq-star">&#10022;</span>
@@ -124,9 +109,9 @@
         </div>
     </section>
 
-    <!-- SERVICE CARDS -->
-    <section class="svc-section">
-        <div class="svc-grid">
+    <!-- ══════════════ 2. ESTILOS ══════════════ -->
+    <section class="svc-section" id="estilos">
+        <div class="svc-grid svc-grid--3">
             <div class="svc-card">
                 <div class="svc-card-top">
                     <span class="svc-num">01</span>
@@ -163,22 +148,10 @@
                     <span class="svc-arrow">&#8599;</span>
                 </div>
             </div>
-            <div class="svc-card">
-                <div class="svc-card-top">
-                    <span class="svc-num">04</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svc-icon"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-                </div>
-                <h3 class="svc-card-title">Lettering</h3>
-                <p class="svc-card-desc">Tipograf&#237;a custom, nunca una fuente descargada. Si va a estar en tu piel, merece ser original.</p>
-                <div class="svc-card-foot">
-                    <span class="svc-tag">Custom</span>
-                    <span class="svc-arrow">&#8599;</span>
-                </div>
-            </div>
         </div>
     </section>
 
-    <!-- GALLERY -->
+    <!-- ══════════════ 3. EL ARCHIVO ══════════════ -->
     <a id="portfolio" style="position:absolute;visibility:hidden;pointer-events:none"></a>
     <section id="work" class="gal-section">
         <div class="gal-inner">
@@ -188,16 +161,17 @@
                     <h2 class="gal-title" style="text-align:left!important">EL <span>ARCHIVO.</span></h2>
                 </div>
                 <div class="gal-filters">
-                    <button class="gal-btn active" data-filter="All">All</button>
+                    <button class="gal-btn active" data-filter="All">Todo</button>
                     <button class="gal-btn" data-filter="Blackwork">Blackwork</button>
                     <button class="gal-btn" data-filter="Bot&#225;nico">Bot&#225;nico</button>
-                    <button class="gal-btn" data-filter="Lettering">Lettering</button>
+                    <button class="gal-btn" data-filter="Fineline">Fineline</button>
                 </div>
             </div>
             <div class="gal-grid" id="galGrid"></div>
+            <p id="galEmpty" class="gal-empty" hidden>No hay piezas en esta categor&#237;a todav&#237;a.</p>
             <div class="gal-foot">
                 <span id="galCount"></span>
-                <a href="https://www.instagram.com/negas.tattoo" target="_blank" rel="noopener">
+                <a href="https://www.instagram.com/negas.tattoo" target="_blank" rel="noopener" class="js-ig">
                     @negas.tattoo
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;display:inline;vertical-align:middle"><path d="M7 17L17 7M7 7h10v10"/></svg>
                 </a>
@@ -205,283 +179,326 @@
         </div>
     </section>
 
-    <section id="booking" class="max-w-5xl mx-auto px-10 md:px-24 lg:px-48 py-6">
-        <div class="w-full flex justify-between items-end mb-10 uppercase font-black italic text-[10px] tracking-[0.3em] border-b border-white/20 pb-4 reveal-item">
-            <div class="text-left leading-tight">SOLICITUD<br>DE DISENO</div>
-            <div class="text-red-600 text-lg">PROCESO</div>
-            <div class="text-right leading-tight">ESTIMACION<br>INSTANTANEA</div>
-        </div>
-
-        <h3 class="section-header main-title-header reveal-item mb-10">Cotizacion</h3>
-
-        <form id="tattoo-form" class="space-y-6 mb-12">
-            <input type="hidden" name="estimated_price" id="form-estimated-price">
-            <input type="hidden" name="final_size" id="form-size">
-            <input type="hidden" name="fecha_cita" id="form-fecha-cita">
-            <input type="hidden" name="recaptcha_token" id="recaptcha_token">
-
-            <div id="section-proyecto" class="space-y-4 reveal-item">
-                <h2 class="section-header text-center">TU TATUAJE</h2>
-
-                <div class="poster-card">
-                    <label class="field-label">Estilo de tatuaje</label>
-                    <div class="custom-dropdown relative">
-                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-none py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
-                            <span class="dropdown-label opacity-50">Selecciona una opcion...</span>
-                            <svg class="dropdown-icon w-5 h-5 text-zinc-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-none overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1.2">Blackwork</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1">Botanico (Flores)</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1">Minimalismo</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="1.2">Lettering</div>
-                        </div>
-                        <input type="hidden" id="complexity" name="complexity" data-label="Estilo" required>
-                    </div>
-                </div>
-
-                <div class="poster-card">
-                    <label class="field-label">Cuentame tu idea</label>
-                    <textarea name="message" rows="4" required maxlength="500" placeholder="Describe tu diseno, estilo, referencias..." class="w-full py-3 px-0 resize-none border-b border-zinc-700 focus:border-white transition-colors text-lg italic"></textarea>
-                    <span id="charCount" class="absolute bottom-4 right-6 text-[10px] text-zinc-500 font-mono">0/500</span>
-                </div>
-
-                <div class="poster-card">
-                    <label class="field-label">Zona del cuerpo</label>
-                    <div class="custom-dropdown relative">
-                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-none py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
-                            <span class="dropdown-label opacity-50">Selecciona una zona...</span>
-                            <svg class="dropdown-icon w-5 h-5 text-zinc-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-none overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Brazo">Brazo</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Antebrazo">Antebrazo</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Muneca">Muneca</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Tobillo">Tobillo</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Pantorrilla">Pantorrilla</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Muslo">Muslo</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Pecho">Pecho</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Espalda">Espalda</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Costillas">Costillas</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Cuello">Cuello</div>
-                        </div>
-                        <input type="hidden" id="tattoo_zone" name="tattoo_zone" data-label="Zona" required>
-                    </div>
-                </div>
-
-                <div id="price-card" class="poster-card border-red-600 space-y-4">
-                    <div>
-                        <label class="field-label">Tamano en centimetros</label>
-                        <div class="flex items-center gap-6 h-16">
-                            <div id="slider-pulse-wrapper" class="flex-1 flex items-center">
-                                <input type="range" id="size" min="2" max="60" value="10" class="w-full h-1 bg-zinc-800 appearance-none cursor-pointer accent-[#D20000] hover:accent-white transition-all">
-                            </div>
-                            <div class="shrink-0 w-[100px] text-right flex items-center justify-end">
-                                <span id="size-display-val" class="text-4xl font-black tracking-tighter italic text-white leading-none">10cm</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-center pt-4 border-t border-white/5">
-                        <div id="terminal-container" class="min-h-[20px] flex items-center justify-center mb-2 gap-3">
-                            <div id="terminal-spinner" class="hidden">
-                                <svg class="animate-spin h-4 w-4 text-emerald-500/80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            </div>
-                            <p id="terminal-msg" class="text-[10px] uppercase tracking-widest leading-relaxed transition-colors duration-300"></p>
-                        </div>
-
-                        <div id="price-result" class="hidden opacity-0 transition-opacity duration-500">
-                            <span id="price-display" class="text-[clamp(1.5rem,12vw,4.5rem)] font-black tracking-tighter italic text-white break-all leading-none"></span>
-                            <p class="text-[14px] text-zinc-600 mt-2 uppercase tracking-widest">INVERSIÓN ESTIMADA</p>
-                        </div>
-
-                        <p id="disclaimer-msg" class="text-[12px] text-zinc-500 mt-6 italic transition-opacity duration-300">Completa todos los campos para ver tu cotizacion.</p>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <label class="field-label">Referencia Visual</label>
-                    <input type="file" id="fotoTatuaje" accept="image/jpeg,image/png,image/webp" class="hidden">
-                    <div id="upload-zone"
-                         class="relative group cursor-pointer border-2 border-dashed border-white/20 hover:border-red-600 bg-black rounded-none p-12 transition-all duration-500 flex flex-col items-center justify-center min-h-[220px] overflow-hidden">
-
-                        <div id="upload-placeholder" class="flex flex-col items-center text-center transition-all duration-500 group-hover:scale-105">
-                            <svg class="w-16 h-16 mb-4 text-[#D20000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v5m0 0l-2-2m2 2l2-2" />
-                            </svg>
-                            <span class="text-white font-black italic tracking-tighter text-2xl uppercase">Sube tu referencia visual aqui</span>
-                            <p class="text-[#D20000] text-[10px] font-bold uppercase mt-3 tracking-[0.2em] opacity-80">Una imagen nos ayuda a capturar tu idea de forma precisa</p>
-                        </div>
-
-                        <div id="upload-preview" class="hidden absolute inset-0 bg-black">
-                            <img id="preview-img" src=""
-                                 class="w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-700" alt="Vista previa de referencia">
-                        </div>
-                    </div>
-                    <p class="text-[11px] text-zinc-600 italic">El archivo debe ser JPG, PNG o WEBP y menor a 10MB.</p>
-                </div>
+    <!-- ══════════════ 4. COTIZACIÓN ══════════════ -->
+    <section id="booking" class="quote-cta">
+        <div class="quote-cta-inner">
+            <div class="meta-bar reveal-item">
+                <div>SOLICITUD<br>DE DISE&#209;O</div>
+                <div class="meta-bar-accent">PROCESO</div>
+                <div class="meta-bar-end">ESTIMACI&#211;N<br>INSTANT&#193;NEA</div>
             </div>
 
-            <div id="section-datos" class="space-y-6 pt-8 mt-8 border-t border-[#1a1a1a] reveal-item">
-                <h2 class="section-header text-center">DATOS PERSONALES</h2>
+            <h2 class="section-header main-title-header reveal-item">Cotiza tu tatuaje</h2>
 
-                <div>
-                    <label class="field-label">Nombre Completo</label>
-                    <input type="text" name="user_name" required class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
-                </div>
-
-                <div>
-                    <label class="field-label">WhatsApp <span class="text-zinc-600 normal-case tracking-normal font-normal text-sm italic">(10 digitos)</span></label>
-                    <input type="tel" name="user_phone" required pattern="[0-9]{10}" maxlength="10" class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
-                </div>
-
-                <div>
-                    <label class="field-label">Email</label>
-                    <input type="email" name="user_email" required class="w-full py-3 px-0 border-b border-zinc-700 focus:border-white transition-colors text-lg bg-transparent font-bold">
-                </div>
-
-                <div class="poster-card">
-                    <label class="field-label">Ciudad</label>
-                    <div class="custom-dropdown relative">
-                        <button type="button" class="dropdown-btn w-full flex justify-between items-center bg-black border border-[#333] rounded-none py-4 px-6 text-white text-lg font-bold italic uppercase transition-all duration-300">
-                            <span class="dropdown-label opacity-50">Selecciona una ciudad...</span>
-                            <svg class="dropdown-icon w-5 h-5 text-zinc-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div class="dropdown-menu absolute w-full mt-2 bg-[#080808] border border-[#333] rounded-none overflow-hidden opacity-0 invisible -translate-y-2 transition-all duration-300 z-50 shadow-2xl">
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Sabaneta">Sabaneta</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Medellin">Medellin</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Envigado">Envigado</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Itagui">Itagui</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Poblado">Poblado</div>
-                            <div class="dropdown-option px-6 py-4 cursor-pointer hover:bg-[#D20000] hover:text-white transition-all duration-200 text-zinc-400 font-bold italic uppercase" data-value="Otro">Otro</div>
-                        </div>
-                        <input type="hidden" id="ciudad" name="ciudad" data-label="Ciudad" required>
-                    </div>
-                </div>
-            </div>
-
-            <p class="reveal-item text-[10px] uppercase tracking-[0.2em] text-zinc-500 text-center leading-relaxed mt-2">
-                Este formulario genera una <span class="text-white">estimacion orientativa</span>. Una vez recibida tu solicitud,
-                te contactare de inmediato por <span class="text-white">WhatsApp</span> para confirmar los detalles y agendar tu cita.
+            <p class="quote-cta-lead reveal-item">
+                El cotizador te da el precio al instante. Cuatro pasos, menos de un minuto.
             </p>
 
-            <button type="submit" id="submit-btn" class="reveal-item w-full text-white py-8 rounded-none text-3xl font-black uppercase italic tracking-tighter mt-4">
-                Enviar Solicitud
-            </button>
-        </form>
+            <div class="quote-steps reveal-item">
+                <div class="quote-step">
+                    <span class="quote-step-num">01</span>
+                    <span class="quote-step-txt">Tus datos de contacto</span>
+                </div>
+                <div class="quote-step">
+                    <span class="quote-step-num">02</span>
+                    <span class="quote-step-txt">Cu&#233;ntame tu idea</span>
+                </div>
+                <div class="quote-step">
+                    <span class="quote-step-num">03</span>
+                    <span class="quote-step-txt">Tama&#241;o y precio en vivo</span>
+                </div>
+                <div class="quote-step">
+                    <span class="quote-step-num">04</span>
+                    <span class="quote-step-txt">Referencias (opcional)</span>
+                </div>
+            </div>
 
+            <div class="quote-badge reveal-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                <span>El resultado es una <strong>INVERSI&#211;N APROXIMADA</strong>, por confirmar con Negas seg&#250;n el detalle final del dise&#241;o.</span>
+            </div>
+
+            <button type="button" class="quote-cta-btn js-open-quote reveal-item" data-origin="seccion-cotizacion">
+                Cotizar tatuaje
+            </button>
+
+            <div class="quote-cta-alt reveal-item">
+                <span>&#191;Prefieres hablar directo?</span>
+                <a href="#" target="_blank" rel="noopener" class="js-wa js-wa-track" data-origin="seccion-cotizacion">Escr&#237;beme por WhatsApp</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════ 5. FAQ ══════════════ -->
+    <section class="faq-section">
         <div class="accordion-container reveal-item">
-            <h2 class="text-3xl font-black italic uppercase tracking-tighter mb-10 text-center">Preguntas Frecuentes</h2>
+            <h2 class="faq-title">Preguntas Frecuentes</h2>
             <div class="accordion">
                 <div class="accordion-line top-line" style="top:0; bottom:auto;"></div>
                 <div class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">Cual es el valor minimo de una cotizacion?</span>
+                        <span class="accordion-title">&#191;Cu&#225;l es el valor m&#237;nimo de una cotizaci&#243;n?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">El valor minimo depende del tamano y complejidad del diseno. Para piezas pequenas comenzamos desde $180.000 COP. Te recomendamos usar el cotizador para obtener una estimacion inicial.</p>
+                        <p class="accordion-text">El valor m&#237;nimo depende del tama&#241;o y la complejidad del dise&#241;o. Para piezas peque&#241;as comenzamos desde $180.000 COP. Usa el cotizador para obtener una estimaci&#243;n inicial.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </div>
 
                 <article class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">Puedo modificar el diseno despues de cotizado?</span>
+                        <span class="accordion-title">&#191;El precio del cotizador es el precio final?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">Claro, los disenos pueden ajustarse segun tus preferencias. Cambios menores no tienen costo adicional. Modificaciones significativas pueden afectar el valor final de la cotizacion.</p>
+                        <p class="accordion-text">No. El cotizador te da una <strong>inversi&#243;n aproximada</strong> basada en el tama&#241;o. El valor definitivo lo confirmo contigo por WhatsApp cuando vea el dise&#241;o, porque la densidad de detalle y la zona del cuerpo tambi&#233;n influyen. Nunca te cobro m&#225;s sin hab&#233;rtelo dicho antes.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </article>
 
                 <article class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">Cuanto tiempo tarda realizar un tatuaje?</span>
+                        <span class="accordion-title">&#191;Puedo modificar el dise&#241;o despu&#233;s de cotizado?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">El tiempo depende del tamano, complejidad y ubicacion del diseno. Pueden ser desde 30 minutos para piezas pequenas, hasta varias horas para trabajos mas complejos. La duracion se especifica en tu cotizacion.</p>
+                        <p class="accordion-text">Claro, los dise&#241;os pueden ajustarse seg&#250;n tus preferencias. Cambios menores no tienen costo adicional. Modificaciones significativas pueden afectar el valor final de la cotizaci&#243;n.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </article>
 
                 <article class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">Que cuidados debo tener despues del tatuaje?</span>
+                        <span class="accordion-title">&#191;Cu&#225;nto tiempo tarda realizar un tatuaje?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">Manten el area limpia e hidratada. Evita la exposicion al sol durante las primeras semanas. No nades en piscinas o playas durante el proceso de cicatrizacion. Usa bloqueador a partir de la segunda semana. Evita ropa muy ajustada sobre la zona tatuada.</p>
+                        <p class="accordion-text">Depende del tama&#241;o, la complejidad y la ubicaci&#243;n del dise&#241;o. Pueden ser desde 30 minutos para piezas peque&#241;as hasta varias horas para trabajos m&#225;s complejos. La duraci&#243;n se especifica en tu cotizaci&#243;n.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </article>
 
                 <article class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">Hacen tatuajes de cobertura?</span>
+                        <span class="accordion-title">&#191;Qu&#233; cuidados debo tener despu&#233;s del tatuaje?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">No hago coberturas, mi trabajo usa el contraste de la piel con la tinta para crear espacios de luz, tiendo a no rellenar solido con tinta, por esto es imposible hacer coberturas con mi estilo de tatuaje.</p>
+                        <p class="accordion-text">Mant&#233;n el &#225;rea limpia e hidratada con Lubriderm azul, evita el sol y el agua estancada durante la cicatrizaci&#243;n. Tienes el paso a paso completo en <a href="/cuidados" class="accordion-link">cuidados post-tatuaje</a>.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </article>
 
                 <article class="accordion-item">
                     <div class="accordion-header">
-                        <span class="accordion-title">Cual es la politica de cancelación de citas?</span>
+                        <span class="accordion-title">&#191;Hacen tatuajes de cobertura?</span>
                         <div class="accordion-icon">+</div>
                     </div>
                     <div class="accordion-content">
-                        <p class="accordion-text">Las cotizaciones no requieren deposito. Para confirmar tu cita, es necesario un abono de 50.000 pesos. No reembolsamos el abono en caso de cancelacion, es posible reagendar si se avisa con minimo 48 horas de anticipacion. Reagendaciones posteriores estan sujetas a disponibilidad.</p>
+                        <p class="accordion-text">No hago coberturas. Mi trabajo usa el contraste de la piel con la tinta para crear espacios de luz y tiendo a no rellenar s&#243;lido, por esto es imposible hacer coberturas con mi estilo de tatuaje.</p>
                     </div>
                     <div class="accordion-line"></div>
                 </article>
-            </div>
-        </div>
 
-        <div class="pt-20 reveal-item">
-            <div class="max-w-2xl mx-auto text-center">
-                <p class="text-zinc-500 text-sm leading-relaxed mb-8">Si tienes dudas sobre tu cotización, contáctame directamente a traves de WhatsApp.</p>
-
-                <div class="flex justify-center">
-                    <a href="#" target="_blank" rel="noopener" class="js-wa btn-poster bg-[#D20000] text-white py-8 px-12 block w-full text-center text-3xl font-black uppercase italic tracking-tighter hover:bg-[#b00000] transition duration-500">
-                        Pregunta aqui
-                    </a>
-                </div>
+                <article class="accordion-item">
+                    <div class="accordion-header">
+                        <span class="accordion-title">&#191;Cu&#225;l es la pol&#237;tica de cancelaci&#243;n de citas?</span>
+                        <div class="accordion-icon">+</div>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="accordion-text">Las cotizaciones no requieren dep&#243;sito. Para confirmar tu cita es necesario un abono de $50.000. No reembolsamos el abono en caso de cancelaci&#243;n; es posible reagendar si se avisa con m&#237;nimo 48 horas de anticipaci&#243;n. Reagendaciones posteriores est&#225;n sujetas a disponibilidad.</p>
+                    </div>
+                    <div class="accordion-line"></div>
+                </article>
             </div>
         </div>
     </section>
     </main>
 
-    <a href="#booking" id="floating-cta" class="floating-cta" aria-label="Cotizar tatuaje">
+    <button type="button" id="floating-cta" class="floating-cta js-open-quote" data-origin="flotante" aria-label="Cotizar tatuaje">
         COTIZAR TATUAJE
-    </a>
+    </button>
 
-    <div id="lightbox" class="fixed inset-0 z-[200] cursor-pointer bg-black/95 backdrop-blur-md flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-        <button type="button"
-                class="absolute top-6 left-6 md:top-8 md:left-8 text-white z-[250] flex items-center gap-2 group transition-all p-4 bg-black/20 rounded-full backdrop-blur-md"
-                aria-label="Volver">
-            <svg class="w-7 h-7 md:w-9 md:h-9 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- ══════════════ LIGHTBOX ══════════════ -->
+    <div id="lightbox">
+        <button type="button" class="lb-back" aria-label="Volver">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            <span class="hidden md:block uppercase tracking-[0.2em] text-[11px] font-black italic">Volver</span>
+            <span>Volver</span>
         </button>
-        <img id="lb-img" src="" class="max-w-[90%] max-h-[85%] object-contain cursor-default shadow-2xl transition-all duration-500" alt="Negas Ink Portfolio Zoom">
+        <img id="lb-img" src="" alt="Negas Tattoo Portfolio Zoom">
     </div>
 
+    <!-- ══════════════ POPUP COTIZADOR ══════════════ -->
+    <div id="quote-modal" class="qm" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="qm-heading">
+        <div class="qm-overlay" data-qm-close></div>
+
+        <div class="qm-panel" role="document">
+            <button type="button" class="qm-close" data-qm-close aria-label="Cerrar">&#10005;</button>
+
+            <div class="qm-head">
+                <div class="qm-kicker">Negas Tattoo &#183; Sabaneta</div>
+                <h2 id="qm-heading" class="qm-title">Cotiza tu <span>tatuaje</span></h2>
+                <div class="qm-progress" aria-hidden="true">
+                    <div class="qm-bar"><div class="qm-bar-fill" id="qm-bar-fill"></div></div>
+                    <div class="qm-progress-txt">Paso <span id="qm-step-now">1</span> de 4</div>
+                </div>
+            </div>
+
+            <form id="quote-form" class="qm-body" novalidate>
+
+                <!-- ── Paso 1: datos ── -->
+                <section class="qm-step is-active" data-step="1">
+                    <p class="qm-step-lead">Para empezar, &#191;con qui&#233;n hablo?</p>
+
+                    <div class="qm-field">
+                        <label class="qm-label" for="qm-name">Nombre <span class="qm-req">*</span></label>
+                        <input type="text" id="qm-name" name="name" class="qm-input" autocomplete="name" placeholder="Tu nombre" maxlength="120" required>
+                        <p class="qm-error" data-error-for="name"></p>
+                    </div>
+
+                    <div class="qm-field">
+                        <label class="qm-label" for="qm-phone">WhatsApp <span class="qm-req">*</span></label>
+                        <div class="qm-phone">
+                            <span class="qm-phone-prefix">+57</span>
+                            <input type="tel" id="qm-phone" name="phone" class="qm-input qm-input--phone" inputmode="numeric" autocomplete="tel-national" placeholder="300 123 4567" maxlength="10" required>
+                        </div>
+                        <p class="qm-hint">10 d&#237;gitos, sin espacios. Aqu&#237; te env&#237;o tu cotizaci&#243;n.</p>
+                        <p class="qm-error" data-error-for="phone"></p>
+                    </div>
+
+                    <div class="qm-field">
+                        <label class="qm-label" for="qm-email">Email <span class="qm-opt">opcional</span></label>
+                        <input type="email" id="qm-email" name="email" class="qm-input" autocomplete="email" placeholder="tucorreo@email.com" maxlength="200">
+                        <p class="qm-error" data-error-for="email"></p>
+                    </div>
+
+                    <label class="qm-consent">
+                        <input type="checkbox" id="qm-consent" name="consent" required>
+                        <span>Autorizo el tratamiento de mis datos personales conforme a la <a href="/privacidad" target="_blank" rel="noopener">pol&#237;tica de privacidad</a>.</span>
+                    </label>
+                    <p class="qm-error" data-error-for="consent"></p>
+
+                    <p class="qm-notice">
+                        Estudio privado en <strong>Sabaneta, Antioquia</strong>. Atenci&#243;n presencial &#250;nicamente, con cita previa.
+                    </p>
+
+                    <button type="button" class="qm-btn qm-btn--primary" data-qm-next="1">
+                        Continuar
+                    </button>
+                </section>
+
+                <!-- ── Paso 2: idea ── -->
+                <section class="qm-step" data-step="2">
+                    <p class="qm-step-lead">Cu&#233;ntame tu idea</p>
+
+                    <div class="qm-field">
+                        <textarea id="qm-description" name="description" class="qm-textarea" rows="7" maxlength="500"
+                                  placeholder="Describe tu diseño con detalles: estilo de tatuaje, en qué zona del cuerpo, y si es posible, envíame referencias de tu tatuaje para darme una idea de lo que quieres."></textarea>
+                        <div class="qm-counter"><span id="qm-char-count">0</span>/500</div>
+                        <p class="qm-error" data-error-for="description"></p>
+                    </div>
+
+                    <div class="qm-nav">
+                        <button type="button" class="qm-btn qm-btn--ghost" data-qm-back="2">Atr&#225;s</button>
+                        <button type="button" class="qm-btn qm-btn--primary" data-qm-next="2">Continuar</button>
+                    </div>
+                </section>
+
+                <!-- ── Paso 3: tamaño + precio ── -->
+                <section class="qm-step" data-step="3">
+                    <p class="qm-step-lead">&#191;Qu&#233; tan grande lo quieres?</p>
+
+                    <div class="qm-size">
+                        <div class="qm-size-row">
+                            <input type="range" id="qm-size" name="sizeCm" min="0" max="60" step="1" value="0" class="qm-range" aria-label="Tamaño en centímetros">
+                            <div class="qm-size-val"><span id="qm-size-display">0</span><small>cm</small></div>
+                        </div>
+                        <div class="qm-size-scale"><span>0</span><span>30</span><span>60</span></div>
+                    </div>
+
+                    <div class="qm-price" id="qm-price">
+                        <div class="qm-price-idle" id="qm-price-idle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            Desliza para ver tu inversi&#243;n aproximada
+                        </div>
+                        <div class="qm-price-result" id="qm-price-result" hidden>
+                            <div class="qm-price-val" id="qm-price-val"></div>
+                            <div class="qm-price-tag">
+                                INVERSI&#211;N APROXIMADA
+                                <span>Por confirmar con Negas</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="qm-error" data-error-for="sizeCm"></p>
+
+                    <p class="qm-fineprint">
+                        El valor definitivo depende del detalle del dise&#241;o y la zona del cuerpo. Te lo confirmo por WhatsApp antes de agendar.
+                    </p>
+
+                    <div class="qm-nav">
+                        <button type="button" class="qm-btn qm-btn--ghost" data-qm-back="3">Atr&#225;s</button>
+                        <button type="button" class="qm-btn qm-btn--primary" data-qm-next="3">Continuar</button>
+                    </div>
+                </section>
+
+                <!-- ── Paso 4: referencias ── -->
+                <section class="qm-step" data-step="4">
+                    <p class="qm-step-lead">Referencias <span class="qm-opt">opcional</span></p>
+                    <p class="qm-step-sub">En caso de que tengas referencias como im&#225;genes, m&#243;ntalas aqu&#237;.</p>
+
+                    <input type="file" id="qm-file" accept="image/jpeg,image/png,image/webp" hidden>
+                    <div id="qm-drop" class="qm-drop" role="button" tabindex="0" aria-label="Subir imagen de referencia">
+                        <div class="qm-drop-inner" id="qm-drop-inner">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span>Subir imagen</span>
+                            <small>JPG, PNG o WEBP &#183; m&#225;x 10MB</small>
+                        </div>
+                        <img id="qm-preview" class="qm-preview" alt="Vista previa de tu referencia" hidden>
+                    </div>
+                    <button type="button" id="qm-file-clear" class="qm-file-clear" hidden>Quitar imagen</button>
+                    <p class="qm-error" data-error-for="file"></p>
+
+                    <div class="qm-nav">
+                        <button type="button" class="qm-btn qm-btn--ghost" data-qm-back="4">Atr&#225;s</button>
+                        <button type="submit" class="qm-btn qm-btn--primary" id="qm-submit">Ver mi cotizaci&#243;n</button>
+                    </div>
+                    <button type="button" class="qm-skip" id="qm-skip">Omitir y enviar sin im&#225;genes</button>
+                </section>
+
+                <!-- ── Cierre ── -->
+                <section class="qm-step qm-step--done" data-step="5">
+                    <div class="qm-done-mark">&#10003;</div>
+                    <h3 class="qm-done-title">Listo, <span id="qm-done-name">ya qued&#243;</span></h3>
+
+                    <div class="qm-done-price">
+                        <div class="qm-price-val" id="qm-done-val"></div>
+                        <div class="qm-price-tag">
+                            INVERSI&#211;N APROXIMADA
+                            <span>Por confirmar con Negas</span>
+                        </div>
+                    </div>
+
+                    <p class="qm-done-lead">
+                        Ya tengo tu solicitud. El siguiente paso es cerrar los detalles conmigo &#8212; te abro el chat con el resumen listo.
+                    </p>
+
+                    <a href="#" id="qm-wa-cta" class="qm-btn qm-btn--primary qm-btn--wa" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.9 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                        Continuar por WhatsApp
+                    </a>
+
+                    <button type="button" class="qm-skip" data-qm-close>Cerrar</button>
+                </section>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════════ FOOTER ══════════════ -->
     <footer id="contact" class="nfooter">
         <div class="nfooter-inner">
             <div class="nfooter-grid">
@@ -492,22 +509,30 @@
                     </div>
                     <p class="nfooter-desc">Estudio privado de tatuaje en Sabaneta. Cita previa, una sola persona a la vez. Nos vemos cuando est&#233;s listo.</p>
                     <div class="nfooter-socials">
-                        <a href="https://www.instagram.com/negas.tattoo" target="_blank" rel="noopener" aria-label="Instagram" class="nfooter-soc js-ig">IG</a>
-                        <a href="https://wa.me/573046796003" target="_blank" rel="noopener" aria-label="WhatsApp" class="nfooter-soc js-wa">WA</a>
-                        <a href="https://www.facebook.com/negas.ink" target="_blank" rel="noopener" aria-label="Facebook" class="nfooter-soc js-fb">FB</a>
+                        <a href="https://www.instagram.com/negas.tattoo" target="_blank" rel="noopener" aria-label="Instagram" class="nfooter-soc js-ig" title="Instagram">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                        </a>
+                        <a href="#" target="_blank" rel="noopener" aria-label="WhatsApp" class="nfooter-soc js-wa js-wa-track" data-origin="footer" title="WhatsApp">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.9 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                        </a>
+                        <a href="https://www.facebook.com/negas.ink" target="_blank" rel="noopener" aria-label="Facebook" class="nfooter-soc js-fb" title="Facebook">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        </a>
                     </div>
                 </div>
                 <div>
                     <div class="nfooter-col-title">Navegaci&#243;n</div>
                     <div class="nfooter-links">
                         <a href="#work">Portafolio</a>
-                        <a href="#booking">Cotizar</a>
+                        <a href="#estilos">Estilos</a>
+                        <a href="/cotizar" class="js-open-quote" data-origin="footer">Cotizar tatuaje</a>
+                        <a href="/cuidados">Cuidados post-tatuaje</a>
                     </div>
                 </div>
                 <div>
                     <div class="nfooter-col-title">Contacto</div>
                     <p class="nfooter-contact-txt">Sabaneta, Antioquia<br>Colombia</p>
-                    <a href="https://wa.me/573046796003" target="_blank" rel="noopener" class="nfooter-contact-lnk js-wa">WhatsApp directo</a>
+                    <a href="#" target="_blank" rel="noopener" class="nfooter-contact-lnk js-wa js-wa-track" data-origin="footer-contacto">WhatsApp directo</a>
                     <a href="https://www.instagram.com/negas.tattoo" target="_blank" rel="noopener" class="nfooter-contact-lnk js-ig">@negas.tattoo</a>
                 </div>
                 <div>
@@ -515,55 +540,21 @@
                     <div class="nfooter-sched">
                         <div class="nfooter-sched-row"><span class="nfooter-sched-day">Lun&#8211;Vie</span><span class="nfooter-sched-time">10:00 &#8212; 19:00</span></div>
                         <div class="nfooter-sched-row"><span class="nfooter-sched-day">S&#225;bado</span><span class="nfooter-sched-time">11:00 &#8212; 16:00</span></div>
-                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">Dom&#8211;</span><span class="nfooter-sched-time">Cerrado</span></div>
+                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">Domingo</span><span class="nfooter-sched-time">Cerrado</span></div>
                     </div>
-                    <div class="nfooter-badge"><span class="nfooter-badge-dot"></span>Abierto ahora</div>
+                    <p class="nfooter-sched-note">Solo con cita previa</p>
                 </div>
             </div>
             <div class="nfooter-bottom">
-                <div>&#169; 2026 Negas Tattoo &#8212; Todos los derechos, ninguna licencia para copiar dise&#241;os.</div>
+                <div>&#169; negas.tattoo desde 2024 &#8212; Todos los derechos, ninguna licencia para copiar dise&#241;os.</div>
                 <div class="nfooter-bottom-links">
-                    <a href="#">Privacidad</a>
-                    <a href="#">Cuidados post-tatuaje</a>
+                    <a href="/privacidad">Privacidad</a>
+                    <a href="/cuidados">Cuidados post-tatuaje</a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <div id="city-warning" class="fixed inset-0 z-[300] hidden items-center justify-center p-6">
-        <div id="city-warning-overlay" class="absolute inset-0 bg-black/90 backdrop-blur-md"></div>
-        <div class="poster-card max-w-lg w-full z-10 border-red-600 text-center space-y-6">
-            <h4 class="text-3xl font-black italic uppercase tracking-tighter">Aviso Importante</h4>
-            <p class="text-zinc-300 italic leading-relaxed">
-                Hola. Que alegrÍa que consideres mi trabajo. Solo queria recordarte que mi estudio esta ubicado unicamente en <strong>Sabaneta, Antioquia</strong>. Si tienes la disponibilidad para viajar y llegar hasta aqui, estas mas que invitado a enviar tu solicitud.
-            </p>
-            <button type="button"
-                    id="city-warning-close"
-                    class="bg-white text-black px-8 py-4 font-black uppercase italic tracking-tighter hover:bg-red-600 hover:text-white transition-all w-full">
-                Entendido, alla llegare
-            </button>
-        </div>
-    </div>
-
     <script src="script.js" type="module" defer></script>
-    <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('tattoo-form');
-            const submitBtn = document.getElementById('submit-btn');
-            const fileInput = document.getElementById('fotoTatuaje');
-
-            const checkForm = () => {
-                const isValid = form.checkValidity();
-                submitBtn.classList.toggle('form-valid', isValid);
-            };
-
-            if (form) form.addEventListener('input', checkForm);
-            if (fileInput) fileInput.addEventListener('change', () => window.handleImagePreview(fileInput));
-
-            setTimeout(() => {
-                if (typeof layout === 'function') layout(true);
-            }, 100);
-        });
-    </script>
 </body>
 </html>

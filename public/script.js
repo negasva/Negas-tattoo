@@ -1,79 +1,134 @@
-// 0. COMPORTAMIENTO INICIAL: Reiniciar scroll al recargar
-if ('scrollRestoration' in history) {
-    history.scrollRestoration = 'manual';
-}
+/* ═══════════════════════════════════════════════════════════════
+   NEGAS TATTOO — frontend
+   Flujo de cotizacion en popup con captura de lead en dos fases:
+     paso 1  -> POST /api/lead/start     (guarda nombre + WhatsApp)
+     paso 4  -> POST /api/lead/complete  (enriquece con idea/tamano/precio)
+   Si la persona abandona en el paso 2 o 3, el contacto ya quedo guardado.
 
-if (!window.location.hash) {
-    window.scrollTo(0, 0);
-}
+   El SDK de Supabase se carga con import() dinamico y SOLO cuando hay que
+   subir una imagen. Antes se importaba arriba del archivo, y si el CDN
+   fallaba el modulo entero moria y se caia el cotizador completo.
+   ═══════════════════════════════════════════════════════════════ */
 
-gsap.registerPlugin(ScrollTrigger);
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+if (!window.location.hash) window.scrollTo(0, 0);
 
-ScrollTrigger.config({
-    ignoreMobileResize: true,
-    limitCallbacks: true,
-    autoRefreshEvents: 'visibilitychange,DOMContentLoaded,load'
-});
+/* ─── Estado global ──────────────────────────────────────────── */
+let appConfig = {};
+let pricing = {
+    base: 90000,
+    perCmSmall: 38000,
+    perCmLarge: 52000,
+    breakpointCm: 15,
+    minimum: 180000,
+    rangeLow: 0.95,
+    rangeHigh: 1.25,
+    maxCm: 60
+};
 
-ScrollTrigger.normalizeScroll(false);
+const quoteSession = {
+    leadId: null,
+    token: null,
+    name: '',
+    phone: '',
+    description: '',
+    sizeCm: 0,
+    price: null
+};
 
-window.addEventListener('load', () => {
-    ScrollTrigger.refresh();
-});
-
-let configuracionApp = {};
-let tiempoEscritura;
-let tiempoCalculo;
-let ultimoMensajeEscrito = '';
-
-async function loadConfig() {
-    const botonEnvio = document.getElementById('submit-btn');
-    if (botonEnvio) botonEnvio.disabled = true;
+/* ─── Tracking (Meta Pixel + Google Ads / GA4) ────────────────── */
+// Nunca lanza: si un pixel no esta configurado o el bloqueador de anuncios lo
+// tumba, el flujo del formulario debe seguir funcionando igual.
+function track(event, params = {}) {
+    try {
+        if (typeof window.fbq === 'function') {
+            const standard = ['Lead', 'SubmitApplication', 'Contact', 'ViewContent', 'PageView'];
+            if (standard.includes(event)) window.fbq('track', event, params);
+            else window.fbq('trackCustom', event, params);
+        }
+    } catch (_) { /* pixel bloqueado */ }
 
     try {
+        if (typeof window.gtag === 'function') {
+            window.gtag('event', event, params);
+        }
+    } catch (_) { /* gtag no cargado */ }
+}
+
+function trackAdsConversion() {
+    const { googleAdsId, googleAdsConversionLabel } = appConfig;
+    if (!googleAdsId || !googleAdsConversionLabel || typeof window.gtag !== 'function') return;
+    try {
+        window.gtag('event', 'conversion', {
+            send_to: `${googleAdsId}/${googleAdsConversionLabel}`
+        });
+    } catch (_) { /* noop */ }
+}
+
+function loadGoogleTags() {
+    const ids = [appConfig.googleAdsId, appConfig.ga4Id].filter(Boolean);
+    if (!ids.length) return;
+
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ids[0]);
+    document.head.appendChild(script);
+
+    ids.forEach(id => window.gtag('config', id));
+}
+
+/* ─── Configuracion ──────────────────────────────────────────── */
+async function loadConfig() {
+    try {
         const res = await fetch('/api/config');
-        if (!res.ok) throw new Error('No se pudo cargar la configuracion');
-        configuracionApp = await res.json();
-        applyConfig();
+        if (!res.ok) throw new Error('config no disponible');
+        appConfig = await res.json();
     } catch (error) {
         console.error('Error loading config:', error);
+        appConfig = {};
     }
-
-    if (botonEnvio) botonEnvio.disabled = false;
+    applyConfig();
 }
 
 function applyConfig() {
-    const { waPhone, instagramUrl, facebookUrl, recaptchaSiteKey, emailjsPublicKey } = configuracionApp;
+    const { waPhone, instagramUrl, facebookUrl, recaptchaSiteKey } = appConfig;
 
+    if (appConfig.pricing) pricing = { ...pricing, ...appConfig.pricing };
     if (recaptchaSiteKey) loadRecaptcha(recaptchaSiteKey);
-    if (emailjsPublicKey) loadEmailJS(emailjsPublicKey);
+    loadGoogleTags();
 
     if (waPhone) {
-        const whatsappWebUrl = 'https://wa.me/' + waPhone;
+        const webUrl = 'https://wa.me/' + waPhone;
         document.querySelectorAll('a.js-wa').forEach(a => {
-            a.href = whatsappWebUrl;
-            a.dataset.webHref = whatsappWebUrl;
+            a.href = webUrl;
+            a.dataset.webHref = webUrl;
             a.dataset.appHref = 'whatsapp://send?phone=' + waPhone;
         });
     }
 
     if (instagramUrl) {
-        const instagramUsername = getInstagramUsername(instagramUrl);
+        const username = getInstagramUsername(instagramUrl);
         document.querySelectorAll('a.js-ig').forEach(a => {
             a.href = instagramUrl;
             a.dataset.webHref = instagramUrl;
-            if (instagramUsername) {
-                a.dataset.appHref = 'instagram://user?username=' + instagramUsername;
-            }
+            if (username) a.dataset.appHref = 'instagram://user?username=' + username;
         });
     }
 
-    if (facebookUrl) document.querySelectorAll('a.js-fb').forEach(a => { a.href = facebookUrl; });
+    if (facebookUrl) {
+        document.querySelectorAll('a.js-fb').forEach(a => { a.href = facebookUrl; });
+    }
 
+    bindDeepLinkAnchors();
 }
 
-// --- reCAPTCHA v3 (carga dinamica segun la site key del backend) ---
+/* ─── reCAPTCHA v3 ───────────────────────────────────────────── */
 let recaptchaReady = null;
+
 function loadRecaptcha(siteKey) {
     if (!siteKey || recaptchaReady) return recaptchaReady;
     recaptchaReady = new Promise((resolve, reject) => {
@@ -81,11 +136,8 @@ function loadRecaptcha(siteKey) {
         script.src = 'https://www.google.com/recaptcha/api.js?render=' + encodeURIComponent(siteKey);
         script.async = true;
         script.onload = () => {
-            if (window.grecaptcha && window.grecaptcha.ready) {
-                window.grecaptcha.ready(() => resolve());
-            } else {
-                reject(new Error('grecaptcha no disponible'));
-            }
+            if (window.grecaptcha && window.grecaptcha.ready) window.grecaptcha.ready(() => resolve());
+            else reject(new Error('grecaptcha no disponible'));
         };
         script.onerror = () => reject(new Error('No se pudo cargar reCAPTCHA'));
         document.head.appendChild(script);
@@ -93,77 +145,31 @@ function loadRecaptcha(siteKey) {
     return recaptchaReady;
 }
 
-async function getRecaptchaToken() {
-    const siteKey = configuracionApp?.recaptchaSiteKey;
+async function getRecaptchaToken(action) {
+    const siteKey = appConfig?.recaptchaSiteKey;
     if (!siteKey) return '';
     try {
         if (recaptchaReady) await recaptchaReady;
         if (!window.grecaptcha) return '';
-        return await window.grecaptcha.execute(siteKey, { action: 'submit_quote' });
+        return await window.grecaptcha.execute(siteKey, { action });
     } catch (error) {
         console.warn('reCAPTCHA token error:', error);
         return '';
     }
 }
 
-// --- EmailJS (carga dinamica + correo de confirmacion al cliente) ---
-let emailjsReady = null;
-function loadEmailJS(publicKey) {
-    if (!publicKey || emailjsReady) return emailjsReady;
-    emailjsReady = new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
-        script.async = true;
-        script.onload = () => {
-            try {
-                window.emailjs.init({ publicKey });
-                resolve();
-            } catch (error) {
-                reject(error);
-            }
-        };
-        script.onerror = () => reject(new Error('No se pudo cargar EmailJS'));
-        document.head.appendChild(script);
-    });
-    return emailjsReady;
-}
-
-// Dispara el correo de confirmacion. Nunca lanza: si falla, no debe romper el
-// flujo de exito (el lead ya quedo guardado en el backend).
-async function sendConfirmationEmail(params) {
-    const { emailjsServiceId, emailjsTemplateId } = configuracionApp || {};
-    if (!emailjsServiceId || !emailjsTemplateId) return;
-    try {
-        if (emailjsReady) await emailjsReady;
-        if (!window.emailjs) return;
-        await window.emailjs.send(emailjsServiceId, emailjsTemplateId, {
-            to_name: params.name,
-            to_email: params.email,
-            reply_to: params.email,
-            zona: params.zone,
-            tamano: params.size,
-            estilo: params.style,
-            precio: params.price
-        });
-    } catch (error) {
-        console.warn('EmailJS send failed:', error);
-    }
-}
-
+/* ─── Deep links a apps nativas en movil ─────────────────────── */
 function isMobileDevice() {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
 }
 
-function getInstagramUsername(instagramUrl) {
+function getInstagramUsername(url) {
     try {
-        const url = new URL(instagramUrl);
-        if (!/instagram\.com$/i.test(url.hostname) && !/www\.instagram\.com$/i.test(url.hostname)) {
-            return '';
-        }
-
-        const [username] = url.pathname.split('/').filter(Boolean);
+        const parsed = new URL(url);
+        if (!/(^|\.)instagram\.com$/i.test(parsed.hostname)) return '';
+        const [username] = parsed.pathname.split('/').filter(Boolean);
         return username || '';
-    } catch (_error) {
+    } catch (_) {
         return '';
     }
 }
@@ -177,19 +183,17 @@ function openAppOrFallback(appUrl, webUrl) {
     const startedAt = Date.now();
     const fallbackDelay = 1200;
     const fallback = setTimeout(() => {
-        if (Date.now() - startedAt < fallbackDelay + 250) {
-            window.location.href = webUrl;
-        }
+        if (Date.now() - startedAt < fallbackDelay + 250) window.location.href = webUrl;
     }, fallbackDelay);
 
-    const handleVisibilityChange = () => {
+    const onVisibility = () => {
         if (document.hidden) {
             clearTimeout(fallback);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            document.removeEventListener('visibilitychange', onVisibility);
         }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('visibilitychange', onVisibility);
     window.location.href = appUrl;
 }
 
@@ -199,11 +203,14 @@ function bindDeepLinkAnchors() {
         anchor.dataset.deepLinkBound = 'true';
 
         anchor.addEventListener('click', event => {
+            if (anchor.classList.contains('js-wa-track')) {
+                track('ClickWhatsApp', { origen: anchor.dataset.origin || 'desconocido' });
+            }
             if (!isMobileDevice()) return;
 
             const appHref = anchor.dataset.appHref;
             const webHref = anchor.dataset.webHref || anchor.href;
-            if (!webHref) return;
+            if (!webHref || webHref.endsWith('#')) return;
 
             event.preventDefault();
             openAppOrFallback(appHref, webHref);
@@ -211,354 +218,103 @@ function bindDeepLinkAnchors() {
     });
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   GALERIA — se alimenta de /api/gallery (editable desde el admin)
+   ═══════════════════════════════════════════════════════════════ */
+const galGrid = document.getElementById('galGrid');
+const galCount = document.getElementById('galCount');
+const galEmpty = document.getElementById('galEmpty');
+let galleryImages = [];
+let activeFilter = 'All';
 
-function showSubmitError(message) {
-    alert(message);
-    typeWriter(message, 'text-red-500', true);
-}
-
-function showSubmitWarning(message) {
-    alert(message);
-    typeWriter(message, 'text-amber-400');
-}
-
-window.toggleMenu = function(e) {
-    e.stopPropagation();
-    const m = document.getElementById('mobileMenu');
-    if (!m) return;
-    m.classList.toggle('active');
-    document.body.classList.toggle('menu-open', m.classList.contains('active'));
-};
-
-document.querySelector('.redes-dropdown button')?.addEventListener('click', (e) => {
-    if (window.innerWidth <= 768) {
-        e.preventDefault();
-        e.currentTarget.parentElement.classList.toggle('active');
-    }
-});
-
-document.querySelectorAll('.custom-dropdown').forEach(dropdown => {
-    const btn = dropdown.querySelector('.dropdown-btn');
-    const menu = dropdown.querySelector('.dropdown-menu');
-    const icon = dropdown.querySelector('.dropdown-icon');
-    const label = dropdown.querySelector('.dropdown-label');
-    const input = dropdown.querySelector('input[type="hidden"]');
-    const options = dropdown.querySelectorAll('.dropdown-option');
-
-    btn.onclick = (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.dropdown-menu').forEach(m => {
-            if (m !== menu) {
-                m.classList.add('opacity-0', 'invisible', '-translate-y-2');
-                m.previousElementSibling.querySelector('.dropdown-icon').classList.remove('rotate-180');
-            }
-        });
-        const open = !menu.classList.contains('invisible');
-        menu.classList.toggle('opacity-0', open);
-        menu.classList.toggle('invisible', open);
-        menu.classList.toggle('-translate-y-2', open);
-        icon.classList.toggle('rotate-180', !open);
-    };
-
-    options.forEach(opt => {
-        opt.onclick = (e) => {
-            e.stopPropagation();
-            input.value = opt.getAttribute('data-value');
-            label.textContent = opt.textContent;
-            label.classList.remove('opacity-50');
-            menu.classList.add('opacity-0', 'invisible', '-translate-y-2');
-            icon.classList.remove('rotate-180');
-
-            if (input.id === 'ciudad' && opt.getAttribute('data-value') === 'Otro') {
-                const warning = document.getElementById('city-warning');
-                if (warning) {
-                    warning.classList.remove('hidden');
-                    warning.classList.add('flex');
-                }
-            }
-
-            calculatePrice();
-        };
-    });
-});
-
-window.addEventListener('click', () => {
-    document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.add('opacity-0', 'invisible', '-translate-y-2'));
-    document.querySelectorAll('.dropdown-icon').forEach(i => i.classList.remove('rotate-180'));
-});
-
-function typeWriter(text, colorClass = 'text-zinc-500', shake = false) {
-    const elementoMensaje = document.getElementById('terminal-msg');
-    if (!elementoMensaje || (ultimoMensajeEscrito === text && elementoMensaje.classList.contains('animate-shake') === shake)) return;
-
-    ultimoMensajeEscrito = text;
-    clearTimeout(tiempoEscritura);
-    elementoMensaje.className = `text-[10px] uppercase tracking-widest leading-relaxed transition-colors duration-300 ${colorClass} ${shake ? 'animate-shake' : ''}`;
-    elementoMensaje.textContent = '';
-    let indice = 0;
-
-    function type() {
-        if (indice < text.length) {
-            elementoMensaje.textContent += text.charAt(indice);
-            indice++;
-            tiempoEscritura = setTimeout(type, 10);
-        }
-    }
-
-    type();
-}
-
-window.calculatePrice = function() {
-    const selectorSize = document.getElementById('size');
-    const selectorComp = document.getElementById('complexity');
-    const displaySize = document.getElementById('size-display-val');
-    const displayPrice = document.getElementById('price-display');
-    const contenedorResultado = document.getElementById('price-result');
-    const spinner = document.getElementById('terminal-spinner');
-    const disclaimer = document.getElementById('disclaimer-msg');
-    const terminal = document.getElementById('terminal-container');
-
-    if (!selectorSize || !selectorComp || !displaySize || !displayPrice || !contenedorResultado) return;
-
-    const valorTamano = Number(selectorSize.value);
-    displaySize.textContent = valorTamano + 'cm';
-    document.getElementById('form-size').value = valorTamano + 'cm';
-
-    const valorComplejidad = parseFloat(selectorComp.value);
-    const ideaProyecto = document.querySelector('textarea[name="message"]')?.value.trim();
-    const estiloSeleccionado = !Number.isNaN(valorComplejidad);
-    const ideaValida = Boolean(ideaProyecto);
-
-    clearTimeout(tiempoCalculo);
-
-    if (!estiloSeleccionado || !ideaValida) {
-        if (spinner) spinner.classList.add('hidden');
-        if (terminal) terminal.classList.remove('hidden');
-        typeWriter('Completa los campos requeridos', 'text-zinc-500');
-        contenedorResultado.classList.add('hidden', 'opacity-0');
-        if (disclaimer) disclaimer.classList.remove('hidden');
-    } else {
-        if (spinner) spinner.classList.remove('hidden');
-        if (terminal) terminal.classList.remove('hidden');
-        typeWriter('Procesando...', 'text-emerald-500/80');
-        tiempoCalculo = setTimeout(() => {
-            if (spinner) spinner.classList.add('hidden');
-            if (terminal) terminal.classList.add('hidden');
-            const base = 90000;
-            const factorPequeno = 33000;
-            const factorGrande = 45000;
-            const total = base + Math.min(valorTamano, 15) * factorPequeno * valorComplejidad + Math.max(0, valorTamano - 15) * factorGrande * valorComplejidad;
-            displayPrice.textContent = '$' + total.toLocaleString('es-CO');
-            document.getElementById('form-estimated-price').value = '$' + total.toLocaleString('es-CO');
-            contenedorResultado.classList.remove('hidden');
-            if (disclaimer) disclaimer.classList.add('hidden');
-            setTimeout(() => contenedorResultado.classList.remove('opacity-0'), 10);
-        }, 800);
-    }
-};
-
-import { supabase, uploadReferenceImage } from './supabase.js'
-
-const form = document.getElementById('tattoo-form');
-if (form) {
-    form.onsubmit = async e => {
-        e.preventDefault();
-
-        const btn = document.getElementById('submit-btn');
-        const originalLabel = btn.textContent;
-        btn.textContent = 'ENVIANDO...';
-        btn.disabled = true;
-
-        try {
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                throw new Error('Completa todos los campos requeridos.');
-            }
-
-            // 1) Subida de imagen con control estricto: si falla, abortamos el
-            //    envio para no mandar la cotizacion en silencio sin la imagen.
-            let referenceImgUrl = null;
-            const fileInput = document.getElementById('fotoTatuaje');
-            const file = fileInput?.files?.[0];
-
-            if (file) {
-                try {
-                    const path = await uploadReferenceImage(file);
-                    const { data } = supabase.storage.from('reference-images').getPublicUrl(path);
-                    referenceImgUrl = data.publicUrl;
-                } catch (uploadError) {
-                    console.error('Image upload failed:', uploadError);
-                    alert('No pudimos subir tu imagen de referencia. Revisa tu conexion y que el archivo sea JPG/PNG/WEBP (max 10MB), luego intenta de nuevo.');
-                    btn.textContent = originalLabel;
-                    btn.disabled = false;
-                    return;
-                }
-            }
-
-            // 2) Token reCAPTCHA v3 (lo valida el backend antes de guardar).
-            const recaptchaToken = await getRecaptchaToken();
-            const tokenField = document.getElementById('recaptcha_token');
-            if (tokenField) tokenField.value = recaptchaToken;
-
-            const estiloRaw = document.querySelector('#complexity')?.closest('.custom-dropdown')?.querySelector('.dropdown-label')?.textContent?.trim();
-            const estiloLabel = (estiloRaw && estiloRaw !== 'Selecciona una opcion...') ? estiloRaw : '';
-
-            const estimatedPrice = document.getElementById('form-estimated-price')?.value
-                || document.getElementById('price-display')?.textContent?.trim()
-                || '';
-            const leadData = {
-                name: form.user_name.value.trim(),
-                email: form.user_email.value.trim(),
-                phone: form.user_phone.value.trim(),
-                tattoo_zone: document.getElementById('tattoo_zone').value,
-                size: document.getElementById('form-size').value.trim(),
-                description: form.message.value.trim(),
-                reference_img_url: referenceImgUrl,
-                recaptchaToken
-            };
-
-            // 3) Enviar al endpoint seguro del backend (ya no a Supabase directo).
-            const res = await fetch('/api/submit-quote', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(leadData)
-            });
-
-            if (!res.ok) {
-                let serverMsg = 'No se pudo enviar tu cotizacion. Intenta de nuevo.';
-                try {
-                    const body = await res.json();
-                    if (body?.error) serverMsg = body.error;
-                } catch (_) { /* respuesta sin JSON */ }
-                throw new Error(serverMsg);
-            }
-
-            // 4) Flujo de exito: correo de confirmacion al cliente via EmailJS.
-            await sendConfirmationEmail({
-                name: leadData.name,
-                email: leadData.email,
-                zone: leadData.tattoo_zone,
-                size: leadData.size,
-                style: estiloLabel,
-                price: estimatedPrice
-            });
-
-            sessionStorage.setItem('ultimaCotizacion', JSON.stringify({
-                cliente_nombre: leadData.name,
-                zona_tatuaje: leadData.tattoo_zone,
-                tamano_final: leadData.size,
-                complejidad_diseno: estiloLabel,
-                cotizacion_estimada: estimatedPrice
-            }));
-            window.location.href = 'resumen.html';
-        } catch (error) {
-            console.error('Submit error:', error);
-            showSubmitError(error.message || 'Error al enviar. Intenta de nuevo.');
-            btn.textContent = 'REINTENTAR';
-            btn.disabled = false;
-            return;
-        }
-
-        btn.textContent = 'ENVIADO';
-    };
-}
-
-function getAltText(url) {
-    const filename = url.substring(url.lastIndexOf('/') + 1).split('.')[0].toLowerCase();
-    let alt = 'Tatuaje Blackwork Negas Ink Sabaneta';
-    if (filename.includes('mariposa')) alt = 'Tatuaje de mariposa blackwork Negas Ink';
-    else if (filename.includes('letras')) alt = 'Tatuaje de letras blackwork Negas Ink';
-    else if (filename.includes('angel')) alt = 'Tatuaje de angel blackwork Negas Ink';
-    else if (filename.includes('tigre')) alt = 'Tatuaje de tigre blackwork Negas Ink';
-    else if (filename.includes('mask')) alt = 'Tatuaje de mascara blackwork Negas Ink';
-    return alt;
-}
-
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
+function shuffle(arr) {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+        [copy[i], copy[j]] = [copy[j], copy[i]];
     }
-    return array;
+    return copy;
 }
 
-const allImageUrls = [
-    'https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg', 'https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg', 'https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg',
-    'https://i.ibb.co/s93WWvNq/Tatttoo-Angel-copy-7.jpg', 'https://i.ibb.co/35ggTM1t/Tatttoo-pierna-completa-copy-2.jpg', 'https://i.ibb.co/x8MJ4tW3/Tatttoo-mask-copy.jpg',
-    'https://i.ibb.co/CKMdBXVC/Tatttoo-mask.jpg', 'https://i.ibb.co/4n31ng5r/Tatttoo-Angel-copy-2.jpg', 'https://i.ibb.co/Z6LmS5WK/Tatttoo-tigre.jpg',
-    'https://i.ibb.co/C3MCJJFW/Tatttoo-pierna-completa.jpg', 'https://i.ibb.co/JYsWfZd/Tatttoo-Angel-copy-3.jpg', 'https://i.ibb.co/fdPZLNzG/Tatttoo-Elefante.jpg',
-    'https://i.ibb.co/FLhCmFhg/Tatttoo-eye.jpg', 'https://i.ibb.co/Q7YssPnN/Tatttoo-Angel-copy-4.jpg', 'https://i.ibb.co/kVWLJHSn/Tatttoo-Angel-copy.jpg',
-    'https://i.ibb.co/cKvQ5BkL/Tatttoo-Angel-copy-6.jpg', 'https://i.ibb.co/dFYtWP4/tatuaje-mariposa.jpg', 'https://i.ibb.co/6RCSYkN4/tatuaje-letras.jpg',
-    'https://i.ibb.co/wZhYZ7TN/tatuaje-letras-copy.jpg', 'https://i.ibb.co/FLGJ9Q23/tatuaje-bebe.jpg', 'https://i.ibb.co/tMJQbKZW/IMG-0066.png',
-    'https://i.ibb.co/hF1pjnd9/IMG-0067.png', 'https://i.ibb.co/ynWN6Cj1/IMG-0065.png', 'https://i.ibb.co/pBjNrfVs/IMG-0063.png',
-    'https://i.ibb.co/pjnW24PB/IMG-4198.jpg', 'https://i.ibb.co/cKQLSWqs/IMG-4197.jpg', 'https://i.ibb.co/pTN8kzF/IMG-4195.jpg',
-    'https://i.ibb.co/W4mNXJdv/IMG-4194.jpg', 'https://i.ibb.co/Xf6251Jc/IMG-4192.jpg', 'https://i.ibb.co/Sw36MPnL/IMG-4201.jpg'
-];
-
-const IMGS = shuffleArray([...new Set(allImageUrls)].map(url => ({ src: url, alt: getAltText(url) })));
-const N = IMGS.length;
-const W = 350;
-const GAP = 32;
-const VISIBLE = 4;
-const SCALES = [1.15, 1, 1, 1];
-let cur = 0;
-let dragging = false;
-let dragX0 = 0;
-let dragCurX = 0;
-let cards = [];
-const vp = document.getElementById('vp');
-const dotsEl = document.getElementById('dots');
-
-function relOffset(i) {
-    let o = ((i - cur) % N + N) % N;
-    return o > N / 2 ? o - N : o;
+async function loadGallery() {
+    if (!galGrid) return;
+    try {
+        const res = await fetch('/api/gallery');
+        if (!res.ok) throw new Error('galeria no disponible');
+        const data = await res.json();
+        galleryImages = Array.isArray(data.images) ? data.images : [];
+    } catch (error) {
+        console.error('Error loading gallery:', error);
+        galleryImages = [];
+    }
+    renderGallery(activeFilter);
 }
 
-function targetProps(o) {
-    const abs = Math.abs(o);
-    const s = o > 0 ? 1 : -1;
-    if (abs >= VISIBLE) return null;
-    let x = 0;
-    for (let j = 1; j <= abs; j++) x += s * (W * SCALES[j - 1] / 2 + W * SCALES[j] / 2 + GAP);
-    return { x, scale: SCALES[abs], zIndex: 20 - abs, autoAlpha: 1 };
-}
+function renderGallery(filter) {
+    if (!galGrid) return;
+    activeFilter = filter;
 
-function layout(instant) {
-    if (!vp) return;
-    cards.forEach((el, i) => {
-        const p = targetProps(relOffset(i));
-        if (!p) {
-            gsap.set(el, { autoAlpha: 0, zIndex: 0 });
-            return;
-        }
-        el.style.zIndex = p.zIndex;
-        el.style.visibility = 'visible';
-        gsap.to(el, { x: p.x, scale: p.scale, autoAlpha: p.autoAlpha, duration: instant ? 0 : 0.6, ease: 'power3.out', overwrite: true });
+    const base = filter === 'All'
+        ? galleryImages
+        : galleryImages.filter(img => img.category === filter);
+
+    // Orden manual desde el admin (sort_order). Solo barajamos cuando todas las
+    // piezas comparten el mismo orden, para que el archivo se sienta vivo pero
+    // el orden explicito de Negas siempre mande.
+    const allSameOrder = base.length > 1 && base.every(i => (i.sort_order || 0) === (base[0].sort_order || 0));
+    const shown = allSameOrder ? shuffle(base) : base;
+
+    galGrid.innerHTML = '';
+
+    shown.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'gal-item' + (item.span ? ' ' + item.span : '');
+
+        const img = document.createElement('img');
+        img.src = item.url;
+        img.alt = item.alt || `Tatuaje ${item.category} — Negas Tattoo Sabaneta`;
+        img.loading = 'lazy';
+        img.decoding = 'async';
+
+        const overlay = document.createElement('div');
+        overlay.className = 'gal-overlay';
+
+        const cat = document.createElement('div');
+        cat.className = 'gal-cat';
+        cat.textContent = item.category;
+
+        el.append(img, overlay, cat);
+        el.addEventListener('click', () => openLightbox(item.url, el));
+        galGrid.appendChild(el);
     });
-    document.querySelectorAll('.sc-dot').forEach((d, i) => d.classList.toggle('on', i === Math.round(cur)));
+
+    if (galCount) {
+        galCount.textContent = galleryImages.length
+            ? `${shown.length} / ${galleryImages.length} piezas`
+            : '';
+    }
+    if (galEmpty) galEmpty.hidden = shown.length > 0;
 }
 
-window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeLightbox();
+document.querySelectorAll('.gal-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        document.querySelectorAll('.gal-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        renderGallery(this.dataset.filter);
+    });
 });
 
-window.addEventListener('popstate', () => {
-    const lb = document.getElementById('lightbox');
-    if (lb && lb.classList.contains('active')) closeLightbox(true);
-});
-
-function go(d) {
-    cur = ((cur + d) % N + N) % N;
-    layout();
-}
-
+/* ═══════════════════════════════════════════════════════════════
+   LIGHTBOX
+   ═══════════════════════════════════════════════════════════════ */
 function openLightbox(src, el) {
     const lb = document.getElementById('lightbox');
     const lbImg = document.getElementById('lb-img');
-    const r = el.getBoundingClientRect();
     if (!lb || !lbImg) return;
 
+    const r = el.getBoundingClientRect();
     lbImg.src = src;
+
     const startX = (r.left + r.width / 2) - (window.innerWidth / 2);
     const startY = (r.top + r.height / 2) - (window.innerHeight / 2);
     const startScale = r.width / (window.innerWidth * 0.9);
@@ -570,352 +326,637 @@ function openLightbox(src, el) {
     lb.classList.add('active');
     history.pushState({ lightbox: true }, '');
 
-    lbImg.offsetHeight;
+    void lbImg.offsetHeight;
 
     lbImg.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease';
     lbImg.style.transform = 'translate(0, 0) scale(1)';
     lbImg.style.opacity = '1';
 
-    document.body.style.overflow = 'hidden';
+    document.body.classList.add('no-scroll');
 }
-
-window.openLightbox = openLightbox;
 
 function closeLightbox(isNavigation = false) {
     const lb = document.getElementById('lightbox');
     const lbImg = document.getElementById('lb-img');
+    if (!lb || !lb.classList.contains('active')) return;
 
-    if (lb) {
-        if (!lb.classList.contains('active')) return;
+    lb.classList.remove('active');
+    if (!isNavigation && history.state?.lightbox) history.back();
 
-        lb.classList.remove('active');
-
-        if (!isNavigation && history.state?.lightbox) history.back();
-
-        if (lbImg) {
-            lbImg.style.opacity = '0';
-            lbImg.style.transform = 'translateY(20px) scale(0.95)';
-            setTimeout(() => {
-                if (!lb.classList.contains('active')) lbImg.src = '';
-            }, 500);
-        }
+    if (lbImg) {
+        lbImg.style.opacity = '0';
+        lbImg.style.transform = 'translateY(20px) scale(0.95)';
+        setTimeout(() => {
+            if (!lb.classList.contains('active')) lbImg.src = '';
+        }, 500);
     }
-    document.body.style.overflow = '';
+
+    if (!isQuoteOpen()) document.body.classList.remove('no-scroll');
 }
 
+window.openLightbox = openLightbox;
 window.closeLightbox = closeLightbox;
 
 const lbContainer = document.getElementById('lightbox');
 if (lbContainer) {
     lbContainer.addEventListener('click', () => closeLightbox());
-
-    const lbImg = document.getElementById('lb-img');
-    if (lbImg) lbImg.addEventListener('click', e => e.stopPropagation());
+    document.getElementById('lb-img')?.addEventListener('click', e => e.stopPropagation());
 
     let touchStartY = 0;
     lbContainer.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
     lbContainer.addEventListener('touchend', e => {
-        const touchEndY = e.changedTouches[0].clientY;
-        if (Math.abs(touchStartY - touchEndY) > 70) closeLightbox();
+        if (Math.abs(touchStartY - e.changedTouches[0].clientY) > 70) closeLightbox();
     }, { passive: true });
 }
 
-if (vp) {
-    IMGS.forEach((imgData, i) => {
-        const card = document.createElement('div');
-        card.className = 'sc-card';
-        const img = document.createElement('img');
-        img.src = imgData.src;
-        img.alt = imgData.alt;
-        card.appendChild(img);
-        img.loading = 'lazy';
-        img.width = 350;
-        img.height = 350;
-        card.onclick = () => {
-            stopAutoPlay();
-            if (Math.abs(dragCurX - dragX0) > 6) return;
-            const offset = relOffset(i);
-            if (offset === 0) openLightbox(imgData.src, card);
-            else go(offset);
-        };
-        vp.appendChild(card);
-        cards.push(card);
-        const dot = document.createElement('div');
-        dot.className = 'sc-dot';
-        dot.onclick = () => go(relOffset(i));
-        if (dotsEl) dotsEl.appendChild(dot);
-    });
+/* ═══════════════════════════════════════════════════════════════
+   POPUP DE COTIZACION
+   ═══════════════════════════════════════════════════════════════ */
+const modal = document.getElementById('quote-modal');
+const quoteForm = document.getElementById('quote-form');
+const TOTAL_STEPS = 4;
+let currentStep = 1;
+let pendingFile = null;
+let isSubmitting = false;
 
-    let autoPlayInterval = setInterval(() => go(1), 3500);
-    const stopAutoPlay = () => clearInterval(autoPlayInterval);
+const isQuoteOpen = () => modal?.classList.contains('is-open');
 
-    vp.onpointerdown = e => {
-        stopAutoPlay();
-        dragging = true;
-        dragX0 = dragCurX = e.clientX;
-        vp.setPointerCapture(e.pointerId);
-    };
-    vp.onpointermove = e => {
-        if (!dragging) return;
-        dragCurX = e.clientX;
-        cards.forEach((c, i) => {
-            const p = targetProps(relOffset(i));
-            if (p) gsap.set(c, { x: p.x + (dragCurX - dragX0) * 0.25 });
-        });
-    };
-    vp.onpointerup = () => {
-        dragging = false;
-        Math.abs(dragCurX - dragX0) > 55 ? go(dragCurX < dragX0 ? 1 : -1) : layout();
-    };
-
-    document.getElementById('prev')?.addEventListener('click', () => {
-        stopAutoPlay();
-        go(-1);
-    });
-    document.getElementById('next')?.addEventListener('click', () => {
-        stopAutoPlay();
-        go(1);
-    });
-    layout(true);
+function setError(field, message) {
+    const el = document.querySelector(`[data-error-for="${field}"]`);
+    if (el) el.textContent = message || '';
 }
 
-window.handleImagePreview = function(input) {
-    const preview = document.getElementById('upload-preview');
-    const img = document.getElementById('preview-img');
-    if (input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            img.src = e.target.result;
-            document.getElementById('upload-placeholder').classList.add('hidden');
-            preview.classList.remove('hidden');
-        };
-        reader.readAsDataURL(input.files[0]);
+function clearErrors() {
+    document.querySelectorAll('.qm-error').forEach(el => { el.textContent = ''; });
+}
+
+function showStep(step) {
+    currentStep = step;
+    modal.querySelectorAll('.qm-step').forEach(section => {
+        section.classList.toggle('is-active', Number(section.dataset.step) === step);
+    });
+
+    const head = modal.querySelector('.qm-head');
+    const isDone = step > TOTAL_STEPS;
+    if (head) head.classList.toggle('is-hidden', isDone);
+
+    const fill = document.getElementById('qm-bar-fill');
+    const now = document.getElementById('qm-step-now');
+    if (fill) fill.style.width = `${(Math.min(step, TOTAL_STEPS) / TOTAL_STEPS) * 100}%`;
+    if (now) now.textContent = String(Math.min(step, TOTAL_STEPS));
+
+    const panel = modal.querySelector('.qm-panel');
+    if (panel) panel.scrollTop = 0;
+
+    const focusTarget = modal.querySelector('.qm-step.is-active input:not([type="hidden"]):not([type="checkbox"]), .qm-step.is-active textarea');
+    if (focusTarget && !isMobileDevice()) setTimeout(() => focusTarget.focus(), 220);
+}
+
+function openQuote(origin = 'desconocido', { push = true } = {}) {
+    if (!modal) return;
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('no-scroll');
+
+    if (push && window.location.pathname !== '/cotizar') {
+        history.pushState({ quote: true }, '', '/cotizar');
     }
-};
 
-const heroTl = gsap.timeline({ delay: 0.5 });
+    track('AbrioCotizador', { origen: origin });
+    showStep(currentStep);
+}
 
-heroTl
-    .to('#hero-black', { y: 0, opacity: 1, duration: 0.5, ease: 'power4.out' })
-    .to('#hero-work', { y: 0, opacity: 1, duration: 0.5, ease: 'power4.out' }, '-=0.35')
-    .to('#hero-negas', { y: 0, opacity: 1, duration: 0.5, ease: 'power4.out' }, '-=0.35')
-    .to('#hero-btn-container', { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out' }, '-=0.1');
+function closeQuote(isNavigation = false) {
+    if (!modal || !isQuoteOpen()) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('no-scroll');
 
+    if (!isNavigation && history.state?.quote) {
+        history.back();
+    } else if (!isNavigation && window.location.pathname === '/cotizar') {
+        // Entraron directo por /cotizar (anuncio): al cerrar dejamos la home
+        // en la barra de direcciones, sin recargar.
+        history.replaceState({}, '', '/');
+    }
+}
+
+document.querySelectorAll('.js-open-quote').forEach(btn => {
+    btn.addEventListener('click', event => {
+        event.preventDefault();
+        openQuote(btn.dataset.origin || 'desconocido');
+    });
+});
+
+modal?.querySelectorAll('[data-qm-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeQuote());
+});
+
+window.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (document.getElementById('lightbox')?.classList.contains('active')) closeLightbox();
+    else if (isQuoteOpen()) closeQuote();
+});
+
+window.addEventListener('popstate', () => {
+    if (document.getElementById('lightbox')?.classList.contains('active')) closeLightbox(true);
+    if (isQuoteOpen()) closeQuote(true);
+});
+
+/* ─── Paso 1: validacion + guardado del lead ─────────────────── */
+const nameInput = document.getElementById('qm-name');
+const phoneInput = document.getElementById('qm-phone');
+const emailInput = document.getElementById('qm-email');
+const consentInput = document.getElementById('qm-consent');
+
+phoneInput?.addEventListener('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, 10);
+});
+
+function readUtm() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            utm_source: params.get('utm_source') || '',
+            utm_medium: params.get('utm_medium') || '',
+            utm_campaign: params.get('utm_campaign') || (params.get('gclid') ? 'google-ads' : '')
+        };
+    } catch (_) {
+        return {};
+    }
+}
+
+async function submitStepOne(button) {
+    clearErrors();
+
+    const name = (nameInput?.value || '').trim();
+    const phone = (phoneInput?.value || '').replace(/\D/g, '');
+    const email = (emailInput?.value || '').trim();
+    const consent = Boolean(consentInput?.checked);
+
+    let valid = true;
+    if (name.length < 2) { setError('name', 'Escribe tu nombre.'); valid = false; }
+    if (!/^3\d{9}$/.test(phone)) { setError('phone', 'Debe ser un celular de 10 dígitos que empiece por 3.'); valid = false; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('email', 'Ese correo no parece válido.'); valid = false; }
+    if (!consent) { setError('consent', 'Necesito tu autorización para guardar tus datos.'); valid = false; }
+    if (!valid) return;
+
+    // Si ya guardamos el lead en esta sesion, no lo duplicamos al volver atras.
+    if (quoteSession.leadId) {
+        quoteSession.name = name;
+        quoteSession.phone = phone;
+        showStep(2);
+        return;
+    }
+
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Guardando...';
+
+    try {
+        const recaptchaToken = await getRecaptchaToken('lead_start');
+        const res = await fetch('/api/lead/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name, phone, email, consent: true, recaptchaToken,
+                source: window.location.pathname === '/cotizar' ? 'cotizar-url' : 'landing',
+                ...readUtm()
+            })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || 'No pudimos guardar tus datos. Intenta de nuevo.');
+
+        quoteSession.leadId = data.leadId;
+        quoteSession.token = data.token;
+        quoteSession.name = name;
+        quoteSession.phone = phone;
+
+        // El lead ya existe en la base: este es el evento que alimenta el
+        // retargeting, no el envio final.
+        track('Lead', { content_name: 'Cotizador paso 1' });
+
+        showStep(2);
+    } catch (error) {
+        setError('name', error.message);
+    } finally {
+        button.disabled = false;
+        button.textContent = original;
+    }
+}
+
+/* ─── Paso 2: idea ───────────────────────────────────────────── */
+const descriptionInput = document.getElementById('qm-description');
+const charCount = document.getElementById('qm-char-count');
+
+descriptionInput?.addEventListener('input', function () {
+    if (charCount) charCount.textContent = String(this.value.length);
+});
+
+function validateStepTwo() {
+    clearErrors();
+    const value = (descriptionInput?.value || '').trim();
+    if (value.length < 10) {
+        setError('description', 'Cuéntame un poco más para poder cotizarte bien.');
+        return false;
+    }
+    quoteSession.description = value;
+    return true;
+}
+
+/* ─── Paso 3: tamano + precio ────────────────────────────────── */
+const sizeInput = document.getElementById('qm-size');
+const sizeDisplay = document.getElementById('qm-size-display');
+const priceIdle = document.getElementById('qm-price-idle');
+const priceResult = document.getElementById('qm-price-result');
+const priceVal = document.getElementById('qm-price-val');
+
+function formatCop(value) {
+    return '$' + Math.round(value).toLocaleString('es-CO');
+}
+
+// Espejo exacto de computePriceRange() en server.js. El servidor recalcula y
+// manda la verdad; esto es solo para el feedback en vivo del slider.
+function computePriceRange(cm) {
+    const size = Math.max(0, Math.min(Number(cm) || 0, pricing.maxCm));
+    if (!size) return null;
+
+    const small = Math.min(size, pricing.breakpointCm) * pricing.perCmSmall;
+    const large = Math.max(0, size - pricing.breakpointCm) * pricing.perCmLarge;
+    const point = Math.max(pricing.minimum, pricing.base + small + large);
+
+    const round = n => Math.round(n / 10000) * 10000;
+    return { min: round(point * pricing.rangeLow), max: round(point * pricing.rangeHigh) };
+}
+
+function updatePrice() {
+    if (!sizeInput) return;
+    const cm = Number(sizeInput.value) || 0;
+
+    if (sizeDisplay) sizeDisplay.textContent = String(cm);
+    sizeInput.style.setProperty('--qm-range-pct', `${(cm / (pricing.maxCm || 60)) * 100}%`);
+
+    const range = computePriceRange(cm);
+    quoteSession.sizeCm = cm;
+    quoteSession.price = range;
+
+    if (!range) {
+        if (priceIdle) priceIdle.hidden = false;
+        if (priceResult) priceResult.hidden = true;
+        return;
+    }
+
+    if (priceIdle) priceIdle.hidden = true;
+    if (priceResult) priceResult.hidden = false;
+    if (priceVal) priceVal.textContent = `${formatCop(range.min)} – ${formatCop(range.max)}`;
+}
+
+sizeInput?.addEventListener('input', updatePrice);
+
+let priceSeenTracked = false;
+sizeInput?.addEventListener('change', () => {
+    if (priceSeenTracked || !quoteSession.sizeCm) return;
+    priceSeenTracked = true;
+    track('VioPrecio', { tamano_cm: quoteSession.sizeCm });
+});
+
+function validateStepThree() {
+    clearErrors();
+    if (!quoteSession.sizeCm) {
+        setError('sizeCm', 'Mueve el slider para elegir el tamaño.');
+        return false;
+    }
+    return true;
+}
+
+/* ─── Paso 4: referencias ────────────────────────────────────── */
+const fileInput = document.getElementById('qm-file');
+const dropZone = document.getElementById('qm-drop');
+const dropInner = document.getElementById('qm-drop-inner');
+const previewImg = document.getElementById('qm-preview');
+const fileClear = document.getElementById('qm-file-clear');
+
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+dropZone?.addEventListener('click', () => fileInput?.click());
+dropZone?.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        fileInput?.click();
+    }
+});
+
+fileInput?.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    setError('file', '');
+    if (!file) return;
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+        setError('file', 'El archivo debe ser JPG, PNG o WEBP.');
+        fileInput.value = '';
+        return;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+        setError('file', 'La imagen supera los 10MB.');
+        fileInput.value = '';
+        return;
+    }
+
+    pendingFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+        if (previewImg) {
+            previewImg.src = e.target.result;
+            previewImg.hidden = false;
+        }
+        if (dropInner) dropInner.hidden = true;
+        if (fileClear) fileClear.hidden = false;
+    };
+    reader.readAsDataURL(file);
+});
+
+fileClear?.addEventListener('click', () => {
+    pendingFile = null;
+    if (fileInput) fileInput.value = '';
+    if (previewImg) { previewImg.hidden = true; previewImg.src = ''; }
+    if (dropInner) dropInner.hidden = false;
+    fileClear.hidden = true;
+    setError('file', '');
+});
+
+/* ─── Envio final ────────────────────────────────────────────── */
+function buildWhatsAppMessage() {
+    const idea = quoteSession.description.length > 220
+        ? quoteSession.description.slice(0, 217) + '...'
+        : quoteSession.description;
+
+    const priceLine = quoteSession.price
+        ? `${formatCop(quoteSession.price.min)} – ${formatCop(quoteSession.price.max)}`
+        : 'por definir';
+
+    return [
+        `Hola Negas, soy ${quoteSession.name}.`,
+        '',
+        'Acabo de cotizar en la página:',
+        `• Idea: ${idea}`,
+        `• Tamaño: ${quoteSession.sizeCm} cm`,
+        `• Inversión aproximada: ${priceLine}`,
+        '',
+        'Quiero confirmar los detalles.'
+    ].join('\n');
+}
+
+function showDoneStep() {
+    const doneName = document.getElementById('qm-done-name');
+    const doneVal = document.getElementById('qm-done-val');
+    const waCta = document.getElementById('qm-wa-cta');
+
+    if (doneName) doneName.textContent = quoteSession.name.split(' ')[0] || 'ya quedó';
+    if (doneVal && quoteSession.price) {
+        doneVal.textContent = `${formatCop(quoteSession.price.min)} – ${formatCop(quoteSession.price.max)}`;
+    }
+
+    if (waCta && appConfig.waPhone) {
+        const text = encodeURIComponent(buildWhatsAppMessage());
+        waCta.href = `https://wa.me/${appConfig.waPhone}?text=${text}`;
+        waCta.addEventListener('click', () => {
+            track('ClickWhatsApp', { origen: 'cierre-cotizador' });
+        }, { once: true });
+    }
+
+    showStep(5);
+}
+
+async function submitQuote({ skipImage = false } = {}) {
+    if (isSubmitting) return;
+    if (!quoteSession.leadId || !quoteSession.token) {
+        setError('file', 'Se perdió la sesión. Cierra y vuelve a empezar.');
+        return;
+    }
+
+    isSubmitting = true;
+    const submitBtn = document.getElementById('qm-submit');
+    const skipBtn = document.getElementById('qm-skip');
+    const original = submitBtn?.textContent;
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Enviando...'; }
+    if (skipBtn) skipBtn.disabled = true;
+
+    try {
+        let referenceImgUrl = null;
+        const file = skipImage ? null : pendingFile;
+
+        if (file) {
+            try {
+                const { supabase, uploadReferenceImage } = await import('./supabase.js');
+                const path = await uploadReferenceImage(file);
+                const { data } = supabase.storage.from('reference-images').getPublicUrl(path);
+                referenceImgUrl = data.publicUrl;
+            } catch (uploadError) {
+                console.error('Image upload failed:', uploadError);
+                setError('file', 'No pudimos subir tu imagen. Puedes enviarla luego por WhatsApp — toca "Omitir y enviar".');
+                return;
+            }
+        }
+
+        const res = await fetch('/api/lead/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                leadId: quoteSession.leadId,
+                token: quoteSession.token,
+                description: quoteSession.description,
+                sizeCm: quoteSession.sizeCm,
+                reference_img_url: referenceImgUrl
+            })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo enviar tu cotización. Intenta de nuevo.');
+
+        // El servidor recalcula el precio: usamos su respuesta, no la del cliente.
+        if (data.price && typeof data.price.min === 'number') {
+            quoteSession.price = { min: data.price.min, max: data.price.max };
+        }
+
+        track('SubmitApplication', {
+            content_name: 'Cotizacion completa',
+            value: quoteSession.price?.min || 0,
+            currency: 'COP'
+        });
+        trackAdsConversion();
+
+        showDoneStep();
+    } catch (error) {
+        setError('file', error.message);
+    } finally {
+        isSubmitting = false;
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = original || 'Ver mi cotización'; }
+        if (skipBtn) skipBtn.disabled = false;
+    }
+}
+
+quoteForm?.addEventListener('submit', event => {
+    event.preventDefault();
+    submitQuote();
+});
+
+document.getElementById('qm-skip')?.addEventListener('click', () => submitQuote({ skipImage: true }));
+
+/* ─── Navegacion entre pasos ─────────────────────────────────── */
+modal?.querySelectorAll('[data-qm-next]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const step = Number(btn.dataset.qmNext);
+        if (step === 1) submitStepOne(btn);
+        else if (step === 2 && validateStepTwo()) showStep(3);
+        else if (step === 3 && validateStepThree()) showStep(4);
+    });
+});
+
+modal?.querySelectorAll('[data-qm-back]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        clearErrors();
+        showStep(Math.max(1, Number(btn.dataset.qmBack) - 1));
+    });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMACIONES Y UI
+   ═══════════════════════════════════════════════════════════════ */
+const hasGsap = typeof window.gsap !== 'undefined';
+
+if (hasGsap) {
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({
+        ignoreMobileResize: true,
+        limitCallbacks: true,
+        autoRefreshEvents: 'visibilitychange,DOMContentLoaded,load'
+    });
+    ScrollTrigger.normalizeScroll(false);
+    window.addEventListener('load', () => ScrollTrigger.refresh());
+
+    const heroTl = gsap.timeline({ delay: 0.4 });
+    heroTl
+        .to('#hero-black', { y: 0, opacity: 1, duration: 0.5, ease: 'power4.out' })
+        .to('#hero-work', { y: 0, opacity: 1, duration: 0.5, ease: 'power4.out' }, '-=0.35')
+        .to('#hero-negas', { y: 0, opacity: 1, duration: 0.5, ease: 'power4.out' }, '-=0.35')
+        .to('#hero-btn-container', { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out' }, '-=0.1');
+
+    gsap.utils.toArray('.reveal-item').forEach(el => {
+        gsap.to(el, {
+            opacity: 1,
+            y: 0,
+            duration: 1.2,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: el, start: 'top 90%', toggleActions: 'play none none none' }
+        });
+    });
+} else {
+    // Sin GSAP no dejamos la pagina en blanco: mostramos todo de una.
+    revealEverything();
+}
+
+function revealEverything() {
+    document.querySelectorAll('.reveal-item').forEach(el => {
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+    });
+}
+
+// Red de seguridad: si GSAP carga pero ScrollTrigger no dispara (scroll raro,
+// error de terceros, prefers-reduced-motion), a los 3 s mostramos todo igual.
+// Una landing invisible es una landing sin leads.
+setTimeout(() => {
+    document.querySelectorAll('.reveal-item').forEach(el => {
+        if (Number(getComputedStyle(el).opacity) < 0.05) {
+            el.style.opacity = '1';
+            el.style.transform = 'none';
+        }
+    });
+}, 3000);
+
+/* ─── CTA flotante ───────────────────────────────────────────── */
 const floatingCta = document.getElementById('floating-cta');
 const heroSection = document.getElementById('hero');
 const bookingSection = document.getElementById('booking');
 let heroVisible = true;
 let bookingVisible = false;
+let shakeTimer = null;
 
 function updateFloatingCta() {
     if (!floatingCta) return;
     const shouldShow = !heroVisible && !bookingVisible;
     floatingCta.classList.toggle('is-visible', shouldShow);
     floatingCta.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+
+    if (!isMobileDevice()) return;
+    if (shouldShow) startShakePulse();
+    else {
+        clearInterval(shakeTimer);
+        floatingCta.classList.remove('animate-shake');
+    }
+}
+
+function triggerFloatingShake() {
+    if (!floatingCta?.classList.contains('is-visible')) return;
+    floatingCta.classList.remove('animate-shake');
+    void floatingCta.offsetWidth;
+    floatingCta.classList.add('animate-shake');
+    floatingCta.addEventListener('animationend', () => {
+        floatingCta.classList.remove('animate-shake');
+    }, { once: true });
+}
+
+function startShakePulse() {
+    clearInterval(shakeTimer);
+    shakeTimer = setInterval(triggerFloatingShake, 12000);
 }
 
 if (floatingCta && heroSection && bookingSection && 'IntersectionObserver' in window) {
-    const observerOptions = {
-        root: null,
-        threshold: 0.12,
-    };
-
-    const observer = new IntersectionObserver((entries) => {
+    const observer = new IntersectionObserver(entries => {
         for (const entry of entries) {
-            if (entry.target === heroSection) {
-                heroVisible = entry.isIntersecting;
-            }
-            if (entry.target === bookingSection) {
-                bookingVisible = entry.isIntersecting;
-            }
+            if (entry.target === heroSection) heroVisible = entry.isIntersecting;
+            if (entry.target === bookingSection) bookingVisible = entry.isIntersecting;
         }
         updateFloatingCta();
-    }, observerOptions);
+    }, { root: null, threshold: 0.12 });
 
     observer.observe(heroSection);
     observer.observe(bookingSection);
     updateFloatingCta();
 }
 
-// En mobile el shake del botón flotante corre una sola vez cada 12 s.
-// En desktop lo maneja .animate-shake con CSS (bucle normal, menos intrusivo).
-if (floatingCta && isMobileDevice()) {
-    const SHAKE_INTERVAL_MS = 12000;
-    let shakeTimer = null;
-
-    function triggerFloatingShake() {
-        if (!floatingCta.classList.contains('is-visible')) return;
-        floatingCta.classList.remove('animate-shake');
-        // forzar reflow para reiniciar la animacion CSS
-        void floatingCta.offsetWidth;
-        floatingCta.classList.add('animate-shake');
-        // quitar la clase al terminar la animacion (1.5 s) para que no quede en bucle
-        floatingCta.addEventListener('animationend', () => {
-            floatingCta.classList.remove('animate-shake');
-        }, { once: true });
-    }
-
-    function startShakePulse() {
-        clearInterval(shakeTimer);
-        shakeTimer = setInterval(triggerFloatingShake, SHAKE_INTERVAL_MS);
-    }
-
-    // Arrancar el pulso cuando el botón se muestra; parar cuando se oculta.
-    const origUpdate = updateFloatingCta;
-    updateFloatingCta = function () {
-        origUpdate();
-        const isVisible = floatingCta.classList.contains('is-visible');
-        if (isVisible) {
-            startShakePulse();
-        } else {
-            clearInterval(shakeTimer);
-            floatingCta.classList.remove('animate-shake');
-        }
-    };
-}
-
-gsap.utils.toArray('.reveal-item').forEach(el => {
-    gsap.to(el, {
-        opacity: 1,
-        y: 0,
-        duration: 1.2,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: el, start: 'top 90%', toggleActions: 'play none none none' }
-    });
-});
-
+/* ─── Acordeon FAQ ───────────────────────────────────────────── */
 document.querySelectorAll('.accordion-header').forEach(header => {
-    header.onclick = () => {
+    header.addEventListener('click', () => {
         const content = header.nextElementSibling;
         const isOpen = header.classList.contains('active');
-        document.querySelectorAll('.accordion-header').forEach(h => {
-            if (h !== header && h.classList.contains('active')) {
-                h.classList.remove('active');
-                gsap.to(h.nextElementSibling, { height: 0, padding: 0 });
+
+        document.querySelectorAll('.accordion-header').forEach(other => {
+            if (other !== header && other.classList.contains('active')) {
+                other.classList.remove('active');
+                const otherContent = other.nextElementSibling;
+                if (hasGsap) gsap.to(otherContent, { height: 0, padding: 0 });
+                else { otherContent.style.height = '0'; otherContent.style.padding = '0'; }
             }
         });
+
         header.classList.toggle('active');
-        gsap.to(content, { height: isOpen ? 0 : 'auto', padding: isOpen ? 0 : '1.5rem' });
-    };
+        if (hasGsap) gsap.to(content, { height: isOpen ? 0 : 'auto', padding: isOpen ? 0 : '1.5rem' });
+        else {
+            content.style.height = isOpen ? '0' : 'auto';
+            content.style.padding = isOpen ? '0' : '1.5rem';
+        }
+    });
 });
 
+/* ─── Arranque ───────────────────────────────────────────────── */
+updatePrice();
 loadConfig();
-bindDeepLinkAnchors();
+loadGallery();
 
-document.getElementById('size')?.addEventListener('input', calculatePrice);
-calculatePrice();
-
-const ta = document.querySelector('textarea[name="message"]');
-if (ta) {
-    ta.oninput = function() {
-        document.getElementById('charCount').textContent = this.value.length + '/500';
-        calculatePrice();
-    };
+// /cotizar abre el popup directo: es la URL que se usa en Google Ads.
+if (window.location.pathname === '/cotizar' || window.location.hash === '#cotizar') {
+    openQuote('url-cotizar', { push: false });
 }
-
-const ph = document.querySelector('input[name="user_phone"]');
-if (ph) {
-    ph.oninput = function() {
-        this.value = this.value.replace(/\D/g, '');
-    };
-}
-
-const uploadZone = document.getElementById('upload-zone');
-const fileInput = document.getElementById('fotoTatuaje');
-if (uploadZone && fileInput) {
-    uploadZone.addEventListener('click', () => fileInput.click());
-}
-
-const cityWarning = document.getElementById('city-warning');
-const cityWarningOverlay = document.getElementById('city-warning-overlay');
-const cityWarningClose = document.getElementById('city-warning-close');
-const closeCityWarning = () => {
-    cityWarning?.classList.add('hidden');
-    cityWarning?.classList.remove('flex');
-};
-
-cityWarningOverlay?.addEventListener('click', closeCityWarning);
-cityWarningClose?.addEventListener('click', closeCityWarning);
-
-
-// ═══════════════════════════════════════════════
-// GALLERY — filter + lightbox (reuses existing #lightbox)
-// ═══════════════════════════════════════════════
-(function() {
-    function shuffleArray(arr) {
-        const copy = [...arr];
-        for (let i = copy.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [copy[i], copy[j]] = [copy[j], copy[i]];
-        }
-        return copy;
-    }
-
-    const ALL_IMGS_ORIGINAL = [
-        {src:'https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg',   cat:'Blackwork', cls:'gal-cs2rs2'},
-        {src:'https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg', cat:'Blackwork', cls:''},
-        {src:'https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg',          cat:'Blackwork', cls:''},
-        {src:'https://i.ibb.co/s93WWvNq/Tatttoo-Angel-copy-7.jpg',   cat:'Blackwork', cls:'gal-rs2'},
-        {src:'https://i.ibb.co/35ggTM1t/Tatttoo-pierna-completa-copy-2.jpg', cat:'Blackwork', cls:''},
-        {src:'https://i.ibb.co/x8MJ4tW3/Tatttoo-mask-copy.jpg',      cat:'Blackwork', cls:''},
-        {src:'https://i.ibb.co/CKMdBXVC/Tatttoo-mask.jpg',           cat:'Blackwork', cls:''},
-        {src:'https://i.ibb.co/4n31ng5r/Tatttoo-Angel-copy-2.jpg',   cat:'Blackwork', cls:'gal-cs2'},
-        {src:'https://i.ibb.co/Z6LmS5WK/Tatttoo-tigre.jpg',          cat:'Blackwork', cls:''},
-        {src:'https://i.ibb.co/C3MCJJFW/Tatttoo-pierna-completa.jpg',cat:'Blackwork', cls:''},
-        {src:'https://i.ibb.co/dFYtWP4/tatuaje-mariposa.jpg',        cat:'Bot\u00e1nico', cls:'gal-rs2'},
-        {src:'https://i.ibb.co/FLGJ9Q23/tatuaje-bebe.jpg',           cat:'Bot\u00e1nico', cls:''},
-        {src:'https://i.ibb.co/6RCSYkN4/tatuaje-letras.jpg',         cat:'Lettering', cls:'gal-cs2'},
-        {src:'https://i.ibb.co/wZhYZ7TN/tatuaje-letras-copy.jpg',    cat:'Lettering', cls:''},
-        {src:'https://i.ibb.co/FLhCmFhg/Tatttoo-eye.jpg',            cat:'Blackwork', cls:''},
-        {src:'https://i.ibb.co/fdPZLNzG/Tatttoo-Elefante.jpg',       cat:'Blackwork', cls:''},
-        {src:'https://i.ibb.co/tMJQbKZW/IMG-0066.png',               cat:'Blackwork', cls:''},
-        {src:'https://i.ibb.co/hF1pjnd9/IMG-0067.png',               cat:'Blackwork', cls:'gal-cs2'},
-        {src:'https://i.ibb.co/ynWN6Cj1/IMG-0065.png',               cat:'Blackwork', cls:''},
-        {src:'https://i.ibb.co/pBjNrfVs/IMG-0063.png',               cat:'Blackwork', cls:''},
-    ];
-
-    let ALL_IMGS = shuffleArray(ALL_IMGS_ORIGINAL);
-
-    const galGrid   = document.getElementById('galGrid');
-    const galCount  = document.getElementById('galCount');
-    if (!galGrid) return;
-
-    function renderGallery(filter) {
-        const base = filter === 'All' ? ALL_IMGS : ALL_IMGS.filter(i => i.cat === filter);
-        const shown = shuffleArray([...base]);
-        galGrid.innerHTML = '';
-        shown.forEach(it => {
-            const el = document.createElement('div');
-            el.className = 'gal-item' + (it.cls ? ' ' + it.cls : '');
-            const img = document.createElement('img');
-            img.src = it.src;
-            img.alt = 'Tatuaje ' + it.cat + ' - Negas Ink Sabaneta';
-            img.loading = 'lazy';
-            const overlay = document.createElement('div');
-            overlay.className = 'gal-overlay';
-            const cat = document.createElement('div');
-            cat.className = 'gal-cat';
-            cat.textContent = it.cat;
-            el.appendChild(img);
-            el.appendChild(overlay);
-            el.appendChild(cat);
-            el.addEventListener('click', () => {
-                if (typeof openLightbox === 'function') {
-                    openLightbox(it.src, el);
-                }
-            });
-            galGrid.appendChild(el);
-        });
-        if (galCount) galCount.textContent = shown.length + ' / ' + ALL_IMGS.length + ' piezas';
-    }
-
-    document.querySelectorAll('.gal-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.gal-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            renderGallery(this.dataset.filter);
-        });
-    });
-
-    renderGallery('All');
-})();

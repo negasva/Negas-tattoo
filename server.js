@@ -416,6 +416,20 @@ app.post('/api/lead/start', leadStartLimiter, async (req, res) => {
       if (isDuplicate && !forceCreate) {
         return res.status(200).json({ ok: true, duplicate: true });
       }
+      if (isDuplicate && forceCreate) {
+        // Constraint still exists: reuse existing lead, refresh its token so this session works
+        const newToken = crypto.randomBytes(24).toString('hex');
+        const { data: existing, error: fetchErr } = await supabaseAdmin
+          .from('leads')
+          .select('id')
+          .eq('phone', phone)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        if (fetchErr || !existing) throw fetchErr || new Error('Lead not found');
+        await supabaseAdmin.from('leads').update({ update_token: newToken, name, email: email || null }).eq('id', existing.id);
+        return res.status(200).json({ ok: true, leadId: existing.id, token: newToken });
+      }
       throw error;
     }
 

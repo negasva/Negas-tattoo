@@ -12,6 +12,9 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3780;
 const PUBLIC_PATH = path.join(__dirname, 'public');
 
+// LOG TEMPORAL — borrar cuando el bug esté resuelto
+app.use((req, _res, next) => { console.log('[DEBUG]', req.method, req.url); next(); });
+
 // Nada de credenciales escritas en el codigo. Todo sale del entorno.
 // Si falta SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY, /api/health lo dice.
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
@@ -136,10 +139,10 @@ app.use(helmet({
       'connect-src': ["'self'", 'https://*.supabase.co', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://connect.facebook.net', 'https://www.facebook.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com', 'https://googleads.g.doubleclick.net'],
       'worker-src': ["'self'", 'blob:'],
       'font-src': ["'self'", 'https://fonts.gstatic.com'],
-      'frame-src': ["'self'", 'https://www.google.com', 'https://td.doubleclick.net'],
+      'frame-src': ["'self'", 'https://www.google.com', 'https://td.doubleclick.net', 'https://www.facebook.com'],
       'object-src': ["'none'"],
       'base-uri': ["'self'"],
-      'form-action': ["'self'"],
+      'form-action': ["'self'", 'https://www.facebook.com'],
     }
   },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' }

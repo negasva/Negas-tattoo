@@ -12,6 +12,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 let clientPromise = null;
+let supabaseBaseUrl = '';
 
 async function createSupabase() {
   const res = await fetch('/api/config');
@@ -19,9 +20,10 @@ async function createSupabase() {
 
   const { supabaseUrl, supabaseAnonKey } = await res.json();
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Faltan SUPABASE_URL o SUPABASE_ANON_KEY en el servidor. Revisa /api/health.');
+    throw new Error('Faltan SUPABASE_URL o SUPABASE_ANON_KEY en el servidor.');
   }
 
+  supabaseBaseUrl = supabaseUrl.replace(/\/+$/, '');
   const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
   return createClient(supabaseUrl, supabaseAnonKey);
 }
@@ -38,6 +40,9 @@ export function getSupabase() {
 }
 
 /* ─── Storage ────────────────────────────────────────────────── */
+// `reference-images` es un bucket PRIVADO: no hay getPublicUrl que valga.
+// Guardamos la ruta canónica del objeto y el admin la abre con una URL
+// firmada de una hora (/api/admin/leads la firma al vuelo).
 export async function uploadReferenceImage(file) {
   const supabase = await getSupabase();
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
@@ -48,8 +53,7 @@ export async function uploadReferenceImage(file) {
     .upload(filename, file, { contentType: file.type || 'image/jpeg' });
   if (error) throw error;
 
-  const { data: pub } = supabase.storage.from('reference-images').getPublicUrl(data.path);
-  return pub.publicUrl;
+  return `${supabaseBaseUrl}/storage/v1/object/reference-images/${data.path}`;
 }
 
 // Sube una pieza del portafolio al bucket público `gallery`.
@@ -68,6 +72,8 @@ export async function uploadGalleryImage(file) {
   return pub.publicUrl;
 }
 
+// `signed-documents` también es privado: guardamos solo la ruta. Para verla,
+// pedirle una URL firmada al backend con signedDocumentUrl().
 export async function uploadDocument(file, clientName) {
   const supabase = await getSupabase();
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
@@ -86,47 +92,10 @@ export async function saveDocument(docData) {
   if (error) throw error;
 }
 
-/* ─── Leads ──────────────────────────────────────────────────── */
-export async function getLeads() {
-  const supabase = await getSupabase();
-  const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  return data;
-}
-
-export async function updateLeadStatus(leadId, status) {
-  const supabase = await getSupabase();
-  const { error } = await supabase.from('leads').update({ status }).eq('id', leadId);
-  if (error) throw error;
-}
-
-export async function getStats() {
-  const supabase = await getSupabase();
-  const [leads, clients, recurring, complete] = await Promise.all([
-    supabase.from('leads').select('id'),
-    supabase.from('leads').select('id').eq('status', 'client'),
-    supabase.from('leads').select('id').eq('status', 'recurring'),
-    supabase.from('leads').select('id').eq('stage', 'complete')
-  ]);
-
-  const totalLeads = leads.data?.length || 0;
-  const totalClients = clients.data?.length || 0;
-  const recurringClients = recurring.data?.length || 0;
-  const completedQuotes = complete.data?.length || 0;
-  const converted = totalClients + recurringClients;
-
-  return {
-    totalLeads,
-    totalClients,
-    recurringClients,
-    completedQuotes,
-    conversionRate: totalLeads ? Math.round((converted / totalLeads) * 100) : 0
-  };
-}
-
-/* ─── Galería (admin) ────────────────────────────────────────── */
-// Todas las escrituras pasan por el backend, que valida el JWT del admin
-// y escribe con la service role key.
+/* ─── Panel admin ────────────────────────────────────────────── */
+// Nada de esto se lee ya con la anon key desde el navegador: `leads` tiene
+// RLS activa y sin políticas, así que solo la service role del servidor la
+// ve. Todo pasa por /api/admin/*, que valida el JWT del admin server-side.
 async function authHeaders() {
   const supabase = await getSupabase();
   const { data } = await supabase.auth.getSession();
@@ -135,21 +104,58 @@ async function authHeaders() {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 }
 
-async function galleryRequest(path, options = {}) {
+async function adminRequest(path, options = {}) {
   const headers = await authHeaders();
   const res = await fetch(path, { ...options, headers });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok || body.ok === false) throw new Error(body.error || 'Error en la galería.');
+  if (!res.ok || body.ok === false) throw new Error(body.error || 'Error en el panel.');
   return body;
 }
 
+/* ─── Leads ──────────────────────────────────────────────────── */
+export async function getLeads({ deleted = false } = {}) {
+  const body = await adminRequest(`/api/admin/leads${deleted ? '?deleted=1' : ''}`);
+  return body.leads || [];
+}
+
+export async function getStats() {
+  const body = await adminRequest('/api/admin/stats');
+  return body.stats;
+}
+
+export async function updateLeadStatus(leadId, status) {
+  await adminRequest(`/api/admin/leads/${leadId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status })
+  });
+}
+
+// Borrado lógico real: escribe deleted_at en la base, no en el localStorage.
+export async function deleteLead(leadId) {
+  await adminRequest(`/api/admin/leads/${leadId}`, { method: 'DELETE' });
+}
+
+export async function restoreLead(leadId) {
+  await adminRequest(`/api/admin/leads/${leadId}/restore`, { method: 'POST' });
+}
+
+/* ─── Documentos firmados ────────────────────────────────────── */
+export async function signedDocumentUrl(path) {
+  const body = await adminRequest('/api/admin/signed-url', {
+    method: 'POST',
+    body: JSON.stringify({ bucket: 'signed-documents', path })
+  });
+  return body.url;
+}
+
+/* ─── Galería ────────────────────────────────────────────────── */
 export async function getGalleryImages() {
-  const body = await galleryRequest('/api/admin/gallery');
+  const body = await adminRequest('/api/admin/gallery');
   return body.images || [];
 }
 
 export async function createGalleryImage(payload) {
-  const body = await galleryRequest('/api/admin/gallery', {
+  const body = await adminRequest('/api/admin/gallery', {
     method: 'POST',
     body: JSON.stringify(payload)
   });
@@ -157,7 +163,7 @@ export async function createGalleryImage(payload) {
 }
 
 export async function updateGalleryImage(id, payload) {
-  const body = await galleryRequest(`/api/admin/gallery/${id}`, {
+  const body = await adminRequest(`/api/admin/gallery/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload)
   });
@@ -165,5 +171,5 @@ export async function updateGalleryImage(id, payload) {
 }
 
 export async function deleteGalleryImage(id) {
-  await galleryRequest(`/api/admin/gallery/${id}`, { method: 'DELETE' });
+  await adminRequest(`/api/admin/gallery/${id}`, { method: 'DELETE' });
 }

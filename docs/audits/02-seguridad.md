@@ -346,3 +346,85 @@ Del 1 al 6: media hora larga en total, y cubre los dos CRÍTICO y dos de los ALT
 ## Nota sobre las skills
 
 `ponytail-audit` **sí existe en este repositorio**, en la rama sin mergear `claude/install-skills-repo-b7t6kk` (commit `5d5395c`, junto con `ponytail`, `ponytail-review`, `ponytail-debt`, `ponytail-gain` y 24 skills de SEO). No carga desde `main` porque nunca se mergeó. La auditoría 01 se hizo a mano por eso. Conviene mergear esa rama.
+
+---
+
+# RESUELTO EL 2026-07-26
+
+Correcciones aplicadas en el orden de la tabla "Acciones por urgencia".
+Verificado: `npm audit --omit=dev` → **0 vulnerabilidades**; `npm test` → CSP
+idéntica en `server.js` y `vercel.json`, sin `unsafe-inline` en `script-src`, y
+`reference_img_url` acotada al propio Storage.
+
+Nada de lo de abajo inventa claves ni valores: donde hace falta un secreto hay
+un placeholder y una nota de qué configurar a mano.
+
+## Estado por hallazgo
+
+| # | hallazgo | estado | dónde |
+|---|---|---|---|
+| C1 | `forceCreate` entrega el lead de otra persona | **cerrado** | rama borrada de `server.js`; el cliente ya no la llama; la migración quita el UNIQUE sobre `phone` que la forzaba |
+| C2 | RLS sobre `leads` | **cerrado en código · pendiente-manual verificar** | `ENABLE ROW LEVEL SECURITY` sin políticas en la migración; `getLeads`/`getStats`/`updateLeadStatus` movidos a `/api/admin/*` |
+| A1 | `/api/health/insert` sin autenticación | **cerrado** | endpoint y `describeServiceKey()` eliminados |
+| A2 | CSP/HSTS/X-Frame-Options ausentes en producción | **cerrado** | bloque `headers` en `vercel.json` sobre `/(.*)` |
+| A3 | `ADMIN_EMAILS` vacío = todos admin | **cerrado en código · pendiente-manual rellenar** | guard invertido a fallo cerrado |
+| A4 | política `gallery admin manage` | **cerrado** | `DROP POLICY`, sin reemplazo |
+| A5 | tipo y tamaño validados solo en cliente | **pendiente-manual** | documentado en la migración y en `SEGURIDAD-INSTRUCCIONES.md`; requiere el dashboard |
+| A6 | buckets públicos con datos personales | **cerrado en código · pendiente-manual verificar** | buckets declarados privados + URLs firmadas de 1 h |
+| M1 | `/api/health` sin autenticación | **cerrado** | 404 sin `HEALTH_DEBUG_KEY` |
+| M2 | enumeración de teléfonos | **cerrado** | el duplicado responde `{ok:true}` como un alta normal |
+| M3 | `'unsafe-inline'` en `script-src` | **cerrado** | scripts inline extraídos; directiva eliminada |
+| M4 | XSS residual en el panel admin | **cerrado** | la clase sale de una lista cerrada |
+| M5 | CORS acepta cualquier `localhost` | **cerrado** | solo si `NODE_ENV !== 'production'` |
+| M6 | `reference_img_url` acepta cualquier URL | **cerrado** | debe empezar por el prefijo del propio Storage |
+| M7 | anon key en el historial de git | **mitigado** | depende de C2, que ya está puesto. Rotarla es decisión del dueño |
+| M8 | dependencias vulnerables | **cerrado** | `form-data` y `multer` fuera; `npm audit fix` para el resto |
+| B1 | `/api/keepalive` sin autenticación | **cerrado en código · pendiente-manual rellenar** | exige `Bearer $CRON_SECRET` |
+| B2 | `update_token` sin comparación en tiempo constante | **sin acción** | la propia auditoría lo descarta |
+| B3 | "borrar" un lead solo escribe en `localStorage` | **cerrado** | columna `deleted_at` + `DELETE /api/admin/leads/:id` |
+| B4 | `SEGURIDAD-INSTRUCCIONES.md` desactualizado | **cerrado** | reescrito contra el código real |
+| B5 | `.agent.md` y `python` en la raíz | **cerrado** | borrados |
+
+## Pendiente-manual: lo que tiene que hacer el dueño
+
+El código no puede tocar el dashboard de Supabase ni las variables de Vercel.
+Hasta que esto esté hecho, cuatro de los arreglos de arriba no protegen nada:
+
+1. **Variables en Vercel** → Project Settings → Environment Variables:
+   - `ADMIN_EMAILS` — **obligatoria**. Sin ella nadie puede entrar al panel
+     (falla cerrado, a propósito). Formato: `correo@dominio.com,otro@dominio.com`.
+   - `CRON_SECRET` — **obligatoria** para que el keepalive siga funcionando.
+     Genera un valor al azar (`openssl rand -hex 32`); Vercel lo manda solo en
+     sus crons cuando la variable existe.
+   - `HEALTH_DEBUG_KEY` — opcional. Sin ella `/api/health` responde 404.
+2. **Correr `migrations/EJECUTAR-ESTE-EN-SUPABASE.sql`** en el SQL Editor y
+   mirar la tabla de resultados. Tiene que decir:
+   `rls_activa_en_leads = true`, `politicas_en_leads = 0`,
+   `politicas_en_galeria = 0`, `buckets_privados_mal = 0`.
+   Eso responde la acción #1 de la tabla de urgencia — la pregunta que el repo
+   no sabía contestar.
+3. **Límites de Storage** → Supabase → Storage → cada bucket → Settings:
+   `file_size_limit = 10MB` y
+   `allowed_mime_types = image/jpeg, image/png, image/webp`.
+   El archivo va del navegador a Storage sin pasar por el servidor: este es el
+   único sitio donde el límite es real.
+4. **Opcional**: rotar la anon key. Con RLS bien puesta no da acceso a nada, así
+   que el orden correcto es verificar el punto 2 primero.
+
+## Decisiones que conviene conocer
+
+- **La migración quita el UNIQUE sobre `phone`.** Era la restricción que
+  obligaba al servidor a "reutilizar" el lead existente, y de ahí salía C1.
+  Sin ella, una recotización es simplemente una fila nueva y el duplicado deja
+  de ser un oráculo (M2). Si el UNIQUE volviera a aparecer, el servidor
+  responde `{ok:true}` sin `leadId` y deja un aviso en los logs.
+- **La CSP está duplicada a propósito** en `server.js` y `vercel.json`: el CDN
+  sirve el estático sin pasar por Express. `npm test` falla si se separan.
+- **`script-src-attr` pasó a `'none'`** y `frame-ancestors` a `'none'`: no hay
+  ni un manejador `on*` inline en `public/`, y concuerda con
+  `X-Frame-Options: DENY`.
+- **El panel admin salió a `public/admin/admin.js`.** Su `<script type="module">`
+  inline habría quedado bloqueado al quitar `'unsafe-inline'`.
+- **No se tocó** lo que la auditoría marca como correcto: verificación
+  server-side del JWT con `auth.getUser()`, recálculo del precio en el
+  servidor, fail-closed de reCAPTCHA y manejo de la service role key.

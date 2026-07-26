@@ -17,11 +17,23 @@
     <meta property="og:image" content="https://i.ibb.co/gbt230bD/657596602-18195058267358960-7783419555348968370-n.jpg">
     <meta name="twitter:card" content="summary_large_image">
 
-    <!-- Meta Pixel — el ID llega desde /api/config (variable META_PIXEL_ID).
-         Este bloque solo carga la librería y encola los eventos; el init y el
-         PageView los dispara script.js apenas tiene la configuración. -->
-    <script src="/pixel.js" defer></script>
-    <!-- End Meta Pixel -->
+   <!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1467646508235189');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>

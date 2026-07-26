@@ -232,6 +232,18 @@ function renderGallery(filter) {
         img.alt = item.alt || `Tatuaje ${item.category} — Negas Tattoo Sabaneta`;
         img.loading = 'lazy';
         img.decoding = 'async';
+        // Reserva de espacio (CLS). Solo si la pieza trae medidas reales.
+        if (item.img_width && item.img_height) {
+            img.width = item.img_width;
+            img.height = item.img_height;
+        }
+        // Variante de 480px: solo existe en las piezas ya migradas al dominio
+        // propio (nombre `...-1080.webp`). En las de i.ibb.co no aplica.
+        const small = item.url.replace('-1080.webp', '-480.webp');
+        if (small !== item.url) {
+            img.srcset = `${small} 480w, ${item.url} 1080w`;
+            img.sizes = '(max-width: 640px) 50vw, 33vw';
+        }
 
         const overlay = document.createElement('div');
         overlay.className = 'gal-overlay';
@@ -241,9 +253,11 @@ function renderGallery(filter) {
         cat.textContent = item.category;
 
         el.append(img, overlay, cat);
-        el.addEventListener('click', () => openLightbox(item.url, el));
+        el.addEventListener('click', () => openLightbox(item.url, el, img.alt));
         galGrid.appendChild(el);
     });
+
+    renderGallerySchema(shown);
 
     if (galCount) {
         galCount.textContent = galleryImages.length
@@ -251,6 +265,42 @@ function renderGallery(filter) {
             : '';
     }
     if (galEmpty) galEmpty.hidden = shown.length > 0;
+}
+
+// ImageGallery + un ImageObject por pieza, a partir de lo que ya devuelve
+// /api/gallery. Se reescribe en cada render (tambien al filtrar).
+function renderGallerySchema(items) {
+    let tag = document.getElementById('gallery-schema');
+    if (!tag) {
+        tag = document.createElement('script');
+        tag.type = 'application/ld+json';
+        tag.id = 'gallery-schema';
+        document.head.appendChild(tag);
+    }
+    tag.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'ImageGallery',
+        '@id': 'https://negas.tattoo/#archivo',
+        name: 'El Archivo',
+        url: 'https://negas.tattoo/#work',
+        isPartOf: { '@id': 'https://negas.tattoo/#website' },
+        associatedMedia: items.map(item => ({
+            '@type': 'ImageObject',
+            contentUrl: item.url,
+            url: item.url,
+            ...(item.img_width ? { width: item.img_width } : {}),
+            ...(item.img_height ? { height: item.img_height } : {}),
+            name: item.alt || undefined,
+            description: item.alt || undefined,
+            keywords: item.category,
+            creator: { '@id': 'https://negas.tattoo/#studio' },
+            copyrightNotice: '© Negas Tattoo',
+            creditText: 'Negas Tattoo',
+            license: 'https://negas.tattoo/privacidad',
+            acquireLicensePage: 'https://negas.tattoo/',
+            contentLocation: { '@id': 'https://negas.tattoo/#studio' }
+        }))
+    });
 }
 
 document.querySelectorAll('.gal-btn').forEach(btn => {
@@ -264,13 +314,14 @@ document.querySelectorAll('.gal-btn').forEach(btn => {
 /* ═══════════════════════════════════════════════════════════════
    LIGHTBOX
    ═══════════════════════════════════════════════════════════════ */
-function openLightbox(src, el) {
+function openLightbox(src, el, alt) {
     const lb = document.getElementById('lightbox');
     const lbImg = document.getElementById('lb-img');
     if (!lb || !lbImg) return;
 
     const r = el.getBoundingClientRect();
     lbImg.src = src;
+    lbImg.alt = alt || 'Pieza del portafolio de Negas Tattoo';
 
     const startX = (r.left + r.width / 2) - (window.innerWidth / 2);
     const startY = (r.top + r.height / 2) - (window.innerHeight / 2);

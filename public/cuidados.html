@@ -1,18 +1,37 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-CO">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuidados post-tatuaje | Negas Tattoo</title>
     <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/favicon.png">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://connect.facebook.net">
     <meta name="description" content="Paso a paso simple para cuidar tu tatuaje nuevo. Recomendacion de Negas Tattoo en Sabaneta: hidratar unicamente con Lubriderm azul.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://negas.tattoo/cuidados">
 
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://negas.tattoo/cuidados">
+    <meta property="og:site_name" content="Negas Tattoo">
+    <meta property="og:locale" content="es_CO">
     <meta property="og:title" content="Cuidados post-tatuaje | Negas Tattoo">
     <meta property="og:description" content="Paso a paso simple para cuidar tu tatuaje nuevo.">
+    <meta property="og:image" content="https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://negas.tattoo/" },
+        { "@type": "ListItem", "position": 2, "name": "Cuidados post-tatuaje", "item": "https://negas.tattoo/cuidados" }
+      ]
+    }
+    </script>
 
     <!-- Meta Pixel — el ID llega desde /api/config (variable META_PIXEL_ID). -->
     <script src="/pixel.js" defer></script>
@@ -22,7 +41,9 @@
     <link rel="stylesheet" href="style.css">
     <style>
         .care-wrap { max-width: 42rem; margin: 0 auto; padding: 3.5rem 1.5rem 5rem; }
-        .care-back { display: inline-flex; align-items: center; gap: .5rem; font-family: monospace; font-size: .625rem; text-transform: uppercase; letter-spacing: .2em; color: #52525b; text-decoration: none; margin-bottom: 2.5rem; transition: color .2s; }
+        .care-crumbs a { color: inherit; text-decoration: none; }
+        .care-crumbs a:hover { color: #fff; }
+        .care-back, .care-crumbs { display: inline-flex; align-items: center; gap: .5rem; font-family: monospace; font-size: .625rem; text-transform: uppercase; letter-spacing: .2em; color: #52525b; text-decoration: none; margin-bottom: 2.5rem; transition: color .2s; }
         .care-back:hover { color: #fff; }
         .care-kicker { font-family: monospace; font-size: .625rem; text-transform: uppercase; letter-spacing: .2em; color: #D20000; margin-bottom: .85rem; }
         .care-title { font-size: clamp(2.5rem, 11vw, 4.5rem) !important; text-align: left !important; line-height: .85; margin-bottom: 1.25rem; }
@@ -68,7 +89,9 @@
 <body>
 
     <div class="care-wrap">
-        <a href="/" class="care-back">&#8592; Volver al inicio</a>
+        <nav class="care-crumbs" aria-label="Miga de pan">
+            <a href="/">Inicio</a> <span>/</span> <span aria-current="page">Cuidados post-tatuaje</span>
+        </nav>
 
         <div class="care-kicker">Despu&#233;s de la sesi&#243;n</div>
         <h1 class="care-title">Cuidados<br><span>post-tatuaje</span></h1>
@@ -179,7 +202,11 @@
             Tengo una duda
         </a>
 
-        <a href="/" class="care-back" style="margin-top:3rem;margin-bottom:0">&#8592; Volver al inicio</a>
+        <nav class="care-crumbs" aria-label="Seguir navegando" style="margin-top:3rem;margin-bottom:0">
+            <a href="/">Inicio</a> <span>/</span>
+            <a href="/#work">Portafolio</a> <span>/</span>
+            <a href="/contacto">Ubicaci&#243;n y contacto</a>
+        </nav>
     </div>
 
     <script src="/page-config.js" defer></script>

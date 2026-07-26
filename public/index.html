@@ -1,20 +1,30 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-CO">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Negas Tattoo | Estudio de tatuaje en Sabaneta, Antioquia</title>
     <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/favicon.png">
+    <meta name="theme-color" content="#0a0a0a">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://connect.facebook.net">
+    <!-- i.ibb.co: quitar este preconnect cuando la galeria migre al dominio propio. -->
+    <link rel="preconnect" href="https://i.ibb.co">
 
     <meta name="description" content="Estudio privado de tatuaje en Sabaneta, Medellin. Blackwork, botanico y fine line. Cotiza en linea y recibe tu inversion aproximada al instante.">
-    <meta name="keywords" content="Tattoo Medellin, Blackwork Sabaneta, Tatuajes Medellin, Negas Tattoo, cotizar tatuaje">
+    <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://negas.tattoo/">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://negas.tattoo/">
+    <meta property="og:site_name" content="Negas Tattoo">
+    <meta property="og:locale" content="es_CO">
     <meta property="og:title" content="Negas Tattoo | Estudio de tatuaje en Sabaneta">
     <meta property="og:description" content="Transformamos tus ideas en piezas permanentes de alto contraste. Cotiza en linea y recibe tu inversion aproximada al instante.">
-    <meta property="og:image" content="https://i.ibb.co/gbt230bD/657596602-18195058267358960-7783419555348968370-n.jpg">
+    <meta property="og:image" content="https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg">
+    <meta property="og:image:alt" content="Tatuaje de &#225;ngel blackwork &#8212; Negas Tattoo Sabaneta">
     <meta name="twitter:card" content="summary_large_image">
 
    <!-- Meta Pixel Code -->
@@ -35,10 +45,171 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+
+<!-- Datos estructurados. Negocio SIN dirección pública (estudio privado /
+     servicio a domicilio): por eso no hay streetAddress, ni geo, ni hasMap.
+     El schema declara solo el área de cobertura, que es lo que Google espera
+     de un service-area business. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://negas.tattoo/#website",
+      "url": "https://negas.tattoo/",
+      "name": "Negas Tattoo",
+      "inLanguage": "es-CO",
+      "publisher": { "@id": "https://negas.tattoo/#studio" }
+    },
+    {
+      "@type": ["TattooParlor", "LocalBusiness"],
+      "@id": "https://negas.tattoo/#studio",
+      "name": "Negas Tattoo",
+      "alternateName": "Negas Tattoo - Estudio Privado",
+      "url": "https://negas.tattoo/",
+      "email": "hola@negas.tattoo",
+      "telephone": "+573337589442",
+      "image": { "@id": "https://negas.tattoo/#primaryimage" },
+      "logo": "https://negas.tattoo/favicon.png",
+      "priceRange": "$$",
+      "currenciesAccepted": "COP",
+      "paymentAccepted": "Efectivo, Transferencia Bancolombia, Nequi",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Sabaneta",
+        "addressRegion": "Antioquia",
+        "postalCode": "055450",
+        "addressCountry": "CO"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+          "opens": "10:00",
+          "closes": "21:00"
+        }
+      ],
+      "publicAccess": false,
+      "isAccessibleForFree": false,
+      "smokingAllowed": false,
+      "availableLanguage": { "@type": "Language", "name": "Spanish", "alternateName": "es" },
+      "areaServed": [
+        { "@type": "City", "name": "Sabaneta" },
+        { "@type": "City", "name": "Envigado" },
+        { "@type": "City", "name": "Itagüí" },
+        { "@type": "City", "name": "La Estrella" },
+        { "@type": "City", "name": "Medellín" },
+        { "@type": "AdministrativeArea", "name": "Valle de Aburrá" }
+      ],
+      "sameAs": [
+        "https://www.instagram.com/negas.tattoo",
+        "https://www.facebook.com/negas.ink",
+        "https://www.tiktok.com/@negasva",
+        "https://share.google/Q0QXb30nNSbFShhjb"
+      ],
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "contactType": "reservations",
+          "telephone": "+573337589442",
+          "email": "hola@negas.tattoo",
+          "availableLanguage": "es",
+          "areaServed": "CO"
+        }
+      ],
+      "makesOffer": [
+        { "@type": "Offer", "itemOffered": { "@id": "https://negas.tattoo/#svc-blackwork" } },
+        { "@type": "Offer", "itemOffered": { "@id": "https://negas.tattoo/#svc-botanico" } },
+        { "@type": "Offer", "itemOffered": { "@id": "https://negas.tattoo/#svc-fineline" } }
+      ],
+      "potentialAction": {
+        "@type": "ReserveAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://negas.tattoo/cotizar",
+          "inLanguage": "es-CO",
+          "actionPlatform": [
+            "http://schema.org/DesktopWebPlatform",
+            "http://schema.org/MobileWebPlatform"
+          ]
+        },
+        "result": { "@type": "Reservation", "name": "Cotización de tatuaje" }
+      }
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://negas.tattoo/#primaryimage",
+      "url": "https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg",
+      "contentUrl": "https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg",
+      "caption": "Tatuaje de ángel blackwork — Negas Tattoo Sabaneta",
+      "creator": { "@id": "https://negas.tattoo/#studio" },
+      "creditText": "Negas Tattoo"
+    },
+    {
+      "@type": "Service",
+      "@id": "https://negas.tattoo/#svc-blackwork",
+      "name": "Blackwork",
+      "serviceType": "Tatuaje blackwork",
+      "provider": { "@id": "https://negas.tattoo/#studio" },
+      "areaServed": { "@type": "AdministrativeArea", "name": "Valle de Aburrá" },
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "COP",
+        "priceSpecification": {
+          "@type": "PriceSpecification",
+          "priceCurrency": "COP",
+          "minPrice": 180000
+        },
+        "availability": "https://schema.org/InStock",
+        "url": "https://negas.tattoo/cotizar"
+      }
+    },
+    {
+      "@type": "Service",
+      "@id": "https://negas.tattoo/#svc-botanico",
+      "name": "Botánico",
+      "serviceType": "Tatuaje botánico",
+      "provider": { "@id": "https://negas.tattoo/#studio" },
+      "areaServed": { "@type": "AdministrativeArea", "name": "Valle de Aburrá" },
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "COP",
+        "priceSpecification": {
+          "@type": "PriceSpecification",
+          "priceCurrency": "COP",
+          "minPrice": 180000
+        },
+        "availability": "https://schema.org/InStock",
+        "url": "https://negas.tattoo/cotizar"
+      }
+    },
+    {
+      "@type": "Service",
+      "@id": "https://negas.tattoo/#svc-fineline",
+      "name": "Fine line",
+      "serviceType": "Tatuaje fine line",
+      "provider": { "@id": "https://negas.tattoo/#studio" },
+      "areaServed": { "@type": "AdministrativeArea", "name": "Valle de Aburrá" },
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "COP",
+        "priceSpecification": {
+          "@type": "PriceSpecification",
+          "priceCurrency": "COP",
+          "minPrice": 180000
+        },
+        "availability": "https://schema.org/InStock",
+        "url": "https://negas.tattoo/cotizar"
+      }
+    }
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -111,6 +282,7 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
 
     <!-- ══════════════ 2. ESTILOS ══════════════ -->
     <section class="svc-section" id="estilos">
+        <h2 class="svc-section-title">Estilos</h2>
         <div class="svc-grid svc-grid--3">
             <div class="svc-card">
                 <div class="svc-card-top">
@@ -530,21 +702,23 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
                         <a href="#work">Portafolio</a>
                         <a href="#estilos">Estilos</a>
                         <a href="/cotizar" class="js-open-quote" data-origin="footer">Cotizar tatuaje</a>
+                        <a href="/contacto">Ubicaci&#243;n y contacto</a>
                         <a href="/cuidados">Cuidados post-tatuaje</a>
                     </div>
                 </div>
                 <div>
                     <div class="nfooter-col-title">Contacto</div>
-                    <p class="nfooter-contact-txt">Sabaneta, Antioquia<br>Colombia</p>
+                    <p class="nfooter-contact-txt">Sabaneta, Antioquia<br>Colombia<br><span style="color:#52525b">Estudio privado &#8212; la direcci&#243;n se indica al agendar la cita.</span></p>
+                    <a href="tel:+573337589442" class="nfooter-contact-lnk">+57 333 758 9442</a>
+                    <a href="https://share.google/Q0QXb30nNSbFShhjb" target="_blank" rel="noopener" class="nfooter-contact-lnk">Ficha en Google</a>
+                    <a href="/contacto" class="nfooter-contact-lnk">Ubicaci&#243;n y contacto</a>
                     <a href="#" target="_blank" rel="noopener" class="nfooter-contact-lnk js-wa js-wa-track" data-origin="footer-contacto">WhatsApp directo</a>
                     <a href="https://www.instagram.com/negas.tattoo" target="_blank" rel="noopener" class="nfooter-contact-lnk js-ig">@negas.tattoo</a>
                 </div>
                 <div>
                     <div class="nfooter-col-title">Horario</div>
                     <div class="nfooter-sched">
-                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">Lun&#8211;Vie</span><span class="nfooter-sched-time">10:00 &#8212; 19:00</span></div>
-                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">S&#225;bado</span><span class="nfooter-sched-time">11:00 &#8212; 16:00</span></div>
-                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">Domingo</span><span class="nfooter-sched-time">Cerrado</span></div>
+                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">Lun&#8211;Dom</span><span class="nfooter-sched-time">10:00 &#8212; 21:00</span></div>
                     </div>
                     <p class="nfooter-sched-note">Solo con cita previa</p>
                 </div>

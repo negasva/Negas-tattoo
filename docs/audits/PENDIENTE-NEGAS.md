@@ -130,8 +130,23 @@ header en `vercel.json`.
 ## 8. Verificación post-despliegue
 
 Los comandos de la §7 de `03-seo.md` **no se pudieron correr** desde el
-entorno de la auditoría (la política de red devuelve 403 para
-`negas.tattoo`). Correr después de desplegar:
+entorno de la auditoría: la política de red bloquea las salidas tanto a
+`negas.tattoo` como a la URL de preview de Vercel (403 del proxy en el
+`CONNECT`, antes de llegar al servidor).
+
+Lo más rápido es correrlos primero contra la **preview de la PR** —ahí ya se
+puede comprobar que `cleanUrls` resuelve `/contacto`, `/cuidados` y
+`/privacidad` con 200, y que los tres `/admin*` devuelven `noindex`— y
+repetirlos contra producción tras el merge:
+
+```bash
+U=https://negas-tattoo-git-claude-negas-seo-audi-dfbaaa-negasvas-projects.vercel.app
+for p in / /contacto /cuidados /privacidad /cotizar /admin /admin/ /admin/index.html; do
+  printf "%-20s " "$p"; curl -sI "$U$p" | grep -iE '^HTTP|^x-robots' | tr -d '\r' | paste -sd' '
+done
+```
+
+Contra producción, después de desplegar:
 
 ```bash
 # Indexabilidad — todos deben dar 200 (cleanUrls ya está activo)

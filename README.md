@@ -12,6 +12,11 @@ cp .env.example .env    # rellena los valores
 npm start               # http://localhost:3780
 ```
 
+Requiere **Node >= 20.6**: `npm start` es `node --env-file=.env server.js`, que
+lee el `.env` con la bandera nativa de Node en vez del paquete `dotenv`. El
+`.env` tiene que existir aunque esté vacío; en Vercel no hace falta, las
+variables vienen del entorno del proyecto.
+
 ---
 
 ## Puesta en producción — 3 pasos obligatorios

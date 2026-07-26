@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 const crypto = require('crypto');
 const express = require('express');
 const path = require('path');
@@ -36,21 +34,32 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean);
 
-// Parametros de precio: editables por variables de entorno para poder ajustar
-// tarifas sin volver a desplegar. El frontend los recibe via /api/config.
+// Parametros de precio. Estuvieron detras de nueve variables de entorno "para
+// ajustar tarifas sin desplegar"; ninguna se configuro nunca en ningun entorno,
+// asi que las nueve caian siempre al mismo default. El frontend los recibe via
+// /api/config. Cambiar una tarifa es cambiar este objeto y desplegar.
 const PRICING = {
-  base: Number(process.env.PRICE_BASE) || 90000,
-  perCmSmall: Number(process.env.PRICE_PER_CM_SMALL) || 38000,
-  perCmLarge: Number(process.env.PRICE_PER_CM_LARGE) || 52000,
-  breakpointCm: Number(process.env.PRICE_BREAKPOINT_CM) || 15,
-  minimum: Number(process.env.PRICE_MINIMUM) || 180000,
-  rangeLow: Number(process.env.PRICE_RANGE_LOW) || 0.95,
-  rangeHigh: Number(process.env.PRICE_RANGE_HIGH) || 1.25,
-  maxCm: Number(process.env.PRICE_MAX_CM) || 60
+  base: 90000,
+  perCmSmall: 38000,
+  perCmLarge: 52000,
+  breakpointCm: 15,
+  minimum: 180000,
+  rangeLow: 0.95,
+  rangeHigh: 1.25,
+  maxCm: 60
 };
 
+// Unica definicion de las categorias y los tamanos de la galeria: aqui se
+// validan (/api/admin/gallery) y desde aqui se sirven al panel admin por
+// /api/config. Estaban repetidos en el admin.
 const GALLERY_CATEGORIES = ['Blackwork', 'Botánico', 'Fineline'];
-const GALLERY_SPANS = ['', 'gal-cs2', 'gal-rs2', 'gal-cs2rs2'];
+const GALLERY_SPANS = [
+  { value: '', label: 'Normal (1×1)' },
+  { value: 'gal-cs2', label: 'Ancha (2×1)' },
+  { value: 'gal-rs2', label: 'Alta (1×2)' },
+  { value: 'gal-cs2rs2', label: 'Grande (2×2)' }
+];
+const GALLERY_SPAN_VALUES = GALLERY_SPANS.map((span) => span.value);
 
 // Buckets privados: contienen datos personales (fotos del cuerpo del cliente,
 // cedulas, documentos de acudientes de menores). No se sirven por URL publica;
@@ -172,7 +181,16 @@ app.use(helmet({
 }));
 
 app.use(express.json({ limit: '100kb' }));
-app.use(express.static(PUBLIC_PATH, { index: false }));
+// `extensions: ['html']` sirve /privacidad y /cuidados sin la extension, e
+// index.html para / y /admin. Reemplaza las cinco rutas sendFile que habia
+// aqui. /cotizar lo reescribe vercel.json a /index.html en produccion.
+app.use(express.static(PUBLIC_PATH, { extensions: ['html'] }));
+
+// La unica ruta de pagina que sobrevive: /cotizar no tiene archivo propio (es
+// la misma landing, el frontend detecta el pathname y abre el popup). En
+// produccion la reescribe vercel.json y esto no llega a ejecutarse; en local
+// sin esta linea la URL de Google Ads da 404.
+app.get('/cotizar', (_req, res) => res.sendFile(path.join(PUBLIC_PATH, 'index.html')));
 
 // ─── Helpers de ruta ─────────────────────────────────────────────────────────
 // Express 4 no captura los rechazos de un handler async: sin esto, un fallo de
@@ -193,27 +211,6 @@ const requireSupabase = (_req, res, next) => {
   return next();
 };
 
-// ─── Rutas de paginas ────────────────────────────────────────────────────────
-// /cotizar sirve la misma landing. El frontend detecta el pathname y abre el
-// popup de cotizacion automaticamente. Asi tenemos una URL real para Google Ads
-// sin duplicar contenido ni mantener dos paginas separadas.
-const sendIndex = (_req, res) => res.sendFile(path.join(PUBLIC_PATH, 'index.html'));
-
-app.get('/', sendIndex);
-app.get('/cotizar', sendIndex);
-
-app.get('/admin', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_PATH, 'admin', 'index.html'));
-});
-
-app.get('/privacidad', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_PATH, 'privacidad.html'));
-});
-
-app.get('/cuidados', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_PATH, 'cuidados.html'));
-});
-
 // Configuracion publica del frontend. Aqui solo van valores que de todas
 // formas terminan en el navegador: la anon key de Supabase (protegida por
 // RLS), la site key de reCAPTCHA y los IDs de medicion. Los secretos de
@@ -230,7 +227,8 @@ app.get('/api/config', apiLimiter, (_req, res) => {
     googleAdsId: (process.env.GOOGLE_ADS_ID || '').trim(),
     googleAdsConversionLabel: (process.env.GOOGLE_ADS_CONVERSION_LABEL || '').trim(),
     ga4Id: (process.env.GA4_MEASUREMENT_ID || '').trim(),
-    pricing: PRICING
+    pricing: PRICING,
+    gallery: { categories: GALLERY_CATEGORIES, spans: GALLERY_SPANS }
   });
 });
 
@@ -387,8 +385,18 @@ async function verifyRecaptcha(token, remoteIp, expectedAction) {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const str = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
 
+const COP = new Intl.NumberFormat('es-CO', {
+  style: 'currency',
+  currency: 'COP',
+  maximumFractionDigits: 0
+});
+
 // Recalcula el precio en el servidor. Nunca confiamos en el rango que manda el
 // cliente: el navegador puede alterarlo y quedaria un precio falso en la base.
+//
+// ⚠ Esta funcion esta duplicada a proposito en script.js (el slider necesita
+// feedback en vivo sin ida y vuelta al servidor). Aqui esta la verdad: misma
+// formula y mismo `label` en los dos lados. Si cambias uno, cambia el otro.
 function computePriceRange(sizeCm) {
   const cm = Math.max(0, Math.min(Number(sizeCm) || 0, PRICING.maxCm));
   if (!cm) return { min: 0, max: 0, label: '' };
@@ -401,11 +409,7 @@ function computePriceRange(sizeCm) {
   const min = round(point * PRICING.rangeLow);
   const max = round(point * PRICING.rangeHigh);
 
-  return {
-    min,
-    max,
-    label: `$${min.toLocaleString('es-CO')} - $${max.toLocaleString('es-CO')}`
-  };
+  return { min, max, label: `${COP.format(min)} - ${COP.format(max)}` };
 }
 
 // Colombia: 10 digitos empezando por 3. Aceptamos que venga con el 57 delante.
@@ -620,7 +624,7 @@ function sanitizeGalleryPayload(body, { partial = false } = {}) {
 
   if (body.span !== undefined) {
     const span = str(body.span, 20);
-    if (!GALLERY_SPANS.includes(span)) errors.push('span');
+    if (!GALLERY_SPAN_VALUES.includes(span)) errors.push('span');
     else out.span = span;
   }
 

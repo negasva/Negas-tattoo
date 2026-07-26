@@ -46,13 +46,13 @@ function track(event, params = {}) {
             if (standard.includes(event)) window.fbq('track', event, params);
             else window.fbq('trackCustom', event, params);
         }
-    } catch (_) { /* pixel bloqueado */ }
+    } catch (error) { console.warn('Meta Pixel no registro el evento', event, '—', error.message); }
 
     try {
         if (typeof window.gtag === 'function') {
             window.gtag('event', event, params);
         }
-    } catch (_) { /* gtag no cargado */ }
+    } catch (error) { console.warn('gtag no registro el evento', event, '—', error.message); }
 }
 
 function trackAdsConversion() {
@@ -62,7 +62,7 @@ function trackAdsConversion() {
         window.gtag('event', 'conversion', {
             send_to: `${googleAdsId}/${googleAdsConversionLabel}`
         });
-    } catch (_) { /* noop */ }
+    } catch (error) { console.warn('Conversion de Google Ads no registrada —', error.message); }
 }
 
 function loadGoogleTags() {
@@ -247,33 +247,6 @@ const shuffle = arr => arr
     .sort((a, b) => a[0] - b[0])
     .map(pair => pair[1]);
 
-// Respaldo: si /api/gallery falla (base sin migrar, Supabase pausado, caida
-// de red) el archivo NO se queda vacio — mostramos las piezas de siempre.
-// Ojo: solo aplica cuando la API da error. Si responde bien con una lista
-// vacia, se respeta: significa que Negas borro las piezas a proposito.
-const GALLERY_FALLBACK = [
-    { url: 'https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg',          category: 'Blackwork', span: 'gal-cs2rs2', alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg',   category: 'Blackwork', span: '',           alt: 'Tatuaje de pierna completa blackwork — Negas Tattoo' },
-    { url: 'https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg',                  category: 'Blackwork', span: '',           alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/s93WWvNq/Tatttoo-Angel-copy-7.jpg',           category: 'Blackwork', span: 'gal-rs2',    alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/35ggTM1t/Tatttoo-pierna-completa-copy-2.jpg', category: 'Blackwork', span: '',           alt: 'Tatuaje de pierna completa blackwork — Negas Tattoo' },
-    { url: 'https://i.ibb.co/x8MJ4tW3/Tatttoo-mask-copy.jpg',              category: 'Blackwork', span: '',           alt: 'Tatuaje de máscara blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/CKMdBXVC/Tatttoo-mask.jpg',                   category: 'Blackwork', span: '',           alt: 'Tatuaje de máscara blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/4n31ng5r/Tatttoo-Angel-copy-2.jpg',           category: 'Blackwork', span: 'gal-cs2',    alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/Z6LmS5WK/Tatttoo-tigre.jpg',                  category: 'Blackwork', span: '',           alt: 'Tatuaje de tigre blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/C3MCJJFW/Tatttoo-pierna-completa.jpg',        category: 'Blackwork', span: '',           alt: 'Tatuaje de pierna completa blackwork — Negas Tattoo' },
-    { url: 'https://i.ibb.co/dFYtWP4/tatuaje-mariposa.jpg',                category: 'Botánico',  span: 'gal-rs2',    alt: 'Tatuaje de mariposa botánico — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/FLGJ9Q23/tatuaje-bebe.jpg',                   category: 'Botánico',  span: '',           alt: 'Tatuaje botánico fine line — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/6RCSYkN4/tatuaje-letras.jpg',                 category: 'Fineline',  span: 'gal-cs2',    alt: 'Tatuaje de letras fine line — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/wZhYZ7TN/tatuaje-letras-copy.jpg',            category: 'Fineline',  span: '',           alt: 'Tatuaje de letras fine line — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/FLhCmFhg/Tatttoo-eye.jpg',                    category: 'Blackwork', span: '',           alt: 'Tatuaje de ojo blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/fdPZLNzG/Tatttoo-Elefante.jpg',               category: 'Blackwork', span: '',           alt: 'Tatuaje de elefante blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/tMJQbKZW/IMG-0066.png',                       category: 'Blackwork', span: '',           alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/hF1pjnd9/IMG-0067.png',                       category: 'Blackwork', span: 'gal-cs2',    alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/ynWN6Cj1/IMG-0065.png',                       category: 'Blackwork', span: '',           alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/pBjNrfVs/IMG-0063.png',                       category: 'Blackwork', span: '',           alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' }
-];
-
 async function loadGallery() {
     if (!galGrid) return;
     try {
@@ -283,8 +256,9 @@ async function loadGallery() {
         if (!data.ok) throw new Error(data.error || 'respuesta inválida');
         galleryImages = Array.isArray(data.images) ? data.images : [];
     } catch (error) {
-        console.warn('Galería: usando respaldo local —', error.message);
-        galleryImages = GALLERY_FALLBACK.map((img, i) => ({ ...img, id: 'fb' + i, sort_order: i }));
+        // Sin respaldo hardcodeado: se muestra #galEmpty, que ya existe.
+        console.warn('Galería no disponible —', error.message);
+        galleryImages = [];
     }
     renderGallery(activeFilter);
 }
@@ -417,8 +391,11 @@ let isSubmitting = false;
 
 const isQuoteOpen = () => modal?.classList.contains('is-open');
 
+// Busca primero dentro del paso visible: `form` existe en varios pasos y el
+// mensaje tiene que salir donde la persona esta mirando.
 function setError(field, message) {
-    const el = document.querySelector(`[data-error-for="${field}"]`);
+    const el = modal?.querySelector(`.qm-step.is-active [data-error-for="${field}"]`)
+        || document.querySelector(`[data-error-for="${field}"]`);
     if (el) el.textContent = message || '';
 }
 
@@ -578,7 +555,7 @@ async function submitStepOne(button) {
 
         showStep(2);
     } catch (error) {
-        setError('name', error.message);
+        setError('form', error.message);
     } finally {
         button.disabled = false;
         button.textContent = original;
@@ -618,18 +595,22 @@ const COP = new Intl.NumberFormat('es-CO', {
 });
 const formatCop = value => COP.format(Math.round(value));
 
-// Espejo exacto de computePriceRange() en server.js. El servidor recalcula y
-// manda la verdad; esto es solo para el feedback en vivo del slider.
+// ⚠ Espejo EXACTO de computePriceRange() en server.js (misma formula, mismo
+// `label`). El servidor recalcula y manda la verdad — esto solo alimenta el
+// feedback en vivo del slider. Si cambias uno, cambia el otro.
 function computePriceRange(cm) {
     const size = Math.max(0, Math.min(Number(cm) || 0, pricing.maxCm));
-    if (!size) return null;
+    if (!size) return { min: 0, max: 0, label: '' };
 
     const small = Math.min(size, pricing.breakpointCm) * pricing.perCmSmall;
     const large = Math.max(0, size - pricing.breakpointCm) * pricing.perCmLarge;
     const point = Math.max(pricing.minimum, pricing.base + small + large);
 
     const round = n => Math.round(n / 10000) * 10000;
-    return { min: round(point * pricing.rangeLow), max: round(point * pricing.rangeHigh) };
+    const min = round(point * pricing.rangeLow);
+    const max = round(point * pricing.rangeHigh);
+
+    return { min, max, label: `${formatCop(min)} - ${formatCop(max)}` };
 }
 
 function updatePrice() {
@@ -641,9 +622,9 @@ function updatePrice() {
 
     const range = computePriceRange(cm);
     quoteSession.sizeCm = cm;
-    quoteSession.price = range;
+    quoteSession.price = range.min ? range : null;
 
-    if (!range) {
+    if (!range.min) {
         if (priceIdle) priceIdle.hidden = false;
         if (priceResult) priceResult.hidden = true;
         return;
@@ -785,7 +766,7 @@ function showDoneStep() {
 async function submitQuote({ skipImage = false } = {}) {
     if (isSubmitting) return;
     if (!quoteSession.leadId || !quoteSession.token) {
-        setError('file', 'Se perdió la sesión. Cierra y vuelve a empezar.');
+        setError('form', 'Se perdió la sesión. Cierra y vuelve a empezar.');
         return;
     }
 
@@ -840,7 +821,7 @@ async function submitQuote({ skipImage = false } = {}) {
 
         showDoneStep();
     } catch (error) {
-        setError('file', error.message);
+        setError('form', error.message);
     } finally {
         isSubmitting = false;
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = original || 'Ver mi cotización'; }

@@ -10,8 +10,8 @@
 
 import {
     getSupabase, getLeads, updateLeadStatus, deleteLead, restoreLead, getStats,
-    uploadDocument, saveDocument,
-    uploadGalleryImage, getGalleryImages, createGalleryImage, updateGalleryImage, deleteGalleryImage
+    upload, storageUrl, saveDocument,
+    getGalleryImages, createGalleryImage, updateGalleryImage, deleteGalleryImage
 } from '../supabase.js'
 
 const loginScreen = document.getElementById('login-screen')
@@ -217,7 +217,7 @@ $('upload-doc-btn').addEventListener('click', async () => {
     btn.disabled = true
 
     try {
-        const filePath = await uploadDocument(file, name)
+        const filePath = await upload('signed-documents', file, name)
 
         const docData = {
             client_name: name,
@@ -233,7 +233,7 @@ $('upload-doc-btn').addEventListener('click', async () => {
             docData.acudiente_nombre = $('doc-acudiente-nombre').value.trim() || null
             docData.acudiente_cedula = $('doc-acudiente-cedula').value.trim() || null
             if (acudienteFile) {
-                docData.acudiente_file_url = await uploadDocument(acudienteFile, name + '-acudiente')
+                docData.acudiente_file_url = await upload('signed-documents', acudienteFile, name + '-acudiente')
             }
         }
 
@@ -457,7 +457,7 @@ $('gal-add-btn').addEventListener('click', async () => {
         if (file) {
             // UX, no control: el límite de verdad lo pone el bucket en Supabase.
             if (file.size > 10 * 1024 * 1024) throw new Error('La imagen supera los 10MB.')
-            url = await uploadGalleryImage(file)
+            url = storageUrl('gallery', await upload('gallery', file), { publico: true })
         }
 
         await createGalleryImage({

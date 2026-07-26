@@ -242,14 +242,10 @@ const galEmpty = document.getElementById('galEmpty');
 let galleryImages = [];
 let activeFilter = 'All';
 
-function shuffle(arr) {
-    const copy = [...arr];
-    for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy;
-}
+const shuffle = arr => arr
+    .map(v => [Math.random(), v])
+    .sort((a, b) => a[0] - b[0])
+    .map(pair => pair[1]);
 
 // Respaldo: si /api/gallery falla (base sin migrar, Supabase pausado, caida
 // de red) el archivo NO se queda vacio — mostramos las piezas de siempre.
@@ -397,9 +393,6 @@ function closeLightbox(isNavigation = false) {
     if (!isQuoteOpen()) document.body.classList.remove('no-scroll');
 }
 
-window.openLightbox = openLightbox;
-window.closeLightbox = closeLightbox;
-
 const lbContainer = document.getElementById('lightbox');
 if (lbContainer) {
     lbContainer.addEventListener('click', () => closeLightbox());
@@ -517,16 +510,12 @@ phoneInput?.addEventListener('input', function () {
 });
 
 function readUtm() {
-    try {
-        const params = new URLSearchParams(window.location.search);
-        return {
-            utm_source: params.get('utm_source') || '',
-            utm_medium: params.get('utm_medium') || '',
-            utm_campaign: params.get('utm_campaign') || (params.get('gclid') ? 'google-ads' : '')
-        };
-    } catch (_) {
-        return {};
-    }
+    const params = new URLSearchParams(window.location.search);
+    return {
+        utm_source: params.get('utm_source') || '',
+        utm_medium: params.get('utm_medium') || '',
+        utm_campaign: params.get('utm_campaign') || (params.get('gclid') ? 'google-ads' : '')
+    };
 }
 
 async function submitStepOne(button) {
@@ -622,9 +611,12 @@ const priceIdle = document.getElementById('qm-price-idle');
 const priceResult = document.getElementById('qm-price-result');
 const priceVal = document.getElementById('qm-price-val');
 
-function formatCop(value) {
-    return '$' + Math.round(value).toLocaleString('es-CO');
-}
+const COP = new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    maximumFractionDigits: 0
+});
+const formatCop = value => COP.format(Math.round(value));
 
 // Espejo exacto de computePriceRange() en server.js. El servidor recalcula y
 // manda la verdad; esto es solo para el feedback en vivo del slider.
@@ -696,6 +688,17 @@ dropZone?.addEventListener('keydown', event => {
         event.preventDefault();
         fileInput?.click();
     }
+});
+
+// Se llama "drop zone", ahora tambien acepta archivos soltados. El archivo se
+// mete en el input y se dispara su 'change': asi la validacion y la vista
+// previa son exactamente las mismas que al elegirlo con el selector.
+dropZone?.addEventListener('dragover', event => event.preventDefault());
+dropZone?.addEventListener('drop', event => {
+    event.preventDefault();
+    if (!fileInput || !event.dataTransfer?.files?.length) return;
+    fileInput.files = event.dataTransfer.files;
+    fileInput.dispatchEvent(new Event('change'));
 });
 
 fileInput?.addEventListener('change', () => {
@@ -799,8 +802,8 @@ async function submitQuote({ skipImage = false } = {}) {
 
         if (file) {
             try {
-                const { uploadReferenceImage } = await import('./supabase.js');
-                referenceImgUrl = await uploadReferenceImage(file);
+                const { upload, storageUrl } = await import('./supabase.js');
+                referenceImgUrl = storageUrl('reference-images', await upload('reference-images', file));
             } catch (uploadError) {
                 console.error('Image upload failed:', uploadError);
                 setError('file', 'No pudimos subir tu imagen. Puedes enviarla luego por WhatsApp — toca "Omitir y enviar".');
@@ -900,21 +903,11 @@ if (hasGsap) {
             scrollTrigger: { trigger: el, start: 'top 90%', toggleActions: 'play none none none' }
         });
     });
-} else {
-    // Sin GSAP no dejamos la pagina en blanco: mostramos todo de una.
-    revealEverything();
 }
 
-function revealEverything() {
-    document.querySelectorAll('.reveal-item').forEach(el => {
-        el.style.opacity = '1';
-        el.style.transform = 'none';
-    });
-}
-
-// Red de seguridad: si GSAP carga pero ScrollTrigger no dispara (scroll raro,
-// error de terceros, prefers-reduced-motion), a los 3 s mostramos todo igual.
-// Una landing invisible es una landing sin leads.
+// Red de seguridad unica: si GSAP no carga, o carga pero ScrollTrigger no
+// dispara (scroll raro, error de terceros, prefers-reduced-motion), a los 3 s
+// mostramos todo igual. Una landing invisible es una landing sin leads.
 setTimeout(() => {
     document.querySelectorAll('.reveal-item').forEach(el => {
         if (Number(getComputedStyle(el).opacity) < 0.05) {

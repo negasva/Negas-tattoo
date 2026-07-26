@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 const crypto = require('crypto');
 const express = require('express');
 const path = require('path');
@@ -12,18 +10,12 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3780;
 const PUBLIC_PATH = path.join(__dirname, 'public');
 
-// LOG TEMPORAL — borrar cuando el bug esté resuelto
-app.use((req, _res, next) => { console.log('[DEBUG]', req.method, req.url); next(); });
-
 // Nada de credenciales escritas en el codigo. Todo sale del entorno.
 // Si falta SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY, /api/health lo dice.
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
 const SUPABASE_SERVICE_ROLE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-const SUPABASE_KEEPALIVE_TABLES = (process.env.SUPABASE_KEEPALIVE_TABLES || 'leads,gallery_images')
-  .split(',')
-  .map((table) => table.trim())
-  .filter(Boolean);
+const SUPABASE_KEEPALIVE_TABLES = ['leads', 'gallery_images'];
 
 // El pixel de Meta es un identificador publico (va en el HTML de cualquier
 // sitio que lo use), pero lo servimos desde el entorno igual para no dejarlo
@@ -42,21 +34,32 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean);
 
-// Parametros de precio: editables por variables de entorno para poder ajustar
-// tarifas sin volver a desplegar. El frontend los recibe via /api/config.
+// Parametros de precio. Estuvieron detras de nueve variables de entorno "para
+// ajustar tarifas sin desplegar"; ninguna se configuro nunca en ningun entorno,
+// asi que las nueve caian siempre al mismo default. El frontend los recibe via
+// /api/config. Cambiar una tarifa es cambiar este objeto y desplegar.
 const PRICING = {
-  base: Number(process.env.PRICE_BASE) || 90000,
-  perCmSmall: Number(process.env.PRICE_PER_CM_SMALL) || 38000,
-  perCmLarge: Number(process.env.PRICE_PER_CM_LARGE) || 52000,
-  breakpointCm: Number(process.env.PRICE_BREAKPOINT_CM) || 15,
-  minimum: Number(process.env.PRICE_MINIMUM) || 180000,
-  rangeLow: Number(process.env.PRICE_RANGE_LOW) || 0.95,
-  rangeHigh: Number(process.env.PRICE_RANGE_HIGH) || 1.25,
-  maxCm: Number(process.env.PRICE_MAX_CM) || 60
+  base: 90000,
+  perCmSmall: 38000,
+  perCmLarge: 52000,
+  breakpointCm: 15,
+  minimum: 180000,
+  rangeLow: 0.95,
+  rangeHigh: 1.25,
+  maxCm: 60
 };
 
+// Unica definicion de las categorias y los tamanos de la galeria: aqui se
+// validan (/api/admin/gallery) y desde aqui se sirven al panel admin por
+// /api/config. Estaban repetidos en el admin.
 const GALLERY_CATEGORIES = ['Blackwork', 'Botánico', 'Fineline'];
-const GALLERY_SPANS = ['', 'gal-cs2', 'gal-rs2', 'gal-cs2rs2'];
+const GALLERY_SPANS = [
+  { value: '', label: 'Normal (1×1)' },
+  { value: 'gal-cs2', label: 'Ancha (2×1)' },
+  { value: 'gal-rs2', label: 'Alta (1×2)' },
+  { value: 'gal-cs2rs2', label: 'Grande (2×2)' }
+];
+const GALLERY_SPAN_VALUES = GALLERY_SPANS.map((span) => span.value);
 
 // Buckets privados: contienen datos personales (fotos del cuerpo del cliente,
 // cedulas, documentos de acudientes de menores). No se sirven por URL publica;
@@ -74,17 +77,21 @@ const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
     })
   : null;
 
+// El allowlist y el comodin de localhost se calculan una vez, no en cada request.
+// El comodin es para desarrollo: en produccion solo valen los origenes de
+// ALLOWED_ORIGINS; si no, la pagina local de un atacante podria leer respuestas
+// de la API real.
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3780,http://127.0.0.1:3780,https://negas.tattoo')
+  .split(',')
+  .map((origin) => origin.trim());
+const LOCAL_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+const ALLOW_LOCAL_ORIGINS = process.env.NODE_ENV !== 'production';
+
 const corsOptions = {
   origin(origin, callback) {
-    // El comodin de localhost es para desarrollo. En produccion solo valen los
-    // origenes de ALLOWED_ORIGINS; si no, la pagina local de un atacante podria
-    // leer respuestas de la API real.
-    const isLocalOrigin = process.env.NODE_ENV !== 'production'
-      && typeof origin === 'string'
-      && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
-    const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3780,http://127.0.0.1:3780,https://negas.tattoo').split(',').map(o => o.trim());
+    const isLocalOrigin = ALLOW_LOCAL_ORIGINS && typeof origin === 'string' && LOCAL_ORIGIN.test(origin);
 
-    if (!origin || isLocalOrigin || allowedOrigins.includes(origin)) {
+    if (!origin || isLocalOrigin || ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
     console.warn('CORS blocked origin:', origin);
@@ -93,41 +100,35 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: false,
-  optionsSuccessStatus: 200,
   maxAge: 86400
 };
 
 // Detras de un proxy/CDN (Cloudflare, etc.) para que el rate-limit lea la IP real.
 app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
 
-// Limitador general para endpoints publicos de solo lectura.
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
-  limit: Number(process.env.RATE_LIMIT_API) || 200,
+const TOO_MANY = 'Demasiadas solicitudes. Intenta de nuevo mas tarde.';
+const limiter = (limit, windowMs, message = TOO_MANY) => rateLimit({
+  windowMs,
+  limit,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
-  message: { ok: false, error: 'Demasiadas solicitudes. Intenta de nuevo mas tarde.' }
+  message: { ok: false, error: message }
 });
+
+// General para endpoints publicos de solo lectura.
+const apiLimiter = limiter(Number(process.env.RATE_LIMIT_API) || 200, 15 * 60 * 1000);
 
 // Paso 1 del cotizador: captura de nombre + WhatsApp. Es el endpoint mas
 // atractivo para spam, pero tampoco puede ser tan estricto que bloquee
 // reintentos legitimos de la misma persona.
-const leadStartLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hora
-  limit: Number(process.env.RATE_LIMIT_LEAD_START) || 10,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  message: { ok: false, error: 'Has enviado demasiadas solicitudes. Espera un momento antes de intentar de nuevo.' }
-});
+const leadStartLimiter = limiter(
+  Number(process.env.RATE_LIMIT_LEAD_START) || 10,
+  60 * 60 * 1000,
+  'Has enviado demasiadas solicitudes. Espera un momento antes de intentar de nuevo.'
+);
 
 // Paso final: ya viene autorizado por leadId + token, asi que puede ser mas laxo.
-const leadCompleteLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  limit: Number(process.env.RATE_LIMIT_LEAD_COMPLETE) || 30,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  message: { ok: false, error: 'Demasiadas solicitudes. Intenta de nuevo mas tarde.' }
-});
+const leadCompleteLimiter = limiter(Number(process.env.RATE_LIMIT_LEAD_COMPLETE) || 30, 60 * 60 * 1000);
 
 // La CSP se declara aqui y se REPITE literalmente en vercel.json, porque el
 // CDN de Vercel sirve el HTML y el estatico sin pasar por Express: sin esa
@@ -180,32 +181,35 @@ app.use(helmet({
 }));
 
 app.use(express.json({ limit: '100kb' }));
-app.use(express.static(PUBLIC_PATH, { index: false }));
+// `extensions: ['html']` sirve /privacidad y /cuidados sin la extension, e
+// index.html para / y /admin. Reemplaza las cinco rutas sendFile que habia
+// aqui. /cotizar lo reescribe vercel.json a /index.html en produccion.
+app.use(express.static(PUBLIC_PATH, { extensions: ['html'] }));
 
-// ─── Rutas de paginas ────────────────────────────────────────────────────────
-// /cotizar sirve la misma landing. El frontend detecta el pathname y abre el
-// popup de cotizacion automaticamente. Asi tenemos una URL real para Google Ads
-// sin duplicar contenido ni mantener dos paginas separadas.
-const sendIndex = (_req, res) => res.sendFile(path.join(PUBLIC_PATH, 'index.html'));
+// La unica ruta de pagina que sobrevive: /cotizar no tiene archivo propio (es
+// la misma landing, el frontend detecta el pathname y abre el popup). En
+// produccion la reescribe vercel.json y esto no llega a ejecutarse; en local
+// sin esta linea la URL de Google Ads da 404.
+app.get('/cotizar', (_req, res) => res.sendFile(path.join(PUBLIC_PATH, 'index.html')));
 
-app.get('/', sendIndex);
-app.get('/cotizar', sendIndex);
+// ─── Helpers de ruta ─────────────────────────────────────────────────────────
+// Express 4 no captura los rechazos de un handler async: sin esto, un fallo de
+// Supabase (DNS, timeout, socket) deja la request colgada hasta el timeout de
+// Vercel. asyncRoute manda el error al handler global con el mensaje que ve el
+// usuario, y ahi se responde y se loguea una sola vez.
+const asyncRoute = (message, handler) => (req, res, next) =>
+  Promise.resolve(handler(req, res, next)).catch((error) => {
+    error.publicMessage = message;
+    next(error);
+  });
 
-app.get('/admin', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_PATH, 'admin', 'index.html'));
-});
-
-app.get('/privacidad', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_PATH, 'privacidad.html'));
-});
-
-app.get('/contacto', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_PATH, 'contacto.html'));
-});
-
-app.get('/cuidados', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_PATH, 'cuidados.html'));
-});
+// Las rutas que hablan con Supabase no tienen nada que hacer sin credenciales.
+const requireSupabase = (_req, res, next) => {
+  if (!supabaseAdmin) {
+    return res.status(500).json({ ok: false, error: 'Servicio no disponible temporalmente.' });
+  }
+  return next();
+};
 
 // Configuracion publica del frontend. Aqui solo van valores que de todas
 // formas terminan en el navegador: la anon key de Supabase (protegida por
@@ -223,7 +227,8 @@ app.get('/api/config', apiLimiter, (_req, res) => {
     googleAdsId: (process.env.GOOGLE_ADS_ID || '').trim(),
     googleAdsConversionLabel: (process.env.GOOGLE_ADS_CONVERSION_LABEL || '').trim(),
     ga4Id: (process.env.GA4_MEASUREMENT_ID || '').trim(),
-    pricing: PRICING
+    pricing: PRICING,
+    gallery: { categories: GALLERY_CATEGORIES, spans: GALLERY_SPANS }
   });
 });
 
@@ -231,7 +236,7 @@ app.get('/api/config', apiLimiter, (_req, res) => {
 // Dice exactamente que falta configurar. Como enumera proveedores, tablas y
 // errores crudos de Postgres, no es publico: sin HEALTH_DEBUG_KEY definida en
 // el entorno y repetida en ?key=, el endpoint no existe.
-app.get('/api/health', apiLimiter, async (req, res) => {
+app.get('/api/health', apiLimiter, asyncRoute('No se pudo completar el diagnostico.', async (req, res) => {
   const debugKey = (process.env.HEALTH_DEBUG_KEY || '').trim();
   if (!debugKey || String(req.query.key || '') !== debugKey) {
     return res.status(404).send('Not Found');
@@ -282,7 +287,7 @@ app.get('/api/health', apiLimiter, async (req, res) => {
     base_de_datos: db,
     pendientes
   });
-});
+}));
 
 // Mantiene el proyecto de Supabase despierto: los proyectos gratuitos se
 // pausan tras ~7 dias sin actividad. Lo llama el cron de Vercel a diario.
@@ -290,13 +295,15 @@ app.get('/api/health', apiLimiter, async (req, res) => {
 // A proposito NO falla si una tabla no existe: con que UNA responda, el
 // proyecto ya cuenta como activo. Antes bastaba una tabla borrada para que
 // el keepalive devolviera 500 y dejara de cumplir su unica funcion.
-app.get('/api/keepalive', apiLimiter, async (req, res) => {
+app.get('/api/keepalive', apiLimiter, asyncRoute('No se pudo tocar la base.', async (req, res) => {
   // Solo el cron. Vercel manda `Authorization: Bearer $CRON_SECRET` cuando la
   // variable esta definida. Sin CRON_SECRET no entra nadie: falla cerrado.
   const cronSecret = (process.env.CRON_SECRET || '').trim();
   if (!cronSecret || req.headers.authorization !== `Bearer ${cronSecret}`) {
     return res.status(401).json({ ok: false, error: 'No autorizado.' });
   }
+  // Aqui NO va requireSupabase: la autorizacion se comprueba primero, para no
+  // contarle el estado de la configuracion a quien no trae el secreto del cron.
   if (!supabaseAdmin) {
     return res.status(500).json({
       ok: false,
@@ -326,7 +333,7 @@ app.get('/api/keepalive', apiLimiter, async (req, res) => {
     touched,
     failed
   });
-});
+}));
 
 // ─── reCAPTCHA ───────────────────────────────────────────────────────────────
 // Verifica un token de reCAPTCHA v3 contra la API de Google.
@@ -378,8 +385,18 @@ async function verifyRecaptcha(token, remoteIp, expectedAction) {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const str = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
 
+const COP = new Intl.NumberFormat('es-CO', {
+  style: 'currency',
+  currency: 'COP',
+  maximumFractionDigits: 0
+});
+
 // Recalcula el precio en el servidor. Nunca confiamos en el rango que manda el
 // cliente: el navegador puede alterarlo y quedaria un precio falso en la base.
+//
+// ⚠ Esta funcion esta duplicada a proposito en script.js (el slider necesita
+// feedback en vivo sin ida y vuelta al servidor). Aqui esta la verdad: misma
+// formula y mismo `label` en los dos lados. Si cambias uno, cambia el otro.
 function computePriceRange(sizeCm) {
   const cm = Math.max(0, Math.min(Number(sizeCm) || 0, PRICING.maxCm));
   if (!cm) return { min: 0, max: 0, label: '' };
@@ -392,11 +409,7 @@ function computePriceRange(sizeCm) {
   const min = round(point * PRICING.rangeLow);
   const max = round(point * PRICING.rangeHigh);
 
-  return {
-    min,
-    max,
-    label: `$${min.toLocaleString('es-CO')} - $${max.toLocaleString('es-CO')}`
-  };
+  return { min, max, label: `${COP.format(min)} - ${COP.format(max)}` };
 }
 
 // Colombia: 10 digitos empezando por 3. Aceptamos que venga con el 57 delante.
@@ -410,11 +423,7 @@ function normalizePhone(raw) {
 // Se guarda apenas la persona da nombre y WhatsApp, ANTES de ver el precio.
 // Ese es el punto del rediseno: si abandona en el paso 2 o 3, el contacto ya
 // esta en la base y se puede recuperar por WhatsApp o por retargeting.
-app.post('/api/lead/start', leadStartLimiter, async (req, res) => {
-  if (!supabaseAdmin) {
-    return res.status(500).json({ ok: false, error: 'Servicio no disponible temporalmente.' });
-  }
-
+app.post('/api/lead/start', leadStartLimiter, requireSupabase, async (req, res) => {
   const body = req.body || {};
 
   const captcha = await verifyRecaptcha(body.recaptchaToken, req.ip, 'lead_start');
@@ -497,11 +506,7 @@ app.post('/api/lead/start', leadStartLimiter, async (req, res) => {
 // ─── Paso final: completar la cotizacion ─────────────────────────────────────
 // Autorizado por leadId + update_token para que nadie pueda sobrescribir el
 // lead de otra persona conociendo solo un id secuencial.
-app.post('/api/lead/complete', leadCompleteLimiter, async (req, res) => {
-  if (!supabaseAdmin) {
-    return res.status(500).json({ ok: false, error: 'Servicio no disponible temporalmente.' });
-  }
-
+app.post('/api/lead/complete', leadCompleteLimiter, requireSupabase, asyncRoute('No se pudo guardar tu cotizacion. Intenta de nuevo.', async (req, res) => {
   const body = req.body || {};
   const leadId = str(String(body.leadId ?? ''), 40);
   const token = str(body.token, 80);
@@ -526,59 +531,45 @@ app.post('/api/lead/complete', leadCompleteLimiter, async (req, res) => {
 
   const price = computePriceRange(sizeCm);
 
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('leads')
-      .update({
-        description,
-        size: `${sizeCm}cm`,
-        estimated_min: price.min,
-        estimated_max: price.max,
-        estimated_price: price.label,
-        reference_img_url: referenceImgUrl || null,
-        stage: 'complete',
-        completed_at: new Date().toISOString()
-      })
-      .eq('id', leadId)
-      .eq('update_token', token)
-      .select('id')
-      .maybeSingle();
+  const { data, error } = await supabaseAdmin
+    .from('leads')
+    .update({
+      description,
+      size: `${sizeCm}cm`,
+      estimated_min: price.min,
+      estimated_max: price.max,
+      estimated_price: price.label,
+      reference_img_url: referenceImgUrl || null,
+      stage: 'complete',
+      completed_at: new Date().toISOString()
+    })
+    .eq('id', leadId)
+    .eq('update_token', token)
+    .select('id')
+    .maybeSingle();
 
-    if (error) throw error;
-    if (!data) {
-      return res.status(403).json({ ok: false, error: 'Sesion de cotizacion invalida. Recarga la pagina.' });
-    }
-
-    return res.json({ ok: true, price });
-  } catch (error) {
-    console.error('Lead complete failed:', error.message);
-    return res.status(500).json({ ok: false, error: 'No se pudo guardar tu cotizacion. Intenta de nuevo.' });
+  if (error) throw error;
+  if (!data) {
+    return res.status(403).json({ ok: false, error: 'Sesion de cotizacion invalida. Recarga la pagina.' });
   }
-});
+
+  return res.json({ ok: true, price });
+}));
 
 // ─── Galeria publica ─────────────────────────────────────────────────────────
-app.get('/api/gallery', apiLimiter, async (_req, res) => {
-  if (!supabaseAdmin) {
-    return res.status(500).json({ ok: false, error: 'Servicio no disponible temporalmente.' });
-  }
+app.get('/api/gallery', apiLimiter, requireSupabase, asyncRoute('No se pudo cargar la galeria.', async (_req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('gallery_images')
+    .select('id,url,category,alt,span,sort_order,img_width,img_height')
+    .eq('active', true)
+    .order('sort_order', { ascending: true })
+    .order('id', { ascending: true });
 
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('gallery_images')
-      .select('id,url,category,alt,span,sort_order,img_width,img_height')
-      .eq('active', true)
-      .order('sort_order', { ascending: true })
-      .order('id', { ascending: true });
+  if (error) throw error;
 
-    if (error) throw error;
-
-    res.set('Cache-Control', 'public, max-age=60');
-    return res.json({ ok: true, images: data || [] });
-  } catch (error) {
-    console.error('Gallery fetch failed:', error.message);
-    return res.status(500).json({ ok: false, error: 'No se pudo cargar la galeria.' });
-  }
-});
+  res.set('Cache-Control', 'public, max-age=60');
+  return res.json({ ok: true, images: data || [] });
+}));
 
 // ─── Galeria: administracion ─────────────────────────────────────────────────
 // Autenticado con el JWT de Supabase que ya usa el panel admin para iniciar
@@ -633,7 +624,7 @@ function sanitizeGalleryPayload(body, { partial = false } = {}) {
 
   if (body.span !== undefined) {
     const span = str(body.span, 20);
-    if (!GALLERY_SPANS.includes(span)) errors.push('span');
+    if (!GALLERY_SPAN_VALUES.includes(span)) errors.push('span');
     else out.span = span;
   }
 
@@ -646,44 +637,34 @@ function sanitizeGalleryPayload(body, { partial = false } = {}) {
   return { payload: out, errors };
 }
 
-app.get('/api/admin/gallery', requireAdmin, async (_req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('gallery_images')
-      .select('*')
-      .order('sort_order', { ascending: true })
-      .order('id', { ascending: true });
+app.get('/api/admin/gallery', requireAdmin, asyncRoute('No se pudo cargar la galeria.', async (_req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('gallery_images')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('id', { ascending: true });
 
-    if (error) throw error;
-    return res.json({ ok: true, images: data || [] });
-  } catch (error) {
-    console.error('Admin gallery fetch failed:', error.message);
-    return res.status(500).json({ ok: false, error: 'No se pudo cargar la galeria.' });
-  }
-});
+  if (error) throw error;
+  return res.json({ ok: true, images: data || [] });
+}));
 
-app.post('/api/admin/gallery', requireAdmin, async (req, res) => {
+app.post('/api/admin/gallery', requireAdmin, asyncRoute('No se pudo guardar la imagen.', async (req, res) => {
   const { payload, errors } = sanitizeGalleryPayload(req.body || {});
   if (errors.length) {
     return res.status(400).json({ ok: false, error: 'Datos invalidos.', fields: errors });
   }
 
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('gallery_images')
-      .insert([{ active: true, sort_order: 0, span: '', ...payload }])
-      .select('*')
-      .single();
+  const { data, error } = await supabaseAdmin
+    .from('gallery_images')
+    .insert([{ active: true, sort_order: 0, span: '', ...payload }])
+    .select('*')
+    .single();
 
-    if (error) throw error;
-    return res.status(201).json({ ok: true, image: data });
-  } catch (error) {
-    console.error('Gallery insert failed:', error.message);
-    return res.status(500).json({ ok: false, error: 'No se pudo guardar la imagen.' });
-  }
-});
+  if (error) throw error;
+  return res.status(201).json({ ok: true, image: data });
+}));
 
-app.patch('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
+app.patch('/api/admin/gallery/:id', requireAdmin, asyncRoute('No se pudo actualizar la imagen.', async (req, res) => {
   const { payload, errors } = sanitizeGalleryPayload(req.body || {}, { partial: true });
   if (errors.length) {
     return res.status(400).json({ ok: false, error: 'Datos invalidos.', fields: errors });
@@ -692,37 +673,27 @@ app.patch('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Nada que actualizar.' });
   }
 
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('gallery_images')
-      .update(payload)
-      .eq('id', req.params.id)
-      .select('*')
-      .maybeSingle();
+  const { data, error } = await supabaseAdmin
+    .from('gallery_images')
+    .update(payload)
+    .eq('id', req.params.id)
+    .select('*')
+    .maybeSingle();
 
-    if (error) throw error;
-    if (!data) return res.status(404).json({ ok: false, error: 'Imagen no encontrada.' });
-    return res.json({ ok: true, image: data });
-  } catch (error) {
-    console.error('Gallery update failed:', error.message);
-    return res.status(500).json({ ok: false, error: 'No se pudo actualizar la imagen.' });
-  }
-});
+  if (error) throw error;
+  if (!data) return res.status(404).json({ ok: false, error: 'Imagen no encontrada.' });
+  return res.json({ ok: true, image: data });
+}));
 
-app.delete('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
-  try {
-    const { error } = await supabaseAdmin
-      .from('gallery_images')
-      .delete()
-      .eq('id', req.params.id);
+app.delete('/api/admin/gallery/:id', requireAdmin, asyncRoute('No se pudo eliminar la imagen.', async (req, res) => {
+  const { error } = await supabaseAdmin
+    .from('gallery_images')
+    .delete()
+    .eq('id', req.params.id);
 
-    if (error) throw error;
-    return res.json({ ok: true });
-  } catch (error) {
-    console.error('Gallery delete failed:', error.message);
-    return res.status(500).json({ ok: false, error: 'No se pudo eliminar la imagen.' });
-  }
-});
+  if (error) throw error;
+  return res.json({ ok: true });
+}));
 
 // ─── Leads: administracion ───────────────────────────────────────────────────
 // El navegador ya no lee `leads` con la anon key: esa tabla tiene RLS activa
@@ -754,108 +725,88 @@ const referencePath = (url) => {
   return prefix ? value.slice(prefix.length) || null : null;
 };
 
-app.get('/api/admin/leads', requireAdmin, async (req, res) => {
+app.get('/api/admin/leads', requireAdmin, asyncRoute('No se pudieron cargar los leads.', async (req, res) => {
   const onlyDeleted = String(req.query.deleted || '') === '1';
 
-  try {
-    let query = supabaseAdmin.from('leads').select('*').order('created_at', { ascending: false });
-    query = onlyDeleted ? query.not('deleted_at', 'is', null) : query.is('deleted_at', null);
+  let query = supabaseAdmin.from('leads').select('*').order('created_at', { ascending: false });
+  query = onlyDeleted ? query.not('deleted_at', 'is', null) : query.is('deleted_at', null);
 
-    const { data, error } = await query;
-    if (error) throw error;
+  const { data, error } = await query;
+  if (error) throw error;
 
-    // La foto de referencia sale firmada, nunca como URL permanente.
-    const leads = await Promise.all((data || []).map(async (lead) => {
-      const filePath = referencePath(lead.reference_img_url);
-      return { ...lead, reference_img_url: filePath ? await signStoragePath('reference-images', filePath) : null };
-    }));
+  // La foto de referencia sale firmada, nunca como URL permanente.
+  const leads = await Promise.all((data || []).map(async (lead) => {
+    const filePath = referencePath(lead.reference_img_url);
+    return { ...lead, reference_img_url: filePath ? await signStoragePath('reference-images', filePath) : null };
+  }));
 
-    return res.json({ ok: true, leads });
-  } catch (error) {
-    console.error('Admin leads fetch failed:', error.message);
-    return res.status(500).json({ ok: false, error: 'No se pudieron cargar los leads.' });
-  }
-});
+  return res.json({ ok: true, leads });
+}));
 
 // Contamos en Postgres (head + count exacto), no trayendo las filas enteras.
-app.get('/api/admin/stats', requireAdmin, async (_req, res) => {
+app.get('/api/admin/stats', requireAdmin, asyncRoute('No se pudieron cargar las estadisticas.', async (_req, res) => {
   const countLeads = (build) => build(
     supabaseAdmin.from('leads').select('id', { count: 'exact', head: true }).is('deleted_at', null)
   );
 
-  try {
-    const [total, clients, recurring, complete] = await Promise.all([
-      countLeads((q) => q),
-      countLeads((q) => q.eq('status', 'client')),
-      countLeads((q) => q.eq('status', 'recurring')),
-      countLeads((q) => q.eq('stage', 'complete'))
-    ]);
+  const [total, clients, recurring, complete] = await Promise.all([
+    countLeads((q) => q),
+    countLeads((q) => q.eq('status', 'client')),
+    countLeads((q) => q.eq('status', 'recurring')),
+    countLeads((q) => q.eq('stage', 'complete'))
+  ]);
 
-    const firstError = [total, clients, recurring, complete].find((r) => r.error);
-    if (firstError) throw firstError.error;
+  const firstError = [total, clients, recurring, complete].find((r) => r.error);
+  if (firstError) throw firstError.error;
 
-    const totalLeads = total.count || 0;
-    const converted = (clients.count || 0) + (recurring.count || 0);
+  const totalLeads = total.count || 0;
+  const converted = (clients.count || 0) + (recurring.count || 0);
 
-    return res.json({
-      ok: true,
-      stats: {
-        totalLeads,
-        totalClients: clients.count || 0,
-        recurringClients: recurring.count || 0,
-        completedQuotes: complete.count || 0,
-        conversionRate: totalLeads ? Math.round((converted / totalLeads) * 100) : 0
-      }
-    });
-  } catch (error) {
-    console.error('Admin stats failed:', error.message);
-    return res.status(500).json({ ok: false, error: 'No se pudieron cargar las estadisticas.' });
-  }
-});
+  return res.json({
+    ok: true,
+    stats: {
+      totalLeads,
+      totalClients: clients.count || 0,
+      recurringClients: recurring.count || 0,
+      completedQuotes: complete.count || 0,
+      conversionRate: totalLeads ? Math.round((converted / totalLeads) * 100) : 0
+    }
+  });
+}));
 
-app.patch('/api/admin/leads/:id/status', requireAdmin, async (req, res) => {
+app.patch('/api/admin/leads/:id/status', requireAdmin, asyncRoute('No se pudo actualizar el estado.', async (req, res) => {
   const status = str((req.body || {}).status, 20);
   if (!LEAD_STATUSES.includes(status)) {
     return res.status(400).json({ ok: false, error: 'Estado invalido.' });
   }
 
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('leads')
-      .update({ status })
-      .eq('id', req.params.id)
-      .select('id')
-      .maybeSingle();
+  const { data, error } = await supabaseAdmin
+    .from('leads')
+    .update({ status })
+    .eq('id', req.params.id)
+    .select('id')
+    .maybeSingle();
 
-    if (error) throw error;
-    if (!data) return res.status(404).json({ ok: false, error: 'Lead no encontrado.' });
-    return res.json({ ok: true });
-  } catch (error) {
-    console.error('Admin lead status failed:', error.message);
-    return res.status(500).json({ ok: false, error: 'No se pudo actualizar el estado.' });
-  }
-});
+  if (error) throw error;
+  if (!data) return res.status(404).json({ ok: false, error: 'Lead no encontrado.' });
+  return res.json({ ok: true });
+}));
 
 // Borrado logico de verdad: antes solo se marcaba en el localStorage del
 // navegador, asi que el lead reaparecia en otro equipo y no habia forma de
 // atender una solicitud de supresion (Ley 1581).
-const setDeletedAt = (deleted) => async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('leads')
-      .update({ deleted_at: deleted ? new Date().toISOString() : null })
-      .eq('id', req.params.id)
-      .select('id')
-      .maybeSingle();
+const setDeletedAt = (deleted) => asyncRoute('No se pudo completar la operacion.', async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('leads')
+    .update({ deleted_at: deleted ? new Date().toISOString() : null })
+    .eq('id', req.params.id)
+    .select('id')
+    .maybeSingle();
 
-    if (error) throw error;
-    if (!data) return res.status(404).json({ ok: false, error: 'Lead no encontrado.' });
-    return res.json({ ok: true });
-  } catch (error) {
-    console.error('Admin lead delete/restore failed:', error.message);
-    return res.status(500).json({ ok: false, error: 'No se pudo completar la operacion.' });
-  }
-};
+  if (error) throw error;
+  if (!data) return res.status(404).json({ ok: false, error: 'Lead no encontrado.' });
+  return res.json({ ok: true });
+});
 
 app.delete('/api/admin/leads/:id', requireAdmin, setDeletedAt(true));
 app.post('/api/admin/leads/:id/restore', requireAdmin, setDeletedAt(false));
@@ -873,7 +824,12 @@ app.post('/api/admin/signed-url', requireAdmin, async (req, res) => {
   return res.json({ ok: true, url });
 });
 
-app.use((_req, res) => res.status(404).send('Not Found'));
+// Error handler global: unico sitio donde se loguea y se responde un 500.
+// El mensaje que ve el usuario lo pone asyncRoute en cada ruta.
+app.use((error, req, res, _next) => {
+  console.error(`${req.method} ${req.path} failed:`, error.message);
+  res.status(500).json({ ok: false, error: error.publicMessage || 'Servicio no disponible temporalmente.' });
+});
 
 // En Vercel este archivo se importa desde api/index.js y NO debe abrir un
 // puerto (las funciones serverless no escuchan). Con `node server.js` en un

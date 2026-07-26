@@ -23,10 +23,8 @@
     <meta property="og:locale" content="es_CO">
     <meta property="og:title" content="Negas Tattoo | Estudio de tatuaje en Sabaneta">
     <meta property="og:description" content="Transformamos tus ideas en piezas permanentes de alto contraste. Cotiza en linea y recibe tu inversion aproximada al instante.">
-    <meta property="og:image" content="<<https://negas.tattoo/img/og-negas-tattoo-1200x630.jpg>>">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="<<pie de foto — lo escribe Negas, ver docs/audits/PENDIENTE-NEGAS.md>>">
+    <meta property="og:image" content="https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg">
+    <meta property="og:image:alt" content="Tatuaje de &#225;ngel blackwork &#8212; Negas Tattoo Sabaneta">
     <meta name="twitter:card" content="summary_large_image">
 
    <!-- Meta Pixel Code -->
@@ -52,15 +50,10 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 
-<!-- ═════════════════════════════════════════════════════════════════════
-     JSON-LD principal (WebSite + TattooParlor + ImageObject + 3 Service).
-     COMENTADO A PROPOSITO: contiene placeholders <<...>>.
-     Regla dura de la auditoria: cero placeholders en produccion. Un
-     telephone falso o una geo inventada rompen la consistencia con Google
-     Business Profile y hacen mas dano que no tener schema.
-     Para activarlo: rellenar los datos de docs/audits/PENDIENTE-NEGAS.md,
-     borrar estas dos lineas de comentario y desplegar.
-     ═════════════════════════════════════════════════════════════════════
+<!-- Datos estructurados. Negocio SIN dirección pública (estudio privado /
+     servicio a domicilio): por eso no hay streetAddress, ni geo, ni hasMap.
+     El schema declara solo el área de cobertura, que es lo que Google espera
+     de un service-area business. -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -77,49 +70,28 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
       "@type": ["TattooParlor", "LocalBusiness"],
       "@id": "https://negas.tattoo/#studio",
       "name": "Negas Tattoo",
-      "alternateName": "Negas Tattoo Studio",
+      "alternateName": "Negas Tattoo - Estudio Privado",
       "url": "https://negas.tattoo/",
       "email": "hola@negas.tattoo",
-      "telephone": "<<+57XXXXXXXXXX>>",
-      "image": {
-        "@id": "https://negas.tattoo/#primaryimage"
-      },
+      "telephone": "+573337589442",
+      "image": { "@id": "https://negas.tattoo/#primaryimage" },
       "logo": "https://negas.tattoo/favicon.png",
       "priceRange": "$$",
       "currenciesAccepted": "COP",
-      "paymentAccepted": "<<Efectivo, Transferencia, Nequi, Daviplata>>",
+      "paymentAccepted": "Efectivo, Transferencia Bancolombia, Nequi",
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "<<Calle 00 #00-00, local 000>>",
         "addressLocality": "Sabaneta",
         "addressRegion": "Antioquia",
-        "postalCode": "<<055450>>",
+        "postalCode": "055450",
         "addressCountry": "CO"
       },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": "<<6.15XXXX>>",
-        "longitude": "<<-75.61XXXX>>"
-      },
-      "hasMap": "<<https://maps.app.goo.gl/XXXXXXXX>>",
       "openingHoursSpecification": [
         {
           "@type": "OpeningHoursSpecification",
-          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
           "opens": "10:00",
-          "closes": "19:00"
-        },
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": "Saturday",
-          "opens": "11:00",
-          "closes": "16:00"
-        },
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": "Sunday",
-          "opens": "00:00",
-          "closes": "00:00"
+          "closes": "21:00"
         }
       ],
       "publicAccess": false,
@@ -129,22 +101,22 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
       "areaServed": [
         { "@type": "City", "name": "Sabaneta" },
         { "@type": "City", "name": "Envigado" },
-        { "@type": "City", "name": "Itagui" },
+        { "@type": "City", "name": "Itagüí" },
         { "@type": "City", "name": "La Estrella" },
-        { "@type": "City", "name": "Medellin" },
-        { "@type": "AdministrativeArea", "name": "Valle de Aburra" }
+        { "@type": "City", "name": "Medellín" },
+        { "@type": "AdministrativeArea", "name": "Valle de Aburrá" }
       ],
       "sameAs": [
         "https://www.instagram.com/negas.tattoo",
         "https://www.facebook.com/negas.ink",
-        "<<https://maps.app.goo.gl/XXXXXXXX>>",
-        "<<https://www.tiktok.com/@negas.tattoo>>"
+        "https://www.tiktok.com/@negasva",
+        "https://share.google/Q0QXb30nNSbFShhjb"
       ],
       "contactPoint": [
         {
           "@type": "ContactPoint",
           "contactType": "reservations",
-          "telephone": "<<+57XXXXXXXXXX>>",
+          "telephone": "+573337589442",
           "email": "hola@negas.tattoo",
           "availableLanguage": "es",
           "areaServed": "CO"
@@ -166,17 +138,17 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
             "http://schema.org/MobileWebPlatform"
           ]
         },
-        "result": { "@type": "Reservation", "name": "Cotizacion de tatuaje" }
+        "result": { "@type": "Reservation", "name": "Cotización de tatuaje" }
       }
     },
     {
       "@type": "ImageObject",
       "@id": "https://negas.tattoo/#primaryimage",
-      "url": "<<https://negas.tattoo/img/estudio-negas-tattoo-sabaneta.webp>>",
-      "contentUrl": "<<https://negas.tattoo/img/estudio-negas-tattoo-sabaneta.webp>>",
-      "width": "<<1200>>",
-      "height": "<<630>>",
-      "caption": "<<texto humano — lo escribe Negas>>"
+      "url": "https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg",
+      "contentUrl": "https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg",
+      "caption": "Tatuaje de ángel blackwork — Negas Tattoo Sabaneta",
+      "creator": { "@id": "https://negas.tattoo/#studio" },
+      "creditText": "Negas Tattoo"
     },
     {
       "@type": "Service",
@@ -184,7 +156,7 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
       "name": "Blackwork",
       "serviceType": "Tatuaje blackwork",
       "provider": { "@id": "https://negas.tattoo/#studio" },
-      "areaServed": { "@type": "AdministrativeArea", "name": "Valle de Aburra" },
+      "areaServed": { "@type": "AdministrativeArea", "name": "Valle de Aburrá" },
       "offers": {
         "@type": "Offer",
         "priceCurrency": "COP",
@@ -200,10 +172,10 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
     {
       "@type": "Service",
       "@id": "https://negas.tattoo/#svc-botanico",
-      "name": "Botanico",
-      "serviceType": "Tatuaje botanico",
+      "name": "Botánico",
+      "serviceType": "Tatuaje botánico",
       "provider": { "@id": "https://negas.tattoo/#studio" },
-      "areaServed": { "@type": "AdministrativeArea", "name": "Valle de Aburra" },
+      "areaServed": { "@type": "AdministrativeArea", "name": "Valle de Aburrá" },
       "offers": {
         "@type": "Offer",
         "priceCurrency": "COP",
@@ -222,7 +194,7 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
       "name": "Fine line",
       "serviceType": "Tatuaje fine line",
       "provider": { "@id": "https://negas.tattoo/#studio" },
-      "areaServed": { "@type": "AdministrativeArea", "name": "Valle de Aburra" },
+      "areaServed": { "@type": "AdministrativeArea", "name": "Valle de Aburrá" },
       "offers": {
         "@type": "Offer",
         "priceCurrency": "COP",
@@ -238,7 +210,6 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
   ]
 }
 </script>
-     ═════════════════════════════════════════════════════════════════════ -->
 </head>
 <body>
 
@@ -733,9 +704,9 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
                 </div>
                 <div>
                     <div class="nfooter-col-title">Contacto</div>
-                    <p class="nfooter-contact-txt">&lt;&lt;Calle 00 #00-00, local 000&gt;&gt;<br>Sabaneta, Antioquia<br>Colombia</p>
-                    <a href="tel:<<+57XXXXXXXXXX>>" class="nfooter-contact-lnk">&lt;&lt;+57 XXX XXX XXXX&gt;&gt;</a>
-                    <a href="<<https://maps.app.goo.gl/XXXXXXXX>>" target="_blank" rel="noopener" class="nfooter-contact-lnk">Ver en Google Maps</a>
+                    <p class="nfooter-contact-txt">Sabaneta, Antioquia<br>Colombia<br><span style="color:#52525b">Estudio privado &#8212; la direcci&#243;n se indica al agendar la cita.</span></p>
+                    <a href="tel:+573337589442" class="nfooter-contact-lnk">+57 333 758 9442</a>
+                    <a href="https://share.google/Q0QXb30nNSbFShhjb" target="_blank" rel="noopener" class="nfooter-contact-lnk">Ficha en Google</a>
                     <a href="/contacto" class="nfooter-contact-lnk">Ubicaci&#243;n y contacto</a>
                     <a href="#" target="_blank" rel="noopener" class="nfooter-contact-lnk js-wa js-wa-track" data-origin="footer-contacto">WhatsApp directo</a>
                     <a href="https://www.instagram.com/negas.tattoo" target="_blank" rel="noopener" class="nfooter-contact-lnk js-ig">@negas.tattoo</a>
@@ -743,9 +714,7 @@ src="https://www.facebook.com/tr?id=1467646508235189&ev=PageView&noscript=1"
                 <div>
                     <div class="nfooter-col-title">Horario</div>
                     <div class="nfooter-sched">
-                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">Lun&#8211;Vie</span><span class="nfooter-sched-time">10:00 &#8212; 19:00</span></div>
-                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">S&#225;bado</span><span class="nfooter-sched-time">11:00 &#8212; 16:00</span></div>
-                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">Domingo</span><span class="nfooter-sched-time">Cerrado</span></div>
+                        <div class="nfooter-sched-row"><span class="nfooter-sched-day">Lun&#8211;Dom</span><span class="nfooter-sched-time">10:00 &#8212; 21:00</span></div>
                     </div>
                     <p class="nfooter-sched-note">Solo con cita previa</p>
                 </div>

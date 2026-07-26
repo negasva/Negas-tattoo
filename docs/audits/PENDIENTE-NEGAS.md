@@ -1,41 +1,61 @@
 # PENDIENTE — datos que solo Negas puede aportar
 
 **Generado:** 2026-07-26 · deriva de `03-seo.md` §5.1 y §5.2
-**Rama:** `claude/negas-seo-audit-execution-68341k`
+**Actualizado:** 2026-07-26 — Negas aportó los datos; **cero placeholders `<<>>`**
 
-> ⛔ **Esta rama NO se despliega tal cual.**
-> Contiene 27 placeholders `<<...>>` repartidos en `public/`. La regla dura de
-> la auditoría (§4.5) es **cero placeholders en producción**: un `telephone`
-> falso o una `geo` inventada rompen la consistencia con Google Business
-> Profile y hacen más daño que no tener schema.
-> Comprobar antes de mergear a `main`:
+> ✅ **La rama ya se puede desplegar.**
 > ```bash
 > grep -rn '<<' public/ && echo "NO DESPLEGAR" || echo "limpio"
 > ```
 
 ---
 
-## 1. Datos bloqueantes (sin esto no hay SEO local)
+## 0. El negocio es un SAB, no un local visitable
 
-| # | Dato | Formato exacto | Dónde se pega |
-|---|---|---|---|
-| 1 | **Dirección del estudio** | Calle/Carrera, número, local, barrio | `public/contacto.html` (bloque `.nap`), footer de `public/index.html`, `streetAddress` del JSON-LD |
-| 2 | **Código postal** | 6 dígitos (Sabaneta es `0554xx`) | `postalCode` del JSON-LD, `contacto.html` |
-| 3 | **Teléfono en E.164** | `+573001234567` — sin espacios, sin guiones, con `+57` | `href="tel:..."` en `index.html` y `contacto.html`, `telephone` y `contactPoint` del JSON-LD |
-| 4 | **Teléfono legible** | `+57 300 123 4567` | texto visible de esos mismos enlaces |
-| 5 | **Coordenadas del pin de GBP** | `latitude` / `longitude` con 6 decimales, **copiadas del panel de Google Business Profile**, no medidas a ojo en un mapa | `geo` del JSON-LD |
-| 6 | **URL corta de la ficha de GBP** | `https://maps.app.goo.gl/XXXXXXXX` | `hasMap` y `sameAs` del JSON-LD, footer de `index.html`, `contacto.html` |
-| 7 | **URL de "Insertar un mapa" de GBP** | el `src` del iframe que da Google | `<iframe class="map-frame">` de `contacto.html` |
-| 8 | **Métodos de pago aceptados** | lista separada por comas: efectivo, transferencia, Nequi, Daviplata, tarjeta… | `paymentAccepted` del JSON-LD |
-| 9 | **Confirmación del horario** | debe coincidir **carácter por carácter** con GBP. Hoy el sitio dice: Lun–Vie 10:00–19:00 · Sáb 11:00–16:00 · Dom cerrado | `openingHoursSpecification` del JSON-LD, footer, `contacto.html` |
-| 10 | **TikTok** (si existe) | URL del perfil, o decir que no hay para borrar la línea | `sameAs` del JSON-LD |
+Dato clave que llegó con las respuestas y que cambió el diseño del schema:
+**no hay dirección pública.** Es un estudio privado y en Google la ficha
+figura como *servicio a domicilio*. En consecuencia, y a propósito:
 
-## 2. Imagen social (og:image)
+- **sin `streetAddress`** — el `PostalAddress` declara solo localidad, región,
+  código postal y país
+- **sin `geo`** — no hay pin público que declarar
+- **sin `hasMap`** ni mapa embebido en `/contacto`
+- **con `areaServed`** — Sabaneta, Envigado, Itagüí, La Estrella, Medellín y
+  Valle de Aburrá. Es lo que Google espera de un service-area business
+- `"publicAccess": false` y la nota visible «Estudio privado: la dirección se
+  indica una vez agendada la cita»
 
-| # | Qué | Detalle |
+## 1. Datos ya incorporados
+
+| Dato | Valor | Dónde quedó |
 |---|---|---|
-| 11 | **Una foto del estudio o pieza insignia** | 1200×630 px, alojada en el dominio propio (`/img/og-negas-tattoo-1200x630.jpg`). Hoy el `og:image` de las 4 páginas es un placeholder. |
-| 12 | **Su pie de foto (`og:image:alt`)** | texto humano, lo escribe Negas |
+| Teléfono | `+573337589442` (visible: `+57 333 758 9442`) | `tel:` en el footer de la home y en `/contacto`; `telephone` y `contactPoint` del JSON-LD |
+| Código postal | `055450` | `postalCode` del JSON-LD y `/contacto` |
+| Métodos de pago | Efectivo, Transferencia Bancolombia, Nequi | `paymentAccepted` |
+| Ficha de Google | `https://share.google/Q0QXb30nNSbFShhjb` | `sameAs`, footer y `/contacto` |
+| TikTok | `https://www.tiktok.com/@negasva` | `sameAs` |
+| Horario | **10:00–21:00 todos los días** | `openingHoursSpecification`, footer de la home y `/contacto` |
+| Nombre alternativo | «Negas Tattoo - Estudio Privado» | `alternateName` |
+| Precio mínimo | $180.000 COP — tomado de la FAQ que ya estaba en la home | `minPrice` de los 3 `Service` |
+
+> ⚠️ El horario del footer cambió: antes decía Lun–Vie 10–19, Sáb 11–16,
+> Dom cerrado. Ahora dice **Lun–Dom 10:00–21:00** en las tres páginas y en el
+> schema. Debe coincidir **exactamente** con lo que diga la ficha de Google.
+
+## 2. Lo que sigue pendiente
+
+| # | Qué | Por qué importa |
+|---|---|---|
+| 1 | **Confirmar que el link de Google es el definitivo** | `share.google/Q0QXb30nNSbFShhjb` es un enlace de compartir. Si el panel de Google Business Profile ofrece el corto `maps.app.goo.gl/...`, ese es preferible: es estable y canónico. Cambiarlo en `sameAs`, footer y `/contacto` |
+| 2 | **Los 20 `alt` de las piezas** | 15 de 20 están duplicados (P1-7). Se editan en `/admin` → panel **Piezas** → *Texto alternativo* → **Guardar**. Ver §3 |
+| 3 | **Una imagen social propia de 1200×630** | Hoy el `og:image` de las 4 páginas apunta a una pieza del portafolio (el ángel blackwork, la destacada del archivo) alojada en `i.ibb.co`. Funciona, pero es vertical: en Facebook y WhatsApp se recorta. Una imagen horizontal propia se vería mejor |
+| 4 | **Correr la migración de imágenes** | Ver §5. Saca las 20 piezas de `i.ibb.co` |
+| 5 | **Verificar la ficha de Google** y completarla | Sin ficha verificada no hay paquete local ni Maps |
+| 6 | **Descripción del negocio para GBP** (250–750 caracteres) | Campo obligatorio de la ficha. Debe sonar a la persona |
+| 7 | **Pedir reseñas reales** tras cada sesión | `AggregateRating` **solo** es legítimo con reseñas reales detrás. Este trabajo **no** lo añadió a propósito: inventarlo es motivo de acción manual de Google |
+| 8 | **Sección "sobre el artista"** — trayectoria, formación, años tatuando | Señal E-E-A-T. Tatuar perfora la piel: la experiencia demostrable pesa |
+| 9 | **Protocolo de bioseguridad y esterilización** | Confianza + E-E-A-T. Debe reflejar lo que de verdad se hace |
+| 10 | **Confirmar redirección www → apex** en Vercel / DNS | P3-7, configuración de infra |
 
 ## 3. Los 20 `alt` de las piezas
 
@@ -58,32 +78,15 @@ Duplicados actuales a reescribir:
 > de archivo WebP salen del `alt`, y con alts duplicados salen
 > `...-2.webp`, `...-3.webp` en lugar de nombres descriptivos.
 
-## 4. Tareas que solo puede hacer Negas (fuera del código)
+## 4. El JSON-LD ya está activo
 
-| # | Tarea | Por qué |
-|---|---|---|
-| 13 | **Crear o reclamar la ficha de Google Business Profile** y verificarla | Sin ficha verificada no hay paquete local ni Maps. Es el punto #5 del plan de ejecución. |
-| 14 | **Escribir la descripción del negocio para GBP** (250–750 caracteres) | Campo obligatorio de la ficha. Debe sonar a la persona. |
-| 15 | **Pedir reseñas reales a los clientes** tras cada sesión, en GBP | `AggregateRating` **solo** es legítimo con reseñas reales detrás. Este trabajo **no** añadió `AggregateRating` a propósito: inventarlo es motivo de acción manual de Google. |
-| 16 | **Sección "sobre el artista"** — trayectoria, formación, años tatuando | Señal E-E-A-T. Tatuar perfora la piel: la experiencia demostrable pesa. |
-| 17 | **Protocolo de bioseguridad y esterilización** del estudio | Confianza + E-E-A-T. Debe reflejar lo que de verdad se hace. |
-| 18 | **Confirmar redirección www → apex** en el panel de Vercel / DNS | P3-7, es configuración de infra, no de repo. |
+Está en `public/index.html`, antes de `</head>`, **sin comentar y sin
+placeholders**. Validarlo tras desplegar:
 
----
+- <https://validator.schema.org/>
+- <https://search.google.com/test/rich-results>
 
-## 5. Cómo activar el JSON-LD principal
-
-Está **comentado a propósito** en `public/index.html`, justo antes de
-`</head>`, dentro de un bloque `<!-- ... -->` con la explicación.
-
-1. Rellenar los datos 1–10 de arriba dentro del bloque.
-2. Borrar las dos líneas de comentario (`<!-- ═══…` y `═══… -->`).
-3. `grep -n '<<' public/index.html` → debe salir vacío.
-4. Validar en <https://validator.schema.org/> y en
-   <https://search.google.com/test/rich-results>.
-5. Desplegar.
-
-## 6. Cómo correr la migración de imágenes
+## 5. Cómo correr la migración de imágenes
 
 Saca las 20 piezas de `i.ibb.co` (hallazgo P1-2), las convierte a WebP q82 en
 dos tamaños (480 y 1080 px) y las sube al bucket público `gallery`.
@@ -118,7 +121,7 @@ Después:
 > Requisito previo: correr `migrations/EJECUTAR-ESTE-EN-SUPABASE.sql`, que ya
 > incluye las columnas `img_width` / `img_height`.
 
-## 7. Nota sobre `Cache-Control` (P3-6)
+## 6. Nota sobre `Cache-Control` (P3-6)
 
 Se dejó en `max-age=3600, must-revalidate`, **a propósito**. Subirlo a
 `max-age=31536000, immutable` solo es seguro si los nombres de archivo llevan
@@ -127,7 +130,7 @@ versión (`style.a1b2c3.css`) o query string de versión. Hoy `style.css` y
 en los navegadores de los visitantes. Cuando se añada versionado, cambiar el
 header en `vercel.json`.
 
-## 8. Verificación post-despliegue
+## 7. Verificación post-despliegue
 
 Los comandos de la §7 de `03-seo.md` **no se pudieron correr** desde el
 entorno de la auditoría: la política de red bloquea las salidas tanto a
@@ -165,7 +168,7 @@ curl -s https://negas.tattoo/robots.txt  | head
 curl -s https://negas.tattoo/sitemap.xml | head
 
 # Schema
-curl -s https://negas.tattoo/ | grep -c 'application/ld+json'   # >= 1 tras activar el @graph
+curl -s https://negas.tattoo/ | grep -c 'application/ld+json'   # esperado: 1
 curl -s https://negas.tattoo/ | grep -o '<<[^>]*>>'             # DEBE salir vacío
 
 # Canonical de /cotizar (debe apuntar a la home)

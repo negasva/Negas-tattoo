@@ -528,10 +528,10 @@ Leyenda: ✅ resuelto · 🟡 código listo, falta un dato o una acción de Nega
 |---|:--:|---|
 | P0-1 | ✅ | `public/robots.txt`: permite todo salvo `/admin` y `/api`, declara el sitemap |
 | P0-2 | ✅ | `public/sitemap.xml` con `/`, `/contacto`, `/cuidados`, `/privacidad`. Sin `/cotizar` (se canonicaliza a `/`) ni `/admin` |
-| P0-3 | 🟡 | El `@graph` de la §4.1 está en `index.html` antes de `</head>`, **comentado**: contiene placeholders y la regla dura es cero `<<>>` en producción. `BreadcrumbList` sí está activo en `/cuidados`, `/privacidad` y `/contacto`; `ImageGallery` se genera en runtime |
+| P0-3 | ✅ | `@graph` activo en `index.html` con los datos reales. **Adaptado a un service-area business**: sin `streetAddress`, sin `geo` y sin `hasMap`, porque no hay dirección pública. `BreadcrumbList` en `/cuidados`, `/privacidad` y `/contacto`; `ImageGallery` generado en runtime |
 | P0-4 | ✅ | `"cleanUrls": true` en `vercel.json`. **Solo eso** — los enlaces y canonicals se dejaron sin `.html`. La verificación con `curl` no se pudo correr: la política de red del entorno devuelve 403 para `negas.tattoo`. El diagnóstico estático es concluyente: sin `cleanUrls` y con output `public`, `/cuidados` y `/privacidad` no resuelven |
-| P0-5 | 🟡 | Teléfono en HTML rastreable con `<a href="tel:">` en el footer de `index.html` y en `/contacto`. Convive con el flujo `js-wa`, no lo reemplaza. Falta el número real |
-| P0-6 | 🟡 | Dirección en el footer de `index.html` y en el `<address>` de `/contacto`. Falta la dirección real |
+| P0-5 | ✅ | `+573337589442` en HTML rastreable con `<a href="tel:">` en el footer de `index.html` y en `/contacto`. Convive con el flujo `js-wa`, no lo reemplaza |
+| P0-6 | ✅ | **No aplica como se planteó**: es un estudio privado sin dirección pública, en Google figura como servicio a domicilio. El `PostalAddress` declara localidad, región, `055450` y país; el resto lo cubre `areaServed`. En el HTML queda la nota «la dirección se indica una vez agendada la cita» |
 
 ### P1
 
@@ -539,7 +539,7 @@ Leyenda: ✅ resuelto · 🟡 código listo, falta un dato o una acción de Nega
 |---|:--:|---|
 | P1-1 | ⬜ | Fallback HTML/SSR de la galería — fuera del alcance de esta ejecución. Mitigado en parte: el `ImageGallery` JSON-LD sí describe las 20 piezas |
 | P1-2 | 🟡 | `scripts/migrate-images.mjs` listo (descarga → WebP q82 → 480/1080 → bucket `gallery` → SQL `UPDATE`). No se pudo ejecutar: la red del entorno bloquea `i.ibb.co` (403). Instrucciones en `PENDIENTE-NEGAS.md` §6 |
-| P1-3 | 🟡 | Enlace a la ficha de GBP en el footer de `index.html` y en `/contacto`; `hasMap` + `sameAs` en el JSON-LD. Falta la URL real |
+| P1-3 | ✅ | Enlace a la ficha (`share.google/Q0QXb30nNSbFShhjb`) en el footer de `index.html`, en `/contacto` y en `sameAs`. Sin `hasMap`: no hay pin público. TikTok `@negasva` añadido a `sameAs` |
 | P1-4 | ✅ | `public/contacto.html` creada: NAP, `tel:`, WhatsApp, correo, mapa embebido, horario y `BreadcrumbList`. Ruta añadida a `server.js`, al sitemap, a robots y al footer de las tres páginas |
 | P1-5 | 🟡 | La conversión a WebP la hace el script de P1-2 |
 | P1-6 | ✅ | `srcset` de dos variantes + `sizes="(max-width: 640px) 50vw, 33vw"` en `renderGallery()`. Se activa solo en las piezas ya migradas (`-1080.webp`) |
@@ -570,7 +570,7 @@ Leyenda: ✅ resuelto · 🟡 código listo, falta un dato o una acción de Nega
 | P3-1 | ✅ | `<meta name="keywords">` eliminado |
 | P3-2 | ✅ | `lang="es-CO"` en las cuatro páginas públicas |
 | P3-3 | ✅ | `apple-touch-icon` y `theme-color` en las cuatro. Sin `manifest.json` (no hay caso de uso de PWA) |
-| P3-4 | ✅ | `og:site_name`, `og:locale`, `og:image:width/height/alt` en `index.html` |
+| P3-4 | 🟡 | `og:site_name`, `og:locale` y `og:image:alt` en `index.html`. **Sin `og:image:width/height`**: el `og:image` es una pieza vertical del portafolio, no un 1200×630, y no se inventan medidas. Falta una imagen social propia |
 | P3-5 | ⬜ | `twitter:title/description/image` siguen heredando de `og:` — funciona, no se añadió duplicación |
 | P3-6 | ⬜ | `Cache-Control` sin tocar, **a propósito**: `immutable` sin versionado en los nombres de archivo cachearía un año un `style.css` cambiado. Anotado en `PENDIENTE-NEGAS.md` §7 |
 | P3-7 | ⬜ | www → apex: configuración de DNS/Vercel, no de repo |
@@ -584,14 +584,16 @@ Leyenda: ✅ resuelto · 🟡 código listo, falta un dato o una acción de Nega
 
 ### Health score tras la ejecución
 
-**73 / 100** (antes: 31). Sube a ~**90** cuando lleguen los datos de
-`PENDIENTE-NEGAS.md` y se corra la migración de imágenes.
+**73 / 100** al abrir la PR, **85 / 100** tras incorporar los datos que aportó
+Negas (teléfono, horario, pagos, ficha de Google, TikTok) y activar el JSON-LD.
+Antes: 31. Sube a ~**92** cuando se corran la migración de imágenes y los alts
+únicos.
 
 | Área | Peso | Antes | Ahora | Nota |
 |---|---:|---:|---:|---|
 | Indexabilidad y rastreo | 20 | 4 | 17 | robots + sitemap + `cleanUrls` + `/admin(.*)` noindex. Las piezas siguen sin fallback HTML (P1-1) |
-| Datos estructurados | 20 | 0 | 12 | breadcrumbs e `ImageGallery` activos; el `@graph` de la home espera datos |
-| SEO local / Maps | 20 | 5 | 11 | `/contacto` y el NAP existen como estructura; faltan los valores y la ficha de GBP |
+| Datos estructurados | 20 | 0 | 18 | `@graph` completo y activo, breadcrumbs e `ImageGallery`. Sin `AggregateRating` hasta que haya reseñas reales |
+| SEO local / Maps | 20 | 5 | 15 | NAP real, ficha enlazada, horario y área de cobertura. Falta verificar y completar la ficha de Google |
 | Imágenes | 15 | 6 | 10 | `srcset`, `width`/`height` y schema listos; falta ejecutar el WebP y los alts únicos |
 | Metadatos técnicos | 10 | 7 | 10 | las cuatro páginas completas |
 | Rendimiento / CWV | 10 | 6 | 8 | `defer` + `preconnect`; el peso de las imágenes sigue pendiente |

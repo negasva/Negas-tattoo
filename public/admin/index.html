@@ -37,10 +37,20 @@
         .panel { border: 1px solid rgba(255,255,255,.1); }
         .panel-head { display: flex; justify-content: space-between; align-items: flex-end; padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,.1); }
         .panel-title { font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.05em; }
-        .gal-row { display: grid; grid-template-columns: 72px 1fr; gap: 1rem; padding: 1rem 1.5rem; border-bottom: 1px solid #1a1a1a; align-items: start; }
+        .gal-row { display: grid; grid-template-columns: 72px 1fr; gap: 1rem; padding: 1rem 1.5rem; border-bottom: 1px solid #1a1a1a; align-items: start; transition: background .15s; }
         .gal-thumb { width: 72px; height: 72px; object-fit: cover; background: #0a0a0a; border: 1px solid #333; }
         .gal-row-controls { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
         .gal-inactive { opacity: .45; }
+        /* Fila con cambios sin guardar: se ve de un vistazo qué falta guardar. */
+        .gal-row.is-dirty { background: rgba(210,0,0,.07); box-shadow: inset 3px 0 0 #D20000; }
+        .tag-picker { display: flex; flex-wrap: wrap; gap: .4rem; }
+        .tag-chip { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .65rem; border: 1px solid #333; background: #1a1a1a; color: #a1a1aa; font-size: .7rem; font-weight: 900; text-transform: uppercase; letter-spacing: .02em; cursor: pointer; user-select: none; transition: all .15s; }
+        .tag-chip:hover { border-color: #52525b; }
+        .tag-chip input { width: .9rem; height: .9rem; accent-color: #D20000; cursor: pointer; }
+        .tag-chip.is-on { border-color: #D20000; background: rgba(210,0,0,.14); color: #fff; }
+        .btn-save-all { background: #fff; color: #000; padding: .6rem 1.1rem; font-size: .75rem; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -.02em; border: none; cursor: pointer; transition: background .2s; }
+        .btn-save-all:hover:not(:disabled) { background: #d4d4d8; }
+        .btn-save-all:disabled { background: #27272a; color: #71717a; cursor: not-allowed; }
         .tab-btn { padding: .6rem 1.25rem; font-size: .75rem; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -.02em; border: 1px solid #27272a; background: transparent; color: #a1a1aa; cursor: pointer; transition: all .2s; }
         .tab-btn.active { background: #fff; color: #000; border-color: #fff; }
         .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: #fff; color: #000; padding: .85rem 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; font-size: .8rem; letter-spacing: -.02em; z-index: 100; opacity: 0; pointer-events: none; transition: opacity .25s; }
@@ -239,12 +249,13 @@
                         </div>
                     </div>
 
-                    <div class="grid md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="field-label" for="gal-category">Etiqueta / estilo</label>
-                            <!-- Las opciones las rellena admin.js con lo que sirve /api/config. -->
-                            <select id="gal-category" class="input"></select>
-                        </div>
+                    <div>
+                        <span class="field-label">Etiquetas / estilo &#183; marca todas las que apliquen</span>
+                        <!-- Las etiquetas las rellena admin.js con lo que sirve /api/config. -->
+                        <div id="gal-tags" class="tag-picker"></div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="field-label" for="gal-span">Tamaño en la grilla</label>
                             <select id="gal-span" class="input"></select>
@@ -265,10 +276,14 @@
                         <div class="flex gap-4 items-center">
                             <span id="gal-count" class="text-red-600 text-[10px] uppercase tracking-widest font-black">0 piezas</span>
                             <button id="gal-reload" class="text-[11px] uppercase tracking-[0.2em] font-black text-zinc-500 hover:text-white transition">Recargar</button>
+                            <button id="gal-save-all" class="btn-save-all" disabled>Sin cambios</button>
                         </div>
                     </div>
                     <div id="gal-list"></div>
                     <p class="px-6 py-4 text-[11px] text-zinc-500 border-t border-white/10 leading-relaxed">
+                        Edita lo que quieras en varias piezas y guarda todo de una con
+                        <strong class="text-white">Guardar cambios</strong>. Las filas con cambios sin guardar
+                        quedan marcadas en rojo.<br>
                         El <strong class="text-white">orden</strong> es ascendente: 0 aparece primero. Si todas las piezas
                         tienen el mismo número, la galería las baraja sola en cada visita.
                     </p>

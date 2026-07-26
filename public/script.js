@@ -109,7 +109,7 @@ function initMetaPixel(pixelId) {
 }
 
 function applyConfig() {
-    const { waPhone, instagramUrl, facebookUrl, recaptchaSiteKey, metaPixelId } = appConfig;
+    const { waPhone, instagramUrl, facebookUrl, tiktokUrl, recaptchaSiteKey, metaPixelId } = appConfig;
 
     if (appConfig.pricing) pricing = { ...pricing, ...appConfig.pricing };
     if (recaptchaSiteKey) loadRecaptcha(recaptchaSiteKey);
@@ -118,6 +118,9 @@ function applyConfig() {
 
     if (waPhone) {
         document.querySelectorAll('a.js-wa').forEach(a => { a.href = 'https://wa.me/' + waPhone; });
+    } else {
+        // Sin numero configurado el flotante seria un enlace a "#": mejor no mostrarlo.
+        document.getElementById('floating-wa')?.remove();
     }
 
     if (instagramUrl) {
@@ -126,6 +129,10 @@ function applyConfig() {
 
     if (facebookUrl) {
         document.querySelectorAll('a.js-fb').forEach(a => { a.href = facebookUrl; });
+    }
+
+    if (tiktokUrl) {
+        document.querySelectorAll('a.js-tt').forEach(a => { a.href = tiktokUrl; });
     }
 }
 
@@ -191,6 +198,14 @@ const shuffle = arr => arr
     .sort((a, b) => a[0] - b[0])
     .map(pair => pair[1]);
 
+// Una pieza puede tener varias etiquetas. `categories` es lo nuevo; `category`
+// es la columna vieja y sigue valiendo para lo que aun no se haya migrado.
+const tagsOf = item => (
+    Array.isArray(item.categories) && item.categories.length
+        ? item.categories
+        : item.category ? [item.category] : []
+);
+
 async function loadGallery() {
     if (!galGrid) return;
     try {
@@ -213,7 +228,7 @@ function renderGallery(filter) {
 
     const base = filter === 'All'
         ? galleryImages
-        : galleryImages.filter(img => img.category === filter);
+        : galleryImages.filter(img => tagsOf(img).includes(filter));
 
     // Orden manual desde el admin (sort_order). Solo barajamos cuando todas las
     // piezas comparten el mismo orden, para que el archivo se sienta vivo pero
@@ -224,12 +239,14 @@ function renderGallery(filter) {
     galGrid.innerHTML = '';
 
     shown.forEach(item => {
+        const tags = tagsOf(item);
+
         const el = document.createElement('div');
         el.className = 'gal-item' + (item.span ? ' ' + item.span : '');
 
         const img = document.createElement('img');
         img.src = item.url;
-        img.alt = item.alt || `Tatuaje ${item.category} — Negas Tattoo Sabaneta`;
+        img.alt = item.alt || `Tatuaje ${tags.join(' y ')} — Negas Tattoo Sabaneta`;
         img.loading = 'lazy';
         img.decoding = 'async';
         // Reserva de espacio (CLS). Solo si la pieza trae medidas reales.
@@ -250,7 +267,11 @@ function renderGallery(filter) {
 
         const cat = document.createElement('div');
         cat.className = 'gal-cat';
-        cat.textContent = item.category;
+        tags.forEach(tag => {
+            const chip = document.createElement('span');
+            chip.textContent = tag;
+            cat.appendChild(chip);
+        });
 
         el.append(img, overlay, cat);
         el.addEventListener('click', () => openLightbox(item.url, el, img.alt));
@@ -292,7 +313,7 @@ function renderGallerySchema(items) {
             ...(item.img_height ? { height: item.img_height } : {}),
             name: item.alt || undefined,
             description: item.alt || undefined,
-            keywords: item.category,
+            keywords: tagsOf(item).join(', '),
             creator: { '@id': 'https://negas.tattoo/#studio' },
             copyrightNotice: '© Negas Tattoo',
             creditText: 'Negas Tattoo',
@@ -892,6 +913,17 @@ setTimeout(() => {
         }
     });
 }, 3000);
+
+/* ─── Header ─────────────────────────────────────────────────── */
+// Transparente sobre el hero, con fondo apenas se baja. Sin listeners de
+// scroll costosos: solo togglea una clase.
+const siteHeader = document.getElementById('site-header');
+
+if (siteHeader) {
+    const syncHeader = () => siteHeader.classList.toggle('is-solid', window.scrollY > 24);
+    syncHeader();
+    window.addEventListener('scroll', syncHeader, { passive: true });
+}
 
 /* ─── CTA flotante ───────────────────────────────────────────── */
 const floatingCta = document.getElementById('floating-cta');

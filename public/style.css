@@ -4,8 +4,15 @@
     --red-dark: #b00000;
     --zinc: #a1a1aa;
     --line: rgba(255, 255, 255, .08);
+    --wa: #25D366;
+    --wa-dark: #1ebe5b;
+    --nav-h: 60px;
     --trans-base: 0.2s ease;
     --trans-smooth: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (min-width: 768px) {
+    :root { --nav-h: 72px; }
 }
 
 /* ═══════════════════════════════════════════════
@@ -162,6 +169,142 @@ h3,
 .meta-bar-end { text-align: right; }
 
 /* ═══════════════════════════════════════════════
+   HEADER
+   Fijo y transparente sobre el hero; toma fondo al bajar (.is-solid, lo
+   pone script.js). Va por encima de todo menos del popup del cotizador.
+═══════════════════════════════════════════════ */
+.nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 300;
+    background: transparent;
+    border-bottom: 1px solid transparent;
+    transition: background-color .3s ease, border-color .3s ease;
+}
+
+.nav.is-solid {
+    background: rgba(10, 10, 10, .92);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-bottom-color: var(--line);
+}
+
+.nav-inner {
+    max-width: 80rem;
+    height: var(--nav-h);
+    margin: 0 auto;
+    padding: 0 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) { .nav-inner { padding: 0 2.5rem; } }
+
+.nav-logo {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    text-decoration: none;
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: -.05em;
+    font-size: .95rem;
+    white-space: nowrap;
+}
+
+.nav-logo-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--red);
+    flex-shrink: 0;
+}
+
+.nav-logo-txt span { color: var(--red); }
+
+.nav-links {
+    display: none;
+    gap: 1.75rem;
+}
+
+@media (min-width: 960px) { .nav-links { display: flex; } }
+
+.nav-links a {
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: .25em;
+    color: var(--zinc);
+    transition: color var(--trans-base);
+}
+
+.nav-links a:hover { color: #fff; }
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.nav-socials {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+}
+
+.nav-soc {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--zinc);
+    border: 1px solid transparent;
+    transition: color var(--trans-base), border-color var(--trans-base);
+}
+
+.nav-soc svg {
+    width: 1.05rem;
+    height: 1.05rem;
+}
+
+.nav-soc:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, .2);
+}
+
+.nav-soc--wa:hover {
+    color: var(--wa);
+    border-color: rgba(37, 211, 102, .45);
+}
+
+.nav-cta {
+    background: var(--red);
+    color: #fff;
+    padding: .7rem 1.1rem;
+    font-family: inherit;
+    font-size: .75rem;
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: -.03em;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color var(--trans-base);
+}
+
+.nav-cta:hover { background: var(--red-dark); }
+
+/* Los anclajes no deben quedar debajo del header fijo. */
+section[id] { scroll-margin-top: var(--nav-h); }
+
+/* ═══════════════════════════════════════════════
    HERO
 ═══════════════════════════════════════════════ */
 .hero-section {
@@ -170,11 +313,11 @@ h3,
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 1rem 2rem;
+    padding: calc(var(--nav-h) + 1rem) 2rem 1rem;
 }
 
-@media (min-width: 768px) { .hero-section { padding: 1rem 5rem; } }
-@media (min-width: 1024px) { .hero-section { padding: 1rem 8rem; } }
+@media (min-width: 768px) { .hero-section { padding: calc(var(--nav-h) + 1rem) 5rem 1rem; } }
+@media (min-width: 1024px) { .hero-section { padding: calc(var(--nav-h) + 1rem) 8rem 1rem; } }
 
 .hero-inner {
     max-width: 80rem;
@@ -644,6 +787,10 @@ h3,
     position: absolute;
     bottom: .75rem;
     left: .75rem;
+    right: .75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
     font-family: monospace;
     font-size: .625rem;
     text-transform: uppercase;
@@ -655,6 +802,13 @@ h3,
     pointer-events: none;
     font-style: normal;
     font-weight: 400;
+}
+
+/* Cada etiqueta va en su propia pastilla: una pieza puede tener varias. */
+.gal-cat span {
+    padding: .15rem .4rem;
+    background: rgba(0, 0, 0, .55);
+    border: 1px solid rgba(210, 0, 0, .45);
 }
 
 .gal-item:hover .gal-cat {
@@ -822,25 +976,75 @@ h3,
     transform: translateY(-2px);
 }
 
-.quote-cta-alt {
-    margin-top: 1.5rem;
-    font-size: .8rem;
-    color: #71717a;
+/* Segunda via de cotizacion: antes era un enlace de 0.8rem que nadie veia.
+   Ahora es un boton verde del mismo peso visual que el rojo. */
+.quote-or {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.25rem 0;
+    color: #52525b;
+    font-size: .68rem;
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: .22em;
+}
+
+.quote-or::before,
+.quote-or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+
+.quote-wa-btn {
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: .5rem;
+    gap: .85rem;
+    width: 100%;
+    padding: 1.35rem 1rem;
+    background: var(--wa);
+    color: #0a0a0a;
+    text-decoration: none;
+    box-shadow: 0 14px 34px rgba(37, 211, 102, .18);
+    transition: background-color .3s ease, transform .3s ease;
 }
 
-.quote-cta-alt a {
-    color: #fff;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    transition: color .2s;
+.quote-wa-btn:hover {
+    background: var(--wa-dark);
+    transform: translateY(-2px);
 }
 
-.quote-cta-alt a:hover { color: var(--red); }
+.quote-wa-btn svg {
+    width: 1.7rem;
+    height: 1.7rem;
+    flex-shrink: 0;
+}
+
+.quote-wa-btn-txt {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1;
+    font-size: clamp(1.1rem, 3.6vw, 1.6rem);
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: -.045em;
+}
+
+.quote-wa-btn-txt small {
+    margin-top: .4rem;
+    font-size: .62rem;
+    font-weight: 700;
+    font-style: normal;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    opacity: .72;
+}
 
 /* ═══════════════════════════════════════════════
    FAQ
@@ -1921,6 +2125,54 @@ h3,
     }
 }
 
+/* ═══════════════════════════════════════════════
+   WHATSAPP FLOTANTE
+   Abajo a la IZQUIERDA a proposito: el CTA rojo de cotizar vive abajo a la
+   derecha y los dos se taparian. Este siempre esta visible.
+═══════════════════════════════════════════════ */
+.floating-wa {
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    z-index: 250;
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .8rem 1rem;
+    background: var(--wa);
+    color: #0a0a0a;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-style: italic;
+    font-weight: 900;
+    letter-spacing: -.045em;
+    font-size: .8rem;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .55);
+    transition: background-color .25s ease, transform .25s ease;
+}
+
+.floating-wa svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+}
+
+.floating-wa:hover {
+    background: var(--wa-dark);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .floating-wa {
+        left: 12px;
+        bottom: 12px;
+        padding: .9rem;
+    }
+
+    /* En movil el CTA rojo ya ocupa media pantalla: aqui solo el icono. */
+    .floating-wa-label { display: none; }
+}
+
 @keyframes shake {
     0%, 20%, 100% { transform: translateX(0); }
     5%, 15%       { transform: translateX(-4px); }
@@ -1945,7 +2197,7 @@ h3,
     #hero {
         min-height: 100svh !important;
         height: auto !important;
-        padding: 1rem 1.25rem 0.5rem !important;
+        padding: calc(var(--nav-h) + 0.75rem) 1.25rem 0.5rem !important;
         display: block;
         position: relative;
         overflow: visible;

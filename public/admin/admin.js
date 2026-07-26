@@ -359,9 +359,29 @@ async function loadGalleryConfig() {
     const { gallery } = await res.json()
     CATEGORIES = gallery.categories
     SPANS = gallery.spans
-    $('gal-category').innerHTML = CATEGORIES.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')
+    $('gal-tags').innerHTML = tagPicker([])
     $('gal-span').innerHTML = SPANS.map(s => `<option value="${escapeHtml(s.value)}">${escapeHtml(s.label)}</option>`).join('')
 }
+
+// Una pieza puede llevar varias etiquetas (`categories`). `category` es la
+// columna vieja de una sola etiqueta: sigue valiendo como respaldo mientras
+// queden filas sin migrar.
+const tagsOf = img => (
+    Array.isArray(img.categories) && img.categories.length
+        ? img.categories
+        : img.category ? [img.category] : []
+)
+
+// Casillas de etiqueta. Mismas para el formulario de arriba y para cada fila.
+function tagPicker(selected) {
+    return CATEGORIES.map(c => `
+        <label class="tag-chip ${selected.includes(c) ? 'is-on' : ''}">
+            <input type="checkbox" data-gal-field="categories" value="${escapeHtml(c)}" ${selected.includes(c) ? 'checked' : ''}>
+            ${escapeHtml(c)}
+        </label>`).join('')
+}
+
+const checkedTags = root => [...root.querySelectorAll('[data-gal-field="categories"]:checked')].map(i => i.value)
 
 let galleryImages = []
 
@@ -381,6 +401,7 @@ function renderGalleryAdmin() {
 
     if (!galleryImages.length) {
         $('gal-list').innerHTML = '<div class="px-6 py-10 text-center text-zinc-500">Todavía no hay piezas. Agrega la primera arriba.</div>'
+        updateDirtyState()
         return
     }
 
@@ -388,12 +409,10 @@ function renderGalleryAdmin() {
         <div class="gal-row ${img.active ? '' : 'gal-inactive'}" data-gal-id="${img.id}">
             <img class="gal-thumb" src="${escapeHtml(img.url)}" alt="" loading="lazy">
             <div class="space-y-2">
+                <div class="tag-picker">${tagPicker(tagsOf(img))}</div>
                 <div class="gal-row-controls">
-                    <select class="input-sm" data-gal-field="category">
-                        ${CATEGORIES.map(c => `<option value="${c}" ${img.category === c ? 'selected' : ''}>${c}</option>`).join('')}
-                    </select>
                     <select class="input-sm" data-gal-field="span">
-                        ${SPANS.map(s => `<option value="${s.value}" ${(img.span || '') === s.value ? 'selected' : ''}>${s.label}</option>`).join('')}
+                        ${SPANS.map(s => `<option value="${escapeHtml(s.value)}" ${(img.span || '') === s.value ? 'selected' : ''}>${escapeHtml(s.label)}</option>`).join('')}
                     </select>
                     <label class="text-[11px] text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                         Orden
@@ -403,53 +422,128 @@ function renderGalleryAdmin() {
                         <input type="checkbox" class="w-4 h-4 accent-red-600 cursor-pointer" data-gal-field="active" ${img.active ? 'checked' : ''}>
                         Visible
                     </label>
-                    <button class="gal-save bg-white text-black px-3 py-1 text-[11px] font-black uppercase hover:bg-zinc-300 transition">Guardar</button>
                     <button class="gal-delete text-zinc-600 hover:text-red-500 text-[11px] font-black uppercase transition">Eliminar</button>
                 </div>
                 <input type="text" class="input-sm w-full" data-gal-field="alt" placeholder="Texto alternativo (SEO)" value="${escapeHtml(img.alt || '')}">
             </div>
         </div>
     `).join('')
+
+    updateDirtyState()
 }
 
-$('gal-list').addEventListener('click', async (e) => {
-    const row = e.target.closest('[data-gal-id]')
-    if (!row) return
-    const id = row.dataset.galId
+/* ─── Guardado global ─── */
+// Ya no hay un botón por fila: se edita lo que sea, en las filas que sea, y
+// "Guardar cambios" manda solo las que de verdad cambiaron.
+const rowPayload = row => ({
+    categories: checkedTags(row),
+    span: row.querySelector('[data-gal-field="span"]').value,
+    sort_order: Number(row.querySelector('[data-gal-field="sort_order"]').value) || 0,
+    active: row.querySelector('[data-gal-field="active"]').checked,
+    alt: row.querySelector('[data-gal-field="alt"]').value.trim()
+})
 
-    if (e.target.classList.contains('gal-save')) {
-        const payload = {
-            category: row.querySelector('[data-gal-field="category"]').value,
-            span: row.querySelector('[data-gal-field="span"]').value,
-            sort_order: Number(row.querySelector('[data-gal-field="sort_order"]').value) || 0,
-            active: row.querySelector('[data-gal-field="active"]').checked,
-            alt: row.querySelector('[data-gal-field="alt"]').value.trim()
-        }
-        e.target.disabled = true
-        try {
-            await updateGalleryImage(id, payload)
-            toast('Pieza actualizada')
-            await loadGallery()
-        } catch (err) {
-            toast(err.message, true)
-        } finally {
-            e.target.disabled = false
-        }
+const savedPayload = img => ({
+    categories: tagsOf(img),
+    span: img.span || '',
+    sort_order: Number(img.sort_order) || 0,
+    active: Boolean(img.active),
+    alt: (img.alt || '').trim()
+})
+
+// El orden de las etiquetas no cuenta como cambio.
+const fingerprint = p => JSON.stringify({ ...p, categories: [...p.categories].sort() })
+
+function isDirty(row) {
+    const saved = galleryImages.find(img => String(img.id) === row.dataset.galId)
+    return Boolean(saved) && fingerprint(rowPayload(row)) !== fingerprint(savedPayload(saved))
+}
+
+const galRows = () => [...$('gal-list').querySelectorAll('[data-gal-id]')]
+
+function updateDirtyState() {
+    const dirty = galRows().filter(row => {
+        const changed = isDirty(row)
+        row.classList.toggle('is-dirty', changed)
+        return changed
+    })
+
+    const btn = $('gal-save-all')
+    btn.disabled = dirty.length === 0
+    btn.textContent = dirty.length ? `Guardar cambios (${dirty.length})` : 'Sin cambios'
+    return dirty
+}
+
+async function saveAllGallery() {
+    const dirty = updateDirtyState()
+    if (!dirty.length) return
+
+    const sinEtiqueta = dirty.find(row => !checkedTags(row).length)
+    if (sinEtiqueta) {
+        toast('Cada pieza necesita al menos una etiqueta', true)
+        sinEtiqueta.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        return
     }
 
-    if (e.target.classList.contains('gal-delete')) {
-        if (!confirm('¿Eliminar esta pieza del portafolio?')) return
-        try {
-            await deleteGalleryImage(id)
-            toast('Pieza eliminada')
-            await loadGallery()
-        } catch (err) {
-            toast(err.message, true)
-        }
+    const btn = $('gal-save-all')
+    btn.disabled = true
+    btn.textContent = 'Guardando...'
+
+    const results = await Promise.allSettled(
+        dirty.map(row => updateGalleryImage(row.dataset.galId, rowPayload(row)))
+    )
+    const fallidas = results.filter(r => r.status === 'rejected')
+
+    if (fallidas.length) {
+        console.error(fallidas.map(f => f.reason))
+        toast(`${fallidas.length} de ${results.length} no se guardaron`, true)
+    } else {
+        toast(`${results.length} pieza${results.length > 1 ? 's' : ''} guardada${results.length > 1 ? 's' : ''}`)
+    }
+
+    await loadGallery()
+}
+
+// Un solo sitio donde se recalcula qué está sin guardar: cualquier edición
+// dentro de la lista pasa por aquí.
+function onGalleryEdit(e) {
+    const chip = e.target.closest('.tag-chip')
+    if (chip) chip.classList.toggle('is-on', e.target.checked)
+    if (e.target.closest('[data-gal-id]')) updateDirtyState()
+}
+
+$('gal-list').addEventListener('input', onGalleryEdit)
+$('gal-list').addEventListener('change', onGalleryEdit)
+$('gal-save-all').addEventListener('click', saveAllGallery)
+
+$('gal-tags').addEventListener('change', (e) => {
+    e.target.closest('.tag-chip')?.classList.toggle('is-on', e.target.checked)
+})
+
+$('gal-list').addEventListener('click', async (e) => {
+    if (!e.target.classList.contains('gal-delete')) return
+    const row = e.target.closest('[data-gal-id]')
+    if (!row) return
+
+    if (!confirm('¿Eliminar esta pieza del portafolio?')) return
+    try {
+        await deleteGalleryImage(row.dataset.galId)
+        toast('Pieza eliminada')
+        await loadGallery()
+    } catch (err) {
+        toast(err.message, true)
     }
 })
 
-$('gal-reload').addEventListener('click', loadGallery)
+$('gal-reload').addEventListener('click', () => {
+    if (updateDirtyState().length && !confirm('Hay cambios sin guardar. ¿Recargar y perderlos?')) return
+    loadGallery()
+})
+
+// Con guardado global es fácil irse sin guardar. Este es el único aviso.
+window.addEventListener('beforeunload', (e) => {
+    if (!$('gal-save-all').disabled) e.preventDefault()
+})
 
 function imageSize(src) {
     return new Promise((resolve, reject) => {
@@ -466,8 +560,15 @@ $('gal-add-btn').addEventListener('click', async () => {
     const file = $('gal-file').files[0]
     const typedUrl = $('gal-url').value.trim()
     const alt = $('gal-alt').value.trim()
+    const categories = checkedTags($('gal-tags'))
 
     if (!file && !typedUrl) { toast('Sube una imagen o pega una URL', true); return }
+    // Sin etiqueta la pieza no aparece en ningun filtro del portafolio.
+    if (!categories.length) {
+        toast('Marca al menos una etiqueta', true)
+        $('gal-tags').scrollIntoView({ behavior: 'smooth', block: 'center' })
+        return
+    }
     // El alt es obligatorio: sin el, la pieza cae a un texto generico por
     // categoria y se pierde el valor descriptivo en Google Imagenes.
     if (!alt) { toast('Escribe el texto alternativo (SEO)', true); $('gal-alt').focus(); return }
@@ -490,7 +591,7 @@ $('gal-add-btn').addEventListener('click', async () => {
 
         await createGalleryImage({
             url,
-            category: $('gal-category').value,
+            categories,
             span: $('gal-span').value,
             alt,
             sort_order: 0,
@@ -500,6 +601,7 @@ $('gal-add-btn').addEventListener('click', async () => {
         $('gal-file').value = ''
         $('gal-url').value = ''
         $('gal-alt').value = ''
+        $('gal-tags').innerHTML = tagPicker([])
         statusEl.textContent = '✓ Pieza agregada'
         statusEl.className = 'text-[11px] uppercase tracking-widest text-emerald-400'
         statusEl.classList.remove('hidden')

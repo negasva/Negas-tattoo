@@ -88,3 +88,168 @@ Quedan en uso reales: `express`, `helmet`, `express-rate-limit`, `@supabase/supa
 ## CSS
 
 `public/style.css` (1.993 líneas) se revisó por selectores muertos: **no hay**. La única clase sin uso en el markup es `.grecaptcha-badge`, que la inyecta Google en runtime. Los 10 selectores que aparecen dos veces están dentro de las 16 media queries — legítimo.
+
+---
+
+# RESUELTO EL 2026-07-26
+
+Ejecutado en tres commits, uno por nivel de riesgo, sobre la rama
+`claude/audit-01-cleanup-40tv2h`. La auditoría 02 (seguridad) se ejecutó
+antes: varios ítems ya no existían y se marcan como tal.
+
+**Neto: −270 líneas** (363 añadidas, 633 borradas sobre 9 archivos).
+
+| archivo | + | − | neto |
+|---|---|---|---|
+| `migrations/DIAGNOSTICO-LEADS.sql` | 0 | 141 | **−141** |
+| `public/script.js` | 69 | 151 | **−82** |
+| `server.js` | 239 | 279 | **−40** |
+| `public/supabase.js` | 17 | 36 | **−19** |
+| `public/admin/admin.js` | 24 | 12 | −12* |
+| `public/admin/index.html` | 3 | 11 | **−8** |
+| `public/index.html` | 5 | 1 | +4* |
+| `package.json` | 1 | 2 | −1 |
+| `README.md` | 5 | 0 | +5* |
+
+\* `admin.js` y `index.html` suben en bruto pero bajan en duplicación
+(categorías y errores generales); `README.md` documenta `--env-file`.
+
+En `server.js` buena parte del `+239/−279` es re-indentación al quitar los
+`try/catch`: el conteo neto (−40) es el real.
+
+## Estado ítem por ítem
+
+### Grupo 1 — SEGURO (commit `4c17971`)
+
+| # | ítem | estado |
+|---|---|---|
+| 1 | `upload(bucket, file, name?)` en `supabase.js` | ✅ hecho, + `storageUrl()`; 3 callers al día |
+| 2 | `asyncRoute` + error handler global | ✅ hecho, en 10 rutas |
+| 3 | `limiter(limit, windowMs, message)` | ✅ hecho |
+| 4 | middleware `requireSupabase` | ⚠️ parcial — ver nota A |
+| 5 | `getStats()` con `count: 'exact'` | ✅ ya resuelto en fase de seguridad |
+| 6 | un solo camino para revelar `.reveal-item` | ✅ hecho — ver nota B |
+| 7 | `shuffle` en una línea | ✅ hecho |
+| 8 | `SUPABASE_KEEPALIVE_TABLES` constante | ✅ hecho |
+| 9 | `try/catch` inalcanzable en `readUtm` | ✅ hecho |
+| 10 | `window.openLightbox` / `closeLightbox` | ✅ hecho |
+| 11 | ancla invisible `#portfolio` | ✅ hecho |
+| 12 | `console.log('[DEBUG]')` por request | ✅ hecho |
+| 13 | handler 404 manual | ✅ hecho |
+| 14 | `optionsSuccessStatus: 200` | ✅ hecho |
+| 15 | allowlist de CORS fuera del closure | ✅ hecho |
+| 16 | `formatCop` con `Intl.NumberFormat` | ✅ hecho — ver nota C |
+| 17 | `#qm-drop` sin drag & drop | ✅ implementado (8 líneas) — ver nota D |
+
+### Grupo 2 — REVISAR (commit `d8c0a5b`)
+
+| # | ítem | estado |
+|---|---|---|
+| 18 | borrar `DIAGNOSTICO-LEADS.sql` | ✅ hecho |
+| 19 | borrar `GALLERY_FALLBACK` | ✅ hecho, queda `#galEmpty` |
+| 20 | borrar rutas `sendFile` | ⚠️ parcial — ver nota E |
+| 21 | `GALLERY_CATEGORIES/SPANS` por `/api/config` | ⚠️ parcial — ver nota F |
+| 22 | `PRICING` a constantes | ✅ hecho, las 9 env vars fuera |
+| 23 | quitar `dotenv` | ✅ hecho, `node --env-file=.env` + README |
+| 24 | reemplazar `cors` por middleware propio | ❌ evaluado y descartado — ver nota G |
+| 25 | `console.warn` en los `catch` vacíos | ✅ hecho (3 vivos; 2 ya no existían) |
+| 26 | error general del formulario | ✅ hecho, `data-error-for="form"` |
+| 27 | `console.error(err)` en el admin | ✅ hecho (3 sitios, hoy en `admin.js`) |
+| 28 | unificar `computePriceRange` | ✅ hecho, `label` incluido |
+
+### Grupo 3 — RIESGOSO (commit `073417a`)
+
+| # | ítem | estado |
+|---|---|---|
+| 29 | máquina de deep links | ⚠️ hecho salvo `isMobileDevice` — ver nota H |
+
+### Ya resueltos en la fase de seguridad (auditoría 02)
+
+`/api/health/insert`, `describeServiceKey()`, `getStats()` bajando todas las
+filas, `multer`, `form-data`, los scripts inline del pixel en
+`privacidad.html` y `cuidados.html` (hoy `public/pixel.js` +
+`public/page-config.js`), `.agent.md` y el archivo `python` de la raíz.
+
+## Notas
+
+**A · `requireSupabase`.** Aplicado en `/api/lead/start`, `/api/lead/complete`
+y `/api/gallery`. `/api/keepalive` conserva su chequeo inline a propósito: un
+middleware corre *antes* que la verificación del `CRON_SECRET` y le contaría
+el estado de la configuración a quien no trae el secreto. Las rutas de
+`/api/admin/*` pasan todas por `requireAdmin`, que ya lo comprueba una vez.
+El `try/catch` de `requireAdmin` tampoco se toca: responde 401, no 500, y
+plegarlo en el handler global cambiaría el código de estado.
+
+**B · revelado de `.reveal-item`.** Queda solo el barrido de 3 s. En el camino
+normal (GSAP carga) no cambia nada. Si el CDN de GSAP cae, el contenido
+aparece a los 3 s en vez de al instante.
+
+**C · formato de moneda.** `Intl.NumberFormat('es-CO')` imprime `$ 180.000`
+(con espacio) donde antes salía `$180.000`. Afecta al precio en pantalla y,
+por el ítem 28, al `estimated_price` que se guarda en la base de los leads
+nuevos. Es solo formato: `estimated_min` y `estimated_max` son numéricos y no
+cambian.
+
+**D · drag & drop.** El archivo soltado entra por el mismo `<input type=file>`
+y dispara su `change`, así que pasa por la misma validación de tipo y tamaño.
+Sin feedback visual al arrastrar: eso pedía tocar `style.css`, que la
+auditoría declaró limpio y el encargo dejó fuera.
+
+**E · rutas de página.** Se borraron `/`, `/admin`, `/privacidad` y
+`/cuidados`; `express.static` con `extensions: ['html']` las sirve.
+**`/cotizar` se queda** (una línea): no tiene archivo propio y sin ella la URL
+que usa Google Ads da 404 en local. En producción la reescribe `vercel.json` y
+esa línea nunca se ejecuta. Efecto secundario: en local `/admin` ahora
+redirige 301 a `/admin/`.
+
+**F · categorías de la galería.** `server.js` es la única definición y las
+sirve en `/api/config`; el admin las lee de ahí para sus dos `<select>`. Los
+cuatro botones de filtro de `index.html` **siguen escritos en el HTML**:
+`index.html` lo sirve el CDN de Vercel como estático y sacarlos a `/api/config`
+dejaría la barra de filtros vacía hasta que responda la función serverless —
+un cambio visible, y el encargo pedía no tener ninguno. Si se acepta ese
+flash, es un cambio de ~6 líneas en `script.js`.
+
+**G · `cors`.** Se queda. Las 17 líneas de configuración no son la parte
+difícil: el preflight sí lo es. Cambiar una dependencia ya instalada y probada
+por una reimplementación propia de CORS no deja el código más claro, lo deja
+más frágil. El ítem 24 decía "solo si el resultado queda más claro".
+
+**H · deep links.** Borrados `getInstagramUsername`, `openAppOrFallback` y
+`bindDeepLinkAnchors`, con el cableado de `dataset.appHref/webHref`. Sobrevive
+el listener de tracking de los `.js-wa-track`. **`isMobileDevice()` NO se
+borra**: la usan el foco automático del paso visible del cotizador
+(`script.js`) y el pulso del CTA flotante. Verificado que los 7 enlaces
+`.js-wa` y los 3 `.js-ig` conservan su `href`.
+
+## Fuera del alcance, encontrado de paso
+
+El commit `b741516` ("Add Meta Pixel tracking code to index.html") volvió a
+meter el bootstrap del pixel **inline y con el ID escrito a mano** en
+`index.html`, deshaciendo lo que la fase de seguridad había sacado a
+`public/pixel.js`. Ese `<script>` inline **está bloqueado por la CSP** (no hay
+`'unsafe-inline'` en `script-src`, ni en `server.js` ni en `vercel.json`), así
+que hoy el pixel no dispara en la landing. No se tocó: es el commit más
+reciente y deliberado del repositorio. Para arreglarlo: devolver
+`<script src="/pixel.js" defer></script>` y poner `META_PIXEL_ID` en el
+entorno de Vercel, como ya hacen `privacidad.html` y `cuidados.html`.
+
+## Verificación
+
+```
+npm install         → ok
+npm test            → CSP idéntica en server.js y vercel.json · reference_img_url ok
+npm start           → puerto 3780
+```
+
+| ruta | código |
+|---|---|
+| `/` | 200 |
+| `/cotizar` | 200 |
+| `/admin/` | 200 |
+| `/privacidad` | 200 |
+| `/cuidados` | 200 |
+| `/api/config` | 200 (sirve ya `gallery.categories` y `gallery.spans`) |
+| `/api/gallery` | 500 · sin `SUPABASE_SERVICE_ROLE_KEY` en local, es la respuesta correcta |
+| `/api/health?key=…` | 503 · enumera lo que falta configurar, correcto |
+| `/api/keepalive` | 401 · sin `CRON_SECRET`, falla cerrado, correcto |

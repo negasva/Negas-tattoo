@@ -117,28 +117,16 @@ function applyConfig() {
     loadGoogleTags();
 
     if (waPhone) {
-        const webUrl = 'https://wa.me/' + waPhone;
-        document.querySelectorAll('a.js-wa').forEach(a => {
-            a.href = webUrl;
-            a.dataset.webHref = webUrl;
-            a.dataset.appHref = 'whatsapp://send?phone=' + waPhone;
-        });
+        document.querySelectorAll('a.js-wa').forEach(a => { a.href = 'https://wa.me/' + waPhone; });
     }
 
     if (instagramUrl) {
-        const username = getInstagramUsername(instagramUrl);
-        document.querySelectorAll('a.js-ig').forEach(a => {
-            a.href = instagramUrl;
-            a.dataset.webHref = instagramUrl;
-            if (username) a.dataset.appHref = 'instagram://user?username=' + username;
-        });
+        document.querySelectorAll('a.js-ig').forEach(a => { a.href = instagramUrl; });
     }
 
     if (facebookUrl) {
         document.querySelectorAll('a.js-fb').forEach(a => { a.href = facebookUrl; });
     }
-
-    bindDeepLinkAnchors();
 }
 
 /* ─── reCAPTCHA v3 ───────────────────────────────────────────── */
@@ -173,64 +161,20 @@ async function getRecaptchaToken(action) {
     }
 }
 
-/* ─── Deep links a apps nativas en movil ─────────────────────── */
+/* ─── Enlaces a WhatsApp e Instagram ─────────────────────────── */
+// Sin maquina de deep links: https://wa.me/… y https://instagram.com/… abren
+// la app nativa por si solos en iOS y en Android. El <a href> plano basta.
+// Lo unico que queda aqui es el tracking del clic.
+document.querySelectorAll('a.js-wa-track').forEach(anchor => {
+    anchor.addEventListener('click', () => {
+        track('ClickWhatsApp', { origen: anchor.dataset.origin || 'desconocido' });
+    });
+});
+
+// Sigue en uso fuera de los deep links: el foco automatico del paso visible y
+// el pulso del CTA flotante solo aplican en movil.
 function isMobileDevice() {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-}
-
-function getInstagramUsername(url) {
-    try {
-        const parsed = new URL(url);
-        if (!/(^|\.)instagram\.com$/i.test(parsed.hostname)) return '';
-        const [username] = parsed.pathname.split('/').filter(Boolean);
-        return username || '';
-    } catch (_) {
-        return '';
-    }
-}
-
-function openAppOrFallback(appUrl, webUrl) {
-    if (!appUrl) {
-        window.open(webUrl, '_blank', 'noopener');
-        return;
-    }
-
-    const startedAt = Date.now();
-    const fallbackDelay = 1200;
-    const fallback = setTimeout(() => {
-        if (Date.now() - startedAt < fallbackDelay + 250) window.location.href = webUrl;
-    }, fallbackDelay);
-
-    const onVisibility = () => {
-        if (document.hidden) {
-            clearTimeout(fallback);
-            document.removeEventListener('visibilitychange', onVisibility);
-        }
-    };
-
-    document.addEventListener('visibilitychange', onVisibility);
-    window.location.href = appUrl;
-}
-
-function bindDeepLinkAnchors() {
-    document.querySelectorAll('a.js-wa, a.js-ig').forEach(anchor => {
-        if (anchor.dataset.deepLinkBound === 'true') return;
-        anchor.dataset.deepLinkBound = 'true';
-
-        anchor.addEventListener('click', event => {
-            if (anchor.classList.contains('js-wa-track')) {
-                track('ClickWhatsApp', { origen: anchor.dataset.origin || 'desconocido' });
-            }
-            if (!isMobileDevice()) return;
-
-            const appHref = anchor.dataset.appHref;
-            const webHref = anchor.dataset.webHref || anchor.href;
-            if (!webHref || webHref.endsWith('#')) return;
-
-            event.preventDefault();
-            openAppOrFallback(appHref, webHref);
-        });
-    });
 }
 
 /* ═══════════════════════════════════════════════════════════════

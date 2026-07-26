@@ -10,8 +10,8 @@
 
 import {
     getSupabase, getLeads, updateLeadStatus, deleteLead, restoreLead, getStats,
-    uploadDocument, saveDocument,
-    uploadGalleryImage, getGalleryImages, createGalleryImage, updateGalleryImage, deleteGalleryImage
+    upload, storageUrl, saveDocument,
+    getGalleryImages, createGalleryImage, updateGalleryImage, deleteGalleryImage
 } from '../supabase.js'
 
 const loginScreen = document.getElementById('login-screen')
@@ -50,6 +50,7 @@ async function login() {
         if (error) throw error
         showAdmin()
     } catch (err) {
+        console.error(err)
         errorEl.textContent = err?.message?.includes('SUPABASE')
             ? 'Falta configurar el servidor.'
             : 'Credenciales incorrectas'
@@ -192,6 +193,7 @@ $('leads-table').addEventListener('change', async (e) => {
         toast('Estado actualizado')
         loadDashboard()
     } catch (err) {
+        console.error(err)
         toast('No se pudo actualizar', true)
     }
 })
@@ -217,7 +219,7 @@ $('upload-doc-btn').addEventListener('click', async () => {
     btn.disabled = true
 
     try {
-        const filePath = await uploadDocument(file, name)
+        const filePath = await upload('signed-documents', file, name)
 
         const docData = {
             client_name: name,
@@ -233,7 +235,7 @@ $('upload-doc-btn').addEventListener('click', async () => {
             docData.acudiente_nombre = $('doc-acudiente-nombre').value.trim() || null
             docData.acudiente_cedula = $('doc-acudiente-cedula').value.trim() || null
             if (acudienteFile) {
-                docData.acudiente_file_url = await uploadDocument(acudienteFile, name + '-acudiente')
+                docData.acudiente_file_url = await upload('signed-documents', acudienteFile, name + '-acudiente')
             }
         }
 
@@ -345,18 +347,27 @@ deletedModal.addEventListener('click', (e) => {
 })
 
 /* ═══════════ GALERÍA ═══════════ */
-const CATEGORIES = ['Blackwork', 'Botánico', 'Fineline']
-const SPANS = [
-    { value: '', label: 'Normal (1×1)' },
-    { value: 'gal-cs2', label: 'Ancha (2×1)' },
-    { value: 'gal-rs2', label: 'Alta (1×2)' },
-    { value: 'gal-cs2rs2', label: 'Grande (2×2)' }
-]
+// La lista viva de categorías y tamaños es la del servidor (/api/config), la
+// misma con la que valida /api/admin/gallery. Aquí no se repite: estaba
+// escrita tres veces (server.js, este archivo y el <select> del HTML).
+let CATEGORIES = []
+let SPANS = []
+
+async function loadGalleryConfig() {
+    const res = await fetch('/api/config')
+    if (!res.ok) throw new Error('No se pudo cargar la configuración.')
+    const { gallery } = await res.json()
+    CATEGORIES = gallery.categories
+    SPANS = gallery.spans
+    $('gal-category').innerHTML = CATEGORIES.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')
+    $('gal-span').innerHTML = SPANS.map(s => `<option value="${escapeHtml(s.value)}">${escapeHtml(s.label)}</option>`).join('')
+}
 
 let galleryImages = []
 
 async function loadGallery() {
     try {
+        if (!CATEGORIES.length) await loadGalleryConfig()
         galleryImages = await getGalleryImages()
         renderGalleryAdmin()
     } catch (err) {
@@ -457,7 +468,7 @@ $('gal-add-btn').addEventListener('click', async () => {
         if (file) {
             // UX, no control: el límite de verdad lo pone el bucket en Supabase.
             if (file.size > 10 * 1024 * 1024) throw new Error('La imagen supera los 10MB.')
-            url = await uploadGalleryImage(file)
+            url = storageUrl('gallery', await upload('gallery', file), { publico: true })
         }
 
         await createGalleryImage({
@@ -499,6 +510,7 @@ try {
     const { data: { session } } = await supabase.auth.getSession()
     if (session) showAdmin()
 } catch (err) {
+    console.error(err)
     const errorEl = $('login-error')
     errorEl.textContent = 'No se pudo conectar con el servidor.'
     errorEl.classList.remove('hidden')

@@ -46,13 +46,13 @@ function track(event, params = {}) {
             if (standard.includes(event)) window.fbq('track', event, params);
             else window.fbq('trackCustom', event, params);
         }
-    } catch (_) { /* pixel bloqueado */ }
+    } catch (error) { console.warn('Meta Pixel no registro el evento', event, '—', error.message); }
 
     try {
         if (typeof window.gtag === 'function') {
             window.gtag('event', event, params);
         }
-    } catch (_) { /* gtag no cargado */ }
+    } catch (error) { console.warn('gtag no registro el evento', event, '—', error.message); }
 }
 
 function trackAdsConversion() {
@@ -62,7 +62,7 @@ function trackAdsConversion() {
         window.gtag('event', 'conversion', {
             send_to: `${googleAdsId}/${googleAdsConversionLabel}`
         });
-    } catch (_) { /* noop */ }
+    } catch (error) { console.warn('Conversion de Google Ads no registrada —', error.message); }
 }
 
 function loadGoogleTags() {
@@ -117,28 +117,16 @@ function applyConfig() {
     loadGoogleTags();
 
     if (waPhone) {
-        const webUrl = 'https://wa.me/' + waPhone;
-        document.querySelectorAll('a.js-wa').forEach(a => {
-            a.href = webUrl;
-            a.dataset.webHref = webUrl;
-            a.dataset.appHref = 'whatsapp://send?phone=' + waPhone;
-        });
+        document.querySelectorAll('a.js-wa').forEach(a => { a.href = 'https://wa.me/' + waPhone; });
     }
 
     if (instagramUrl) {
-        const username = getInstagramUsername(instagramUrl);
-        document.querySelectorAll('a.js-ig').forEach(a => {
-            a.href = instagramUrl;
-            a.dataset.webHref = instagramUrl;
-            if (username) a.dataset.appHref = 'instagram://user?username=' + username;
-        });
+        document.querySelectorAll('a.js-ig').forEach(a => { a.href = instagramUrl; });
     }
 
     if (facebookUrl) {
         document.querySelectorAll('a.js-fb').forEach(a => { a.href = facebookUrl; });
     }
-
-    bindDeepLinkAnchors();
 }
 
 /* ─── reCAPTCHA v3 ───────────────────────────────────────────── */
@@ -173,64 +161,20 @@ async function getRecaptchaToken(action) {
     }
 }
 
-/* ─── Deep links a apps nativas en movil ─────────────────────── */
+/* ─── Enlaces a WhatsApp e Instagram ─────────────────────────── */
+// Sin maquina de deep links: https://wa.me/… y https://instagram.com/… abren
+// la app nativa por si solos en iOS y en Android. El <a href> plano basta.
+// Lo unico que queda aqui es el tracking del clic.
+document.querySelectorAll('a.js-wa-track').forEach(anchor => {
+    anchor.addEventListener('click', () => {
+        track('ClickWhatsApp', { origen: anchor.dataset.origin || 'desconocido' });
+    });
+});
+
+// Sigue en uso fuera de los deep links: el foco automatico del paso visible y
+// el pulso del CTA flotante solo aplican en movil.
 function isMobileDevice() {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-}
-
-function getInstagramUsername(url) {
-    try {
-        const parsed = new URL(url);
-        if (!/(^|\.)instagram\.com$/i.test(parsed.hostname)) return '';
-        const [username] = parsed.pathname.split('/').filter(Boolean);
-        return username || '';
-    } catch (_) {
-        return '';
-    }
-}
-
-function openAppOrFallback(appUrl, webUrl) {
-    if (!appUrl) {
-        window.open(webUrl, '_blank', 'noopener');
-        return;
-    }
-
-    const startedAt = Date.now();
-    const fallbackDelay = 1200;
-    const fallback = setTimeout(() => {
-        if (Date.now() - startedAt < fallbackDelay + 250) window.location.href = webUrl;
-    }, fallbackDelay);
-
-    const onVisibility = () => {
-        if (document.hidden) {
-            clearTimeout(fallback);
-            document.removeEventListener('visibilitychange', onVisibility);
-        }
-    };
-
-    document.addEventListener('visibilitychange', onVisibility);
-    window.location.href = appUrl;
-}
-
-function bindDeepLinkAnchors() {
-    document.querySelectorAll('a.js-wa, a.js-ig').forEach(anchor => {
-        if (anchor.dataset.deepLinkBound === 'true') return;
-        anchor.dataset.deepLinkBound = 'true';
-
-        anchor.addEventListener('click', event => {
-            if (anchor.classList.contains('js-wa-track')) {
-                track('ClickWhatsApp', { origen: anchor.dataset.origin || 'desconocido' });
-            }
-            if (!isMobileDevice()) return;
-
-            const appHref = anchor.dataset.appHref;
-            const webHref = anchor.dataset.webHref || anchor.href;
-            if (!webHref || webHref.endsWith('#')) return;
-
-            event.preventDefault();
-            openAppOrFallback(appHref, webHref);
-        });
-    });
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -242,41 +186,10 @@ const galEmpty = document.getElementById('galEmpty');
 let galleryImages = [];
 let activeFilter = 'All';
 
-function shuffle(arr) {
-    const copy = [...arr];
-    for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy;
-}
-
-// Respaldo: si /api/gallery falla (base sin migrar, Supabase pausado, caida
-// de red) el archivo NO se queda vacio — mostramos las piezas de siempre.
-// Ojo: solo aplica cuando la API da error. Si responde bien con una lista
-// vacia, se respeta: significa que Negas borro las piezas a proposito.
-const GALLERY_FALLBACK = [
-    { url: 'https://i.ibb.co/3ykPPk25/Tatttoo-Angel-copy-5.jpg',          category: 'Blackwork', span: 'gal-cs2rs2', alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/fdPRjPvm/Tatttoo-pierna-completa-copy.jpg',   category: 'Blackwork', span: '',           alt: 'Tatuaje de pierna completa blackwork — Negas Tattoo' },
-    { url: 'https://i.ibb.co/C5xgJLXY/Tatttoo-Angel.jpg',                  category: 'Blackwork', span: '',           alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/s93WWvNq/Tatttoo-Angel-copy-7.jpg',           category: 'Blackwork', span: 'gal-rs2',    alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/35ggTM1t/Tatttoo-pierna-completa-copy-2.jpg', category: 'Blackwork', span: '',           alt: 'Tatuaje de pierna completa blackwork — Negas Tattoo' },
-    { url: 'https://i.ibb.co/x8MJ4tW3/Tatttoo-mask-copy.jpg',              category: 'Blackwork', span: '',           alt: 'Tatuaje de máscara blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/CKMdBXVC/Tatttoo-mask.jpg',                   category: 'Blackwork', span: '',           alt: 'Tatuaje de máscara blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/4n31ng5r/Tatttoo-Angel-copy-2.jpg',           category: 'Blackwork', span: 'gal-cs2',    alt: 'Tatuaje de ángel blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/Z6LmS5WK/Tatttoo-tigre.jpg',                  category: 'Blackwork', span: '',           alt: 'Tatuaje de tigre blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/C3MCJJFW/Tatttoo-pierna-completa.jpg',        category: 'Blackwork', span: '',           alt: 'Tatuaje de pierna completa blackwork — Negas Tattoo' },
-    { url: 'https://i.ibb.co/dFYtWP4/tatuaje-mariposa.jpg',                category: 'Botánico',  span: 'gal-rs2',    alt: 'Tatuaje de mariposa botánico — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/FLGJ9Q23/tatuaje-bebe.jpg',                   category: 'Botánico',  span: '',           alt: 'Tatuaje botánico fine line — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/6RCSYkN4/tatuaje-letras.jpg',                 category: 'Fineline',  span: 'gal-cs2',    alt: 'Tatuaje de letras fine line — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/wZhYZ7TN/tatuaje-letras-copy.jpg',            category: 'Fineline',  span: '',           alt: 'Tatuaje de letras fine line — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/FLhCmFhg/Tatttoo-eye.jpg',                    category: 'Blackwork', span: '',           alt: 'Tatuaje de ojo blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/fdPZLNzG/Tatttoo-Elefante.jpg',               category: 'Blackwork', span: '',           alt: 'Tatuaje de elefante blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/tMJQbKZW/IMG-0066.png',                       category: 'Blackwork', span: '',           alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/hF1pjnd9/IMG-0067.png',                       category: 'Blackwork', span: 'gal-cs2',    alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/ynWN6Cj1/IMG-0065.png',                       category: 'Blackwork', span: '',           alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' },
-    { url: 'https://i.ibb.co/pBjNrfVs/IMG-0063.png',                       category: 'Blackwork', span: '',           alt: 'Tatuaje blackwork — Negas Tattoo Sabaneta' }
-];
+const shuffle = arr => arr
+    .map(v => [Math.random(), v])
+    .sort((a, b) => a[0] - b[0])
+    .map(pair => pair[1]);
 
 async function loadGallery() {
     if (!galGrid) return;
@@ -287,8 +200,9 @@ async function loadGallery() {
         if (!data.ok) throw new Error(data.error || 'respuesta inválida');
         galleryImages = Array.isArray(data.images) ? data.images : [];
     } catch (error) {
-        console.warn('Galería: usando respaldo local —', error.message);
-        galleryImages = GALLERY_FALLBACK.map((img, i) => ({ ...img, id: 'fb' + i, sort_order: i }));
+        // Sin respaldo hardcodeado: se muestra #galEmpty, que ya existe.
+        console.warn('Galería no disponible —', error.message);
+        galleryImages = [];
     }
     renderGallery(activeFilter);
 }
@@ -397,9 +311,6 @@ function closeLightbox(isNavigation = false) {
     if (!isQuoteOpen()) document.body.classList.remove('no-scroll');
 }
 
-window.openLightbox = openLightbox;
-window.closeLightbox = closeLightbox;
-
 const lbContainer = document.getElementById('lightbox');
 if (lbContainer) {
     lbContainer.addEventListener('click', () => closeLightbox());
@@ -424,8 +335,11 @@ let isSubmitting = false;
 
 const isQuoteOpen = () => modal?.classList.contains('is-open');
 
+// Busca primero dentro del paso visible: `form` existe en varios pasos y el
+// mensaje tiene que salir donde la persona esta mirando.
 function setError(field, message) {
-    const el = document.querySelector(`[data-error-for="${field}"]`);
+    const el = modal?.querySelector(`.qm-step.is-active [data-error-for="${field}"]`)
+        || document.querySelector(`[data-error-for="${field}"]`);
     if (el) el.textContent = message || '';
 }
 
@@ -517,16 +431,12 @@ phoneInput?.addEventListener('input', function () {
 });
 
 function readUtm() {
-    try {
-        const params = new URLSearchParams(window.location.search);
-        return {
-            utm_source: params.get('utm_source') || '',
-            utm_medium: params.get('utm_medium') || '',
-            utm_campaign: params.get('utm_campaign') || (params.get('gclid') ? 'google-ads' : '')
-        };
-    } catch (_) {
-        return {};
-    }
+    const params = new URLSearchParams(window.location.search);
+    return {
+        utm_source: params.get('utm_source') || '',
+        utm_medium: params.get('utm_medium') || '',
+        utm_campaign: params.get('utm_campaign') || (params.get('gclid') ? 'google-ads' : '')
+    };
 }
 
 async function submitStepOne(button) {
@@ -589,7 +499,7 @@ async function submitStepOne(button) {
 
         showStep(2);
     } catch (error) {
-        setError('name', error.message);
+        setError('form', error.message);
     } finally {
         button.disabled = false;
         button.textContent = original;
@@ -622,22 +532,29 @@ const priceIdle = document.getElementById('qm-price-idle');
 const priceResult = document.getElementById('qm-price-result');
 const priceVal = document.getElementById('qm-price-val');
 
-function formatCop(value) {
-    return '$' + Math.round(value).toLocaleString('es-CO');
-}
+const COP = new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    maximumFractionDigits: 0
+});
+const formatCop = value => COP.format(Math.round(value));
 
-// Espejo exacto de computePriceRange() en server.js. El servidor recalcula y
-// manda la verdad; esto es solo para el feedback en vivo del slider.
+// ⚠ Espejo EXACTO de computePriceRange() en server.js (misma formula, mismo
+// `label`). El servidor recalcula y manda la verdad — esto solo alimenta el
+// feedback en vivo del slider. Si cambias uno, cambia el otro.
 function computePriceRange(cm) {
     const size = Math.max(0, Math.min(Number(cm) || 0, pricing.maxCm));
-    if (!size) return null;
+    if (!size) return { min: 0, max: 0, label: '' };
 
     const small = Math.min(size, pricing.breakpointCm) * pricing.perCmSmall;
     const large = Math.max(0, size - pricing.breakpointCm) * pricing.perCmLarge;
     const point = Math.max(pricing.minimum, pricing.base + small + large);
 
     const round = n => Math.round(n / 10000) * 10000;
-    return { min: round(point * pricing.rangeLow), max: round(point * pricing.rangeHigh) };
+    const min = round(point * pricing.rangeLow);
+    const max = round(point * pricing.rangeHigh);
+
+    return { min, max, label: `${formatCop(min)} - ${formatCop(max)}` };
 }
 
 function updatePrice() {
@@ -649,9 +566,9 @@ function updatePrice() {
 
     const range = computePriceRange(cm);
     quoteSession.sizeCm = cm;
-    quoteSession.price = range;
+    quoteSession.price = range.min ? range : null;
 
-    if (!range) {
+    if (!range.min) {
         if (priceIdle) priceIdle.hidden = false;
         if (priceResult) priceResult.hidden = true;
         return;
@@ -696,6 +613,17 @@ dropZone?.addEventListener('keydown', event => {
         event.preventDefault();
         fileInput?.click();
     }
+});
+
+// Se llama "drop zone", ahora tambien acepta archivos soltados. El archivo se
+// mete en el input y se dispara su 'change': asi la validacion y la vista
+// previa son exactamente las mismas que al elegirlo con el selector.
+dropZone?.addEventListener('dragover', event => event.preventDefault());
+dropZone?.addEventListener('drop', event => {
+    event.preventDefault();
+    if (!fileInput || !event.dataTransfer?.files?.length) return;
+    fileInput.files = event.dataTransfer.files;
+    fileInput.dispatchEvent(new Event('change'));
 });
 
 fileInput?.addEventListener('change', () => {
@@ -782,7 +710,7 @@ function showDoneStep() {
 async function submitQuote({ skipImage = false } = {}) {
     if (isSubmitting) return;
     if (!quoteSession.leadId || !quoteSession.token) {
-        setError('file', 'Se perdió la sesión. Cierra y vuelve a empezar.');
+        setError('form', 'Se perdió la sesión. Cierra y vuelve a empezar.');
         return;
     }
 
@@ -799,8 +727,8 @@ async function submitQuote({ skipImage = false } = {}) {
 
         if (file) {
             try {
-                const { uploadReferenceImage } = await import('./supabase.js');
-                referenceImgUrl = await uploadReferenceImage(file);
+                const { upload, storageUrl } = await import('./supabase.js');
+                referenceImgUrl = storageUrl('reference-images', await upload('reference-images', file));
             } catch (uploadError) {
                 console.error('Image upload failed:', uploadError);
                 setError('file', 'No pudimos subir tu imagen. Puedes enviarla luego por WhatsApp — toca "Omitir y enviar".');
@@ -837,7 +765,7 @@ async function submitQuote({ skipImage = false } = {}) {
 
         showDoneStep();
     } catch (error) {
-        setError('file', error.message);
+        setError('form', error.message);
     } finally {
         isSubmitting = false;
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = original || 'Ver mi cotización'; }
@@ -900,21 +828,11 @@ if (hasGsap) {
             scrollTrigger: { trigger: el, start: 'top 90%', toggleActions: 'play none none none' }
         });
     });
-} else {
-    // Sin GSAP no dejamos la pagina en blanco: mostramos todo de una.
-    revealEverything();
 }
 
-function revealEverything() {
-    document.querySelectorAll('.reveal-item').forEach(el => {
-        el.style.opacity = '1';
-        el.style.transform = 'none';
-    });
-}
-
-// Red de seguridad: si GSAP carga pero ScrollTrigger no dispara (scroll raro,
-// error de terceros, prefers-reduced-motion), a los 3 s mostramos todo igual.
-// Una landing invisible es una landing sin leads.
+// Red de seguridad unica: si GSAP no carga, o carga pero ScrollTrigger no
+// dispara (scroll raro, error de terceros, prefers-reduced-motion), a los 3 s
+// mostramos todo igual. Una landing invisible es una landing sin leads.
 setTimeout(() => {
     document.querySelectorAll('.reveal-item').forEach(el => {
         if (Number(getComputedStyle(el).opacity) < 0.05) {

@@ -40,50 +40,31 @@ export function getSupabase() {
 }
 
 /* ─── Storage ────────────────────────────────────────────────── */
-// `reference-images` es un bucket PRIVADO: no hay getPublicUrl que valga.
-// Guardamos la ruta canónica del objeto y el admin la abre con una URL
-// firmada de una hora (/api/admin/leads la firma al vuelo).
-export async function uploadReferenceImage(file) {
+// Sube a cualquiera de los tres buckets y devuelve la RUTA del objeto.
+//
+//   reference-images  privado · la ruta se firma al vuelo en /api/admin/leads
+//   signed-documents  privado · la ruta se firma con signedDocumentUrl()
+//   gallery           público · la URL sale de storageUrl()
+//
+// `name` solo lo usa el admin para que el documento lleve el nombre del
+// cliente; si no viene, el nombre es aleatorio.
+export async function upload(bucket, file, name) {
   const supabase = await getSupabase();
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const slug = name ? name.replace(/\s+/g, '-') : Math.random().toString(36).slice(2, 8);
 
   const { data, error } = await supabase.storage
-    .from('reference-images')
-    .upload(filename, file, { contentType: file.type || 'image/jpeg' });
+    .from(bucket)
+    .upload(`${Date.now()}-${slug}.${ext}`, file, { contentType: file.type || 'application/octet-stream' });
   if (error) throw error;
 
-  return `${supabaseBaseUrl}/storage/v1/object/reference-images/${data.path}`;
-}
-
-// Sube una pieza del portafolio al bucket público `gallery`.
-// Requiere sesión de administrador.
-export async function uploadGalleryImage(file) {
-  const supabase = await getSupabase();
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
-  const { data, error } = await supabase.storage
-    .from('gallery')
-    .upload(filename, file, { contentType: file.type || 'image/jpeg' });
-  if (error) throw error;
-
-  const { data: pub } = supabase.storage.from('gallery').getPublicUrl(data.path);
-  return pub.publicUrl;
-}
-
-// `signed-documents` también es privado: guardamos solo la ruta. Para verla,
-// pedirle una URL firmada al backend con signedDocumentUrl().
-export async function uploadDocument(file, clientName) {
-  const supabase = await getSupabase();
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-  const filename = `${Date.now()}-${clientName.replace(/\s+/g, '-')}.${ext}`;
-
-  const { data, error } = await supabase.storage
-    .from('signed-documents')
-    .upload(filename, file, { contentType: file.type || 'application/octet-stream' });
-  if (error) throw error;
   return data.path;
+}
+
+// Forma canónica de un objeto del Storage. El servidor valida exactamente
+// esta forma en reference_img_url (REFERENCE_IMAGE_PREFIX en server.js).
+export function storageUrl(bucket, path, { publico = false } = {}) {
+  return `${supabaseBaseUrl}/storage/v1/object/${publico ? 'public/' : ''}${bucket}/${path}`;
 }
 
 export async function saveDocument(docData) {

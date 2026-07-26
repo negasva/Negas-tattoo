@@ -222,6 +222,7 @@ app.get('/api/config', apiLimiter, (_req, res) => {
     waPhone: (process.env.WHATSAPP_PHONE || '').trim(),
     instagramUrl: (process.env.INSTAGRAM_URL || '').trim(),
     facebookUrl: (process.env.FACEBOOK_URL || '').trim(),
+    tiktokUrl: (process.env.TIKTOK_URL || '').trim(),
     recaptchaSiteKey: RECAPTCHA_SITE_KEY,
     metaPixelId: META_PIXEL_ID,
     googleAdsId: (process.env.GOOGLE_ADS_ID || '').trim(),
@@ -560,7 +561,7 @@ app.post('/api/lead/complete', leadCompleteLimiter, requireSupabase, asyncRoute(
 app.get('/api/gallery', apiLimiter, requireSupabase, asyncRoute('No se pudo cargar la galeria.', async (_req, res) => {
   const { data, error } = await supabaseAdmin
     .from('gallery_images')
-    .select('id,url,category,alt,span,sort_order,img_width,img_height')
+    .select('id,url,category,categories,alt,span,sort_order,img_width,img_height')
     .eq('active', true)
     .order('sort_order', { ascending: true })
     .order('id', { ascending: true });
@@ -616,10 +617,24 @@ function sanitizeGalleryPayload(body, { partial = false } = {}) {
     else out.url = url;
   }
 
-  if (body.category !== undefined || !partial) {
-    const category = str(body.category, 40);
-    if (!GALLERY_CATEGORIES.includes(category)) errors.push('category');
-    else out.category = category;
+  // Multi-etiqueta: una pieza puede ser Blackwork y Botanico a la vez.
+  // `categories` es la fuente de verdad; `category` (la columna vieja) se
+  // mantiene sincronizada con la primera para no romper lo que ya la lee.
+  const rawCategories = Array.isArray(body.categories)
+    ? body.categories
+    : body.categories !== undefined ? []
+    : body.category !== undefined ? [body.category]
+    : null;
+
+  if (rawCategories || !partial) {
+    const list = [...new Set((rawCategories || []).map((value) => str(value, 40)))]
+      .filter((value) => GALLERY_CATEGORIES.includes(value));
+
+    if (!list.length) errors.push('categories');
+    else {
+      out.categories = list;
+      out.category = list[0];
+    }
   }
 
   if (body.span !== undefined) {

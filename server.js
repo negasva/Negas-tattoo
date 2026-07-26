@@ -199,6 +199,10 @@ app.get('/privacidad', (_req, res) => {
   res.sendFile(path.join(PUBLIC_PATH, 'privacidad.html'));
 });
 
+app.get('/contacto', (_req, res) => {
+  res.sendFile(path.join(PUBLIC_PATH, 'contacto.html'));
+});
+
 app.get('/cuidados', (_req, res) => {
   res.sendFile(path.join(PUBLIC_PATH, 'cuidados.html'));
 });
@@ -561,7 +565,7 @@ app.get('/api/gallery', apiLimiter, async (_req, res) => {
   try {
     const { data, error } = await supabaseAdmin
       .from('gallery_images')
-      .select('id,url,category,alt,span,sort_order')
+      .select('id,url,category,alt,span,sort_order,img_width,img_height')
       .eq('active', true)
       .order('sort_order', { ascending: true })
       .order('id', { ascending: true });
@@ -634,6 +638,8 @@ function sanitizeGalleryPayload(body, { partial = false } = {}) {
   }
 
   if (body.alt !== undefined) out.alt = str(body.alt, 200) || null;
+  if (body.img_width !== undefined) out.img_width = Number(body.img_width) || null;
+  if (body.img_height !== undefined) out.img_height = Number(body.img_height) || null;
   if (body.sort_order !== undefined) out.sort_order = Number(body.sort_order) || 0;
   if (body.active !== undefined) out.active = Boolean(body.active);
 

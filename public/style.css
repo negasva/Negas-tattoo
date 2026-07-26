@@ -373,6 +373,12 @@ h3,
     border-bottom: 1px solid rgba(255, 255, 255, .05);
 }
 
+.svc-section-title {
+    font-size: 1.875rem !important;
+    text-align: center !important;
+    margin-bottom: 2.5rem;
+}
+
 .svc-grid {
     display: grid;
     grid-template-columns: 1fr;

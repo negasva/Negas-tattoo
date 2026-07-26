@@ -151,6 +151,12 @@ CREATE TABLE IF NOT EXISTS public.gallery_images (
   created_at  timestamptz DEFAULT now()
 );
 
+-- Medidas reales del archivo. Se leen en /admin al subir la pieza y sirven
+-- para dos cosas: los width/height de los <img> (elimina CLS) y el
+-- ImageObject de la galeria en JSON-LD.
+ALTER TABLE public.gallery_images ADD COLUMN IF NOT EXISTS img_width  integer;
+ALTER TABLE public.gallery_images ADD COLUMN IF NOT EXISTS img_height integer;
+
 CREATE INDEX IF NOT EXISTS gallery_active_order_idx
   ON public.gallery_images (active, sort_order, id);
 

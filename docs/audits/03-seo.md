@@ -511,3 +511,88 @@ curl -s https://negas.tattoo/ | grep -c '<img'
 ```
 
 Después: Search Console → Inspección de URL → "Probar URL publicada" → pestaña **HTML renderizado**, y confirmar que las piezas de la galería aparecen.
+
+---
+
+## 8. Apéndice — RESUELTO EL 2026-07-26
+
+Ejecución del plan de la §6 en la rama `claude/negas-seo-audit-execution-68341k`.
+Los datos del negocio **no se inventaron**: donde faltan quedaron tokens `<<...>>`,
+listados en [`PENDIENTE-NEGAS.md`](./PENDIENTE-NEGAS.md).
+
+Leyenda: ✅ resuelto · 🟡 código listo, falta un dato o una acción de Negas · ⬜ no abordado
+
+### P0
+
+| # | Estado | Qué se hizo |
+|---|:--:|---|
+| P0-1 | ✅ | `public/robots.txt`: permite todo salvo `/admin` y `/api`, declara el sitemap |
+| P0-2 | ✅ | `public/sitemap.xml` con `/`, `/contacto`, `/cuidados`, `/privacidad`. Sin `/cotizar` (se canonicaliza a `/`) ni `/admin` |
+| P0-3 | 🟡 | El `@graph` de la §4.1 está en `index.html` antes de `</head>`, **comentado**: contiene placeholders y la regla dura es cero `<<>>` en producción. `BreadcrumbList` sí está activo en `/cuidados`, `/privacidad` y `/contacto`; `ImageGallery` se genera en runtime |
+| P0-4 | ✅ | `"cleanUrls": true` en `vercel.json`. **Solo eso** — los enlaces y canonicals se dejaron sin `.html`. La verificación con `curl` no se pudo correr: la política de red del entorno devuelve 403 para `negas.tattoo`. El diagnóstico estático es concluyente: sin `cleanUrls` y con output `public`, `/cuidados` y `/privacidad` no resuelven |
+| P0-5 | 🟡 | Teléfono en HTML rastreable con `<a href="tel:">` en el footer de `index.html` y en `/contacto`. Convive con el flujo `js-wa`, no lo reemplaza. Falta el número real |
+| P0-6 | 🟡 | Dirección en el footer de `index.html` y en el `<address>` de `/contacto`. Falta la dirección real |
+
+### P1
+
+| # | Estado | Qué se hizo |
+|---|:--:|---|
+| P1-1 | ⬜ | Fallback HTML/SSR de la galería — fuera del alcance de esta ejecución. Mitigado en parte: el `ImageGallery` JSON-LD sí describe las 20 piezas |
+| P1-2 | 🟡 | `scripts/migrate-images.mjs` listo (descarga → WebP q82 → 480/1080 → bucket `gallery` → SQL `UPDATE`). No se pudo ejecutar: la red del entorno bloquea `i.ibb.co` (403). Instrucciones en `PENDIENTE-NEGAS.md` §6 |
+| P1-3 | 🟡 | Enlace a la ficha de GBP en el footer de `index.html` y en `/contacto`; `hasMap` + `sameAs` en el JSON-LD. Falta la URL real |
+| P1-4 | ✅ | `public/contacto.html` creada: NAP, `tel:`, WhatsApp, correo, mapa embebido, horario y `BreadcrumbList`. Ruta añadida a `server.js`, al sitemap, a robots y al footer de las tres páginas |
+| P1-5 | 🟡 | La conversión a WebP la hace el script de P1-2 |
+| P1-6 | ✅ | `srcset` de dos variantes + `sizes="(max-width: 640px) 50vw, 33vw"` en `renderGallery()`. Se activa solo en las piezas ya migradas (`-1080.webp`) |
+| P1-7 | ⬜ | Alts únicos: los escribe Negas, pieza por pieza. El campo ya es obligatorio al subir (P2-6) |
+
+### P2
+
+| # | Estado | Qué se hizo |
+|---|:--:|---|
+| P2-1 | ✅ | `defer` en los dos `<script>` de GSAP |
+| P2-2 | ✅ | `preconnect` a `fonts.gstatic.com` y `connect.facebook.net` en las 4 páginas, más `i.ibb.co` en `index.html` (temporal, hasta migrar la galería) |
+| P2-3 | ✅ | `<h2>Estilos</h2>` en `#estilos` + regla `.svc-section-title` |
+| P2-4 | ✅ | El lightbox toma el `alt` de la pieza abierta (`openLightbox(src, el, alt)`) |
+| P2-5 | ✅ | Columnas `img_width` / `img_height` en `gallery_images`, expuestas por `/api/gallery` y volcadas a `width`/`height` del `<img>` |
+| P2-6 | ✅ | El `alt` es obligatorio al subir pieza en `/admin`; el mismo flujo lee las medidas del archivo con `new Image()` |
+| P2-7 | ✅ | `twitter:card` + `og:image` en `cuidados.html` |
+| P2-8 | ✅ | `og:type/url/title/description/image` + `twitter:card` en `privacidad.html` |
+| P2-9 | ✅ | `<meta name="robots" content="index, follow">` en `index.html` |
+| P2-10 | ⬜ | Los `js-wa` con `href="#"` se dejaron tal cual: el teléfono ya existe en HTML rastreable por otra vía, y tocarlos rompería el tracking de origen |
+| P2-11 | ✅ | El header `X-Robots-Tag` pasó de `source: "/admin"` a `"/admin(.*)"`: cubre `/admin/` y `/admin/index.html` |
+| P2-12 | ✅ | Breadcrumbs visibles + `BreadcrumbList` en `/cuidados`, `/privacidad` y `/contacto` |
+| P2-13 | ✅ | Ambas enlazan ahora a `/`, `/#work` y `/contacto` |
+
+### P3
+
+| # | Estado | Qué se hizo |
+|---|:--:|---|
+| P3-1 | ✅ | `<meta name="keywords">` eliminado |
+| P3-2 | ✅ | `lang="es-CO"` en las cuatro páginas públicas |
+| P3-3 | ✅ | `apple-touch-icon` y `theme-color` en las cuatro. Sin `manifest.json` (no hay caso de uso de PWA) |
+| P3-4 | ✅ | `og:site_name`, `og:locale`, `og:image:width/height/alt` en `index.html` |
+| P3-5 | ⬜ | `twitter:title/description/image` siguen heredando de `og:` — funciona, no se añadió duplicación |
+| P3-6 | ⬜ | `Cache-Control` sin tocar, **a propósito**: `immutable` sin versionado en los nombres de archivo cachearía un año un `style.css` cambiado. Anotado en `PENDIENTE-NEGAS.md` §7 |
+| P3-7 | ⬜ | www → apex: configuración de DNS/Vercel, no de repo |
+| P3-8 | ✅ | `/cotizar` sigue autocanonicalizándose a `/` y queda fuera del sitemap |
+
+### Lo que deliberadamente NO se hizo
+
+- **Nada de copy.** Ni descripciones, ni reseñas, ni alts de las piezas: §5 dice que lo escribe Negas.
+- **Ningún dato del negocio inventado** — dirección, teléfono, coordenadas, GBP, pagos y horario quedaron como `<<...>>`.
+- **Sin `AggregateRating`** (necesita reseñas reales) y **sin `FAQPage` / `HowTo`** (rich results retirados o restringidos por Google).
+
+### Health score tras la ejecución
+
+**73 / 100** (antes: 31). Sube a ~**90** cuando lleguen los datos de
+`PENDIENTE-NEGAS.md` y se corra la migración de imágenes.
+
+| Área | Peso | Antes | Ahora | Nota |
+|---|---:|---:|---:|---|
+| Indexabilidad y rastreo | 20 | 4 | 17 | robots + sitemap + `cleanUrls` + `/admin(.*)` noindex. Las piezas siguen sin fallback HTML (P1-1) |
+| Datos estructurados | 20 | 0 | 12 | breadcrumbs e `ImageGallery` activos; el `@graph` de la home espera datos |
+| SEO local / Maps | 20 | 5 | 11 | `/contacto` y el NAP existen como estructura; faltan los valores y la ficha de GBP |
+| Imágenes | 15 | 6 | 10 | `srcset`, `width`/`height` y schema listos; falta ejecutar el WebP y los alts únicos |
+| Metadatos técnicos | 10 | 7 | 10 | las cuatro páginas completas |
+| Rendimiento / CWV | 10 | 6 | 8 | `defer` + `preconnect`; el peso de las imágenes sigue pendiente |
+| Headings y enlazado | 5 | 3 | 5 | H2 en `#estilos`, breadcrumbs, callejones sin salida cerrados |

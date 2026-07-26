@@ -440,19 +440,36 @@ $('gal-list').addEventListener('click', async (e) => {
 
 $('gal-reload').addEventListener('click', loadGallery)
 
+function imageSize(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => resolve({ img_width: img.naturalWidth, img_height: img.naturalHeight })
+        img.onerror = () => reject(new Error('No se pudo leer la imagen.'))
+        img.src = src
+    })
+}
+
 $('gal-add-btn').addEventListener('click', async () => {
     const btn = $('gal-add-btn')
     const statusEl = $('gal-add-status')
     const file = $('gal-file').files[0]
     const typedUrl = $('gal-url').value.trim()
+    const alt = $('gal-alt').value.trim()
 
     if (!file && !typedUrl) { toast('Sube una imagen o pega una URL', true); return }
+    // El alt es obligatorio: sin el, la pieza cae a un texto generico por
+    // categoria y se pierde el valor descriptivo en Google Imagenes.
+    if (!alt) { toast('Escribe el texto alternativo (SEO)', true); $('gal-alt').focus(); return }
 
     btn.disabled = true
     btn.textContent = 'Guardando...'
     statusEl.classList.add('hidden')
 
     try {
+        // Medidas reales antes de subir: alimentan los width/height del <img>
+        // de la galería (CLS) y el ImageObject del JSON-LD.
+        const size = await imageSize(file ? URL.createObjectURL(file) : typedUrl)
+
         let url = typedUrl
         if (file) {
             // UX, no control: el límite de verdad lo pone el bucket en Supabase.
@@ -464,8 +481,9 @@ $('gal-add-btn').addEventListener('click', async () => {
             url,
             category: $('gal-category').value,
             span: $('gal-span').value,
-            alt: $('gal-alt').value.trim(),
-            sort_order: 0
+            alt,
+            sort_order: 0,
+            ...size
         })
 
         $('gal-file').value = ''

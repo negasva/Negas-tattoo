@@ -35,8 +35,8 @@ const RECAPTCHA_SITE_KEY = (process.env.RECAPTCHA_SITE_KEY || '').trim();
 const RECAPTCHA_SECRET_KEY = (process.env.RECAPTCHA_SECRET_KEY || '').trim();
 const RECAPTCHA_MIN_SCORE = Number(process.env.RECAPTCHA_MIN_SCORE) || 0.5;
 
-// Correos autorizados para el panel admin. Vacio = cualquier usuario autenticado
-// de Supabase puede administrar. Rellenar en produccion.
+// Correos autorizados para el panel admin. OBLIGATORIA: si queda vacia nadie
+// puede administrar, ni siquiera un usuario autenticado de Supabase.
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
   .split(',')
   .map((email) => email.trim().toLowerCase())
@@ -58,6 +58,16 @@ const PRICING = {
 const GALLERY_CATEGORIES = ['Blackwork', 'Botánico', 'Fineline'];
 const GALLERY_SPANS = ['', 'gal-cs2', 'gal-rs2', 'gal-cs2rs2'];
 
+// Buckets privados: contienen datos personales (fotos del cuerpo del cliente,
+// cedulas, documentos de acudientes de menores). No se sirven por URL publica;
+// el admin los ve con URLs firmadas de una hora.
+const PRIVATE_BUCKETS = ['reference-images', 'signed-documents'];
+const SIGNED_URL_TTL = 3600;
+
+// Forma canonica de un objeto de `reference-images`. Es lo unico que
+// /api/lead/complete acepta en reference_img_url.
+const REFERENCE_IMAGE_PREFIX = `${SUPABASE_URL}/storage/v1/object/reference-images/`;
+
 const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false }
@@ -66,7 +76,12 @@ const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
 
 const corsOptions = {
   origin(origin, callback) {
-    const isLocalOrigin = typeof origin === 'string' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+    // El comodin de localhost es para desarrollo. En produccion solo valen los
+    // origenes de ALLOWED_ORIGINS; si no, la pagina local de un atacante podria
+    // leer respuestas de la API real.
+    const isLocalOrigin = process.env.NODE_ENV !== 'production'
+      && typeof origin === 'string'
+      && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
     const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3780,http://127.0.0.1:3780,https://negas.tattoo').split(',').map(o => o.trim());
 
     if (!origin || isLocalOrigin || allowedOrigins.includes(origin)) {
@@ -114,6 +129,35 @@ const leadCompleteLimiter = rateLimit({
   message: { ok: false, error: 'Demasiadas solicitudes. Intenta de nuevo mas tarde.' }
 });
 
+// La CSP se declara aqui y se REPITE literalmente en vercel.json, porque el
+// CDN de Vercel sirve el HTML y el estatico sin pasar por Express: sin esa
+// copia, las paginas se entregan en produccion sin ninguna cabecera.
+// Si tocas esto, toca tambien vercel.json (`npm test` compara las dos).
+// Sin 'unsafe-inline' en script-src: no queda ni un script inline en public/.
+const CSP_SCRIPT_SRC = ["'self'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://connect.facebook.net', 'https://www.googletagmanager.com'];
+const CSP_DIRECTIVES = {
+  'default-src': ["'self'"],
+  'base-uri': ["'self'"],
+  'font-src': ["'self'", 'https://fonts.gstatic.com'],
+  'form-action': ["'self'", 'https://www.facebook.com'],
+  'frame-ancestors': ["'none'"],
+  'frame-src': ["'self'", 'https://www.google.com', 'https://td.doubleclick.net', 'https://www.facebook.com'],
+  'img-src': ["'self'", 'data:', 'blob:', 'https://*.supabase.co', 'https://i.ibb.co', 'https://*.ibb.co', 'https://www.facebook.com', 'https://www.google.com', 'https://www.google.com.co', 'https://googleads.g.doubleclick.net'],
+  'connect-src': ["'self'", 'https://*.supabase.co', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://connect.facebook.net', 'https://www.facebook.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com', 'https://googleads.g.doubleclick.net'],
+  'object-src': ["'none'"],
+  'script-src': CSP_SCRIPT_SRC,
+  'script-src-attr': ["'none'"],
+  'script-src-elem': CSP_SCRIPT_SRC,
+  'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+  'worker-src': ["'self'", 'blob:'],
+  'upgrade-insecure-requests': []
+};
+
+// Misma serializacion que usa Helmet, para poder compararla con vercel.json.
+const cspString = () => Object.entries(CSP_DIRECTIVES)
+  .map(([key, values]) => [key, ...values].join(' '))
+  .join('; ');
+
 app.use(cors(corsOptions));
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
@@ -129,21 +173,8 @@ app.use(helmet({
   },
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   contentSecurityPolicy: {
-    directives: {
-      'default-src': ["'self'"],
-      'script-src': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://connect.facebook.net', 'https://www.googletagmanager.com'],
-      'script-src-elem': ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://connect.facebook.net', 'https://www.googletagmanager.com'],
-      'script-src-attr': ["'unsafe-inline'"],
-      'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      'img-src': ["'self'", 'data:', 'blob:', 'https://*.supabase.co', 'https://i.ibb.co', 'https://*.ibb.co', 'https://www.facebook.com', 'https://www.google.com', 'https://www.google.com.co', 'https://googleads.g.doubleclick.net'],
-      'connect-src': ["'self'", 'https://*.supabase.co', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://connect.facebook.net', 'https://www.facebook.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com', 'https://googleads.g.doubleclick.net'],
-      'worker-src': ["'self'", 'blob:'],
-      'font-src': ["'self'", 'https://fonts.gstatic.com'],
-      'frame-src': ["'self'", 'https://www.google.com', 'https://td.doubleclick.net', 'https://www.facebook.com'],
-      'object-src': ["'none'"],
-      'base-uri': ["'self'"],
-      'form-action': ["'self'", 'https://www.facebook.com'],
-    }
+    useDefaults: false,
+    directives: CSP_DIRECTIVES
   },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
@@ -193,9 +224,15 @@ app.get('/api/config', apiLimiter, (_req, res) => {
 });
 
 // ─── Diagnostico ─────────────────────────────────────────────────────────────
-// Abre /api/health y te dice exactamente que falta configurar. Sin esto,
-// un fallo de base de datos se ve solo como "No pudimos guardar tus datos".
-app.get('/api/health', apiLimiter, async (_req, res) => {
+// Dice exactamente que falta configurar. Como enumera proveedores, tablas y
+// errores crudos de Postgres, no es publico: sin HEALTH_DEBUG_KEY definida en
+// el entorno y repetida en ?key=, el endpoint no existe.
+app.get('/api/health', apiLimiter, async (req, res) => {
+  const debugKey = (process.env.HEALTH_DEBUG_KEY || '').trim();
+  if (!debugKey || String(req.query.key || '') !== debugKey) {
+    return res.status(404).send('Not Found');
+  }
+
   const checks = {
     SUPABASE_URL: Boolean(SUPABASE_URL),
     SUPABASE_ANON_KEY: Boolean(SUPABASE_ANON_KEY),
@@ -238,130 +275,10 @@ app.get('/api/health', apiLimiter, async (_req, res) => {
   res.status(ok ? 200 : 503).json({
     ok,
     variables: checks,
-    clave_service_role: describeServiceKey(),
     base_de_datos: db,
     pendientes
   });
 });
-
-// ─── Diagnostico profundo ────────────────────────────────────────────────────
-// /api/health solo hace SELECTs, y un SELECT bloqueado por RLS devuelve una
-// lista vacia SIN error: por eso puede salir todo verde mientras el INSERT
-// falla. Este endpoint hace el INSERT de verdad (la misma fila que manda
-// /api/lead/start), borra la fila de prueba y devuelve el error crudo de
-// Postgres: codigo, mensaje, details y hint.
-//
-//   https://negas.tattoo/api/health/insert
-//
-// Si defines HEALTH_DEBUG_KEY en Vercel, hay que llamarlo con ?key=ESE_VALOR.
-app.get('/api/health/insert', apiLimiter, async (req, res) => {
-  const debugKey = (process.env.HEALTH_DEBUG_KEY || '').trim();
-  if (debugKey && String(req.query.key || '') !== debugKey) {
-    return res.status(403).json({ ok: false, error: 'Clave de diagnostico incorrecta.' });
-  }
-  if (!supabaseAdmin) {
-    return res.status(500).json({ ok: false, error: 'Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY.' });
-  }
-
-  const now = new Date().toISOString();
-  const probeToken = `health-probe-${crypto.randomBytes(8).toString('hex')}`;
-  const fila = {
-    name: 'PRUEBA DIAGNOSTICO',
-    phone: '3000000000',
-    email: null,
-    description: null,
-    reference_img_url: null,
-    status: 'lead',
-    stage: 'partial',
-    consent: true,
-    consent_at: now,
-    update_token: probeToken,
-    source: 'health-probe',
-    utm_source: null,
-    utm_medium: null,
-    utm_campaign: null,
-    created_at: now
-  };
-
-  const { data, error } = await supabaseAdmin
-    .from('leads')
-    .insert([fila])
-    .select('id')
-    .single();
-
-  if (error) {
-    // Traducimos los codigos de Postgres/PostgREST mas comunes a algo accionable.
-    const pistas = {
-      '23502': 'Hay una columna NOT NULL en `leads` que el servidor no esta enviando. Mira el campo "column" del error y ponle un DEFAULT o quitale el NOT NULL.',
-      '23514': 'Un CHECK de la tabla rechaza los valores que manda el servidor (status = "lead", stage = "partial"). Ajusta el CHECK o los valores.',
-      '23505': 'Hay un indice UNIQUE que se esta violando (probablemente sobre phone). Es esperable si ya existe ese numero.',
-      '42501': 'PERMISO DENEGADO: la peticion esta pasando por RLS. Casi seguro SUPABASE_SERVICE_ROLE_KEY en Vercel NO tiene la service role key, sino la anon/publishable key. Copiala de Supabase → Settings → API → service_role (secret) y vuelve a desplegar.',
-      '42703': 'Falta una columna en `leads`. Vuelve a correr migrations/EJECUTAR-ESTE-EN-SUPABASE.sql.',
-      '42P01': 'La tabla `leads` no existe en el esquema public.',
-      'PGRST204': 'PostgREST no encuentra una columna en su cache de esquema. Supabase → Settings → API → "Reload schema cache", o vuelve a correr la migracion.',
-      'PGRST301': 'JWT invalido o expirado: revisa el valor de SUPABASE_SERVICE_ROLE_KEY.'
-    };
-
-    return res.status(500).json({
-      ok: false,
-      paso: 'insert',
-      clave_service_role: describeServiceKey(),
-      error: {
-        code: error.code || null,
-        message: error.message || null,
-        details: error.details || null,
-        hint: error.hint || null
-      },
-      diagnostico: pistas[error.code] || 'Codigo no catalogado. El campo error.message de arriba dice exactamente que rechazo Postgres.'
-    });
-  }
-
-  // El INSERT funciono: limpiamos la fila de prueba.
-  const cleanup = await supabaseAdmin.from('leads').delete().eq('id', data.id);
-
-  return res.json({
-    ok: true,
-    clave_service_role: describeServiceKey(),
-    mensaje: 'El INSERT en `leads` funciona correctamente. El formulario deberia guardar.',
-    fila_de_prueba_borrada: !cleanup.error,
-    aviso_limpieza: cleanup.error ? cleanup.error.message : null,
-    siguiente_paso: 'Si el formulario sigue fallando, el error esta en reCAPTCHA o en la validacion. Revisa los Runtime Logs de Vercel al enviar el formulario.'
-  });
-});
-
-// Mira el rol que declara SUPABASE_SERVICE_ROLE_KEY sin revelar la clave.
-// Una service role key legitima es un JWT cuyo payload trae role="service_role"
-// (o una clave nueva con prefijo sb_secret_). Si aqui sale "anon", esa es la
-// causa: RLS se aplica y todos los INSERT se bloquean.
-function describeServiceKey() {
-  const key = SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) return { presente: false };
-
-  if (key.startsWith('sb_secret_')) return { presente: true, formato: 'sb_secret', rol: 'service_role', correcta: true };
-  if (key.startsWith('sb_publishable_')) {
-    return { presente: true, formato: 'sb_publishable', rol: 'anon', correcta: false,
-      problema: 'Es la clave PUBLICA. Necesitas la secreta (sb_secret_...).' };
-  }
-
-  const parts = key.split('.');
-  if (parts.length !== 3) return { presente: true, formato: 'desconocido', correcta: false, problema: 'No parece un JWT ni una clave sb_secret_.' };
-
-  try {
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
-    const rol = payload.role || null;
-    return {
-      presente: true,
-      formato: 'jwt',
-      rol,
-      correcta: rol === 'service_role',
-      problema: rol === 'service_role'
-        ? null
-        : `El JWT declara role="${rol}". Vercel tiene la clave equivocada en SUPABASE_SERVICE_ROLE_KEY: copia la de Supabase → Settings → API → service_role (secret) y vuelve a desplegar.`
-    };
-  } catch (_) {
-    return { presente: true, formato: 'jwt-ilegible', correcta: false, problema: 'No se pudo leer el payload del JWT.' };
-  }
-}
 
 // Mantiene el proyecto de Supabase despierto: los proyectos gratuitos se
 // pausan tras ~7 dias sin actividad. Lo llama el cron de Vercel a diario.
@@ -369,7 +286,13 @@ function describeServiceKey() {
 // A proposito NO falla si una tabla no existe: con que UNA responda, el
 // proyecto ya cuenta como activo. Antes bastaba una tabla borrada para que
 // el keepalive devolviera 500 y dejara de cumplir su unica funcion.
-app.get('/api/keepalive', apiLimiter, async (_req, res) => {
+app.get('/api/keepalive', apiLimiter, async (req, res) => {
+  // Solo el cron. Vercel manda `Authorization: Bearer $CRON_SECRET` cuando la
+  // variable esta definida. Sin CRON_SECRET no entra nadie: falla cerrado.
+  const cronSecret = (process.env.CRON_SECRET || '').trim();
+  if (!cronSecret || req.headers.authorization !== `Bearer ${cronSecret}`) {
+    return res.status(401).json({ ok: false, error: 'No autorizado.' });
+  }
   if (!supabaseAdmin) {
     return res.status(500).json({
       ok: false,
@@ -510,7 +433,6 @@ app.post('/api/lead/start', leadStartLimiter, async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Revisa los datos e intenta de nuevo.', fields: errors });
   }
 
-  const forceCreate = body.forceCreate === true;
   const updateToken = crypto.randomBytes(24).toString('hex');
   const now = new Date().toISOString();
 
@@ -540,23 +462,16 @@ app.post('/api/lead/start', leadStartLimiter, async (req, res) => {
       .single();
 
     if (error) {
+      // Un telefono repetido NO da acceso al lead de esa persona: nunca se
+      // devuelve su id ni se le reescribe el update_token. Y respondemos lo
+      // mismo que en un alta normal para no confirmar si el numero ya existe.
+      //
+      // Solo puede pasar si la tabla tiene un UNIQUE sobre phone; la migracion
+      // lo quita para que una recotizacion sea simplemente una fila nueva.
       const isDuplicate = error.code === '23505' || (error.message && error.message.toLowerCase().includes('unique'));
-      if (isDuplicate && !forceCreate) {
-        return res.status(200).json({ ok: true, duplicate: true });
-      }
-      if (isDuplicate && forceCreate) {
-        // Constraint still exists: reuse existing lead, refresh its token so this session works
-        const newToken = crypto.randomBytes(24).toString('hex');
-        const { data: existing, error: fetchErr } = await supabaseAdmin
-          .from('leads')
-          .select('id')
-          .eq('phone', phone)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        if (fetchErr || !existing) throw fetchErr || new Error('Lead not found');
-        await supabaseAdmin.from('leads').update({ update_token: newToken, name, email: email || null }).eq('id', existing.id);
-        return res.status(200).json({ ok: true, leadId: existing.id, token: newToken });
+      if (isDuplicate) {
+        console.warn('Lead start: UNIQUE sobre phone todavia activo. Corre la migracion.');
+        return res.status(200).json({ ok: true });
       }
       throw error;
     }
@@ -599,7 +514,9 @@ app.post('/api/lead/complete', leadCompleteLimiter, async (req, res) => {
   if (!sizeCm) {
     return res.status(400).json({ ok: false, error: 'Selecciona el tamano aproximado.' });
   }
-  if (referenceImgUrl && !/^https?:\/\//i.test(referenceImgUrl)) {
+  // Solo aceptamos una URL de nuestro propio Storage. Cualquier otra cosa es
+  // un campo controlado por el cliente guardado como dato de negocio.
+  if (referenceImgUrl && !referenceImgUrl.startsWith(REFERENCE_IMAGE_PREFIX)) {
     referenceImgUrl = '';
   }
 
@@ -680,7 +597,9 @@ async function requireAdmin(req, res, next) {
     }
 
     const email = (data.user.email || '').toLowerCase();
-    if (ADMIN_EMAILS.length && !ADMIN_EMAILS.includes(email)) {
+    // Falla cerrado: lista vacia = nadie entra. Antes, ADMIN_EMAILS sin
+    // rellenar convertia en administrador a cualquier usuario registrado.
+    if (!ADMIN_EMAILS.includes(email)) {
       return res.status(403).json({ ok: false, error: 'Esta cuenta no tiene permisos de administrador.' });
     }
 
@@ -799,6 +718,155 @@ app.delete('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Leads: administracion ───────────────────────────────────────────────────
+// El navegador ya no lee `leads` con la anon key: esa tabla tiene RLS activa
+// y sin politicas, asi que solo la service role del servidor la ve. Todo pasa
+// por aqui, detras del mismo requireAdmin que la galeria.
+
+const LEAD_STATUSES = ['lead', 'client', 'recurring'];
+
+// Los buckets privados no se sirven por URL: se firman por una hora.
+async function signStoragePath(bucket, filePath) {
+  const { data, error } = await supabaseAdmin.storage
+    .from(bucket)
+    .createSignedUrl(filePath, SIGNED_URL_TTL);
+
+  if (error) {
+    console.error(`Signed URL failed for ${bucket}:`, error.message);
+    return null;
+  }
+  return data.signedUrl;
+}
+
+// Saca la ruta del objeto para poder firmarla. Solo de nuestro propio Storage:
+// acepta la forma canonica y la publica antigua (los leads guardados cuando el
+// bucket todavia era publico), y nada mas.
+const referencePath = (url) => {
+  const value = String(url || '');
+  const prefixes = [REFERENCE_IMAGE_PREFIX, REFERENCE_IMAGE_PREFIX.replace('/object/', '/object/public/')];
+  const prefix = prefixes.find((p) => value.startsWith(p));
+  return prefix ? value.slice(prefix.length) || null : null;
+};
+
+app.get('/api/admin/leads', requireAdmin, async (req, res) => {
+  const onlyDeleted = String(req.query.deleted || '') === '1';
+
+  try {
+    let query = supabaseAdmin.from('leads').select('*').order('created_at', { ascending: false });
+    query = onlyDeleted ? query.not('deleted_at', 'is', null) : query.is('deleted_at', null);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    // La foto de referencia sale firmada, nunca como URL permanente.
+    const leads = await Promise.all((data || []).map(async (lead) => {
+      const filePath = referencePath(lead.reference_img_url);
+      return { ...lead, reference_img_url: filePath ? await signStoragePath('reference-images', filePath) : null };
+    }));
+
+    return res.json({ ok: true, leads });
+  } catch (error) {
+    console.error('Admin leads fetch failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'No se pudieron cargar los leads.' });
+  }
+});
+
+// Contamos en Postgres (head + count exacto), no trayendo las filas enteras.
+app.get('/api/admin/stats', requireAdmin, async (_req, res) => {
+  const countLeads = (build) => build(
+    supabaseAdmin.from('leads').select('id', { count: 'exact', head: true }).is('deleted_at', null)
+  );
+
+  try {
+    const [total, clients, recurring, complete] = await Promise.all([
+      countLeads((q) => q),
+      countLeads((q) => q.eq('status', 'client')),
+      countLeads((q) => q.eq('status', 'recurring')),
+      countLeads((q) => q.eq('stage', 'complete'))
+    ]);
+
+    const firstError = [total, clients, recurring, complete].find((r) => r.error);
+    if (firstError) throw firstError.error;
+
+    const totalLeads = total.count || 0;
+    const converted = (clients.count || 0) + (recurring.count || 0);
+
+    return res.json({
+      ok: true,
+      stats: {
+        totalLeads,
+        totalClients: clients.count || 0,
+        recurringClients: recurring.count || 0,
+        completedQuotes: complete.count || 0,
+        conversionRate: totalLeads ? Math.round((converted / totalLeads) * 100) : 0
+      }
+    });
+  } catch (error) {
+    console.error('Admin stats failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'No se pudieron cargar las estadisticas.' });
+  }
+});
+
+app.patch('/api/admin/leads/:id/status', requireAdmin, async (req, res) => {
+  const status = str((req.body || {}).status, 20);
+  if (!LEAD_STATUSES.includes(status)) {
+    return res.status(400).json({ ok: false, error: 'Estado invalido.' });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('leads')
+      .update({ status })
+      .eq('id', req.params.id)
+      .select('id')
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return res.status(404).json({ ok: false, error: 'Lead no encontrado.' });
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Admin lead status failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'No se pudo actualizar el estado.' });
+  }
+});
+
+// Borrado logico de verdad: antes solo se marcaba en el localStorage del
+// navegador, asi que el lead reaparecia en otro equipo y no habia forma de
+// atender una solicitud de supresion (Ley 1581).
+const setDeletedAt = (deleted) => async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('leads')
+      .update({ deleted_at: deleted ? new Date().toISOString() : null })
+      .eq('id', req.params.id)
+      .select('id')
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return res.status(404).json({ ok: false, error: 'Lead no encontrado.' });
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Admin lead delete/restore failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'No se pudo completar la operacion.' });
+  }
+};
+
+app.delete('/api/admin/leads/:id', requireAdmin, setDeletedAt(true));
+app.post('/api/admin/leads/:id/restore', requireAdmin, setDeletedAt(false));
+
+// URL firmada para los buckets privados (documentos firmados, cedulas de
+// acudientes). Solo esos dos: nada de firmar rutas arbitrarias.
+app.post('/api/admin/signed-url', requireAdmin, async (req, res) => {
+  const { bucket, path: filePath } = req.body || {};
+  if (!PRIVATE_BUCKETS.includes(bucket) || !str(filePath, 400)) {
+    return res.status(400).json({ ok: false, error: 'Bucket o ruta invalidos.' });
+  }
+
+  const url = await signStoragePath(bucket, str(filePath, 400));
+  if (!url) return res.status(404).json({ ok: false, error: 'Archivo no encontrado.' });
+  return res.json({ ok: true, url });
+});
+
 app.use((_req, res) => res.status(404).send('Not Found'));
 
 // En Vercel este archivo se importa desde api/index.js y NO debe abrir un
@@ -812,5 +880,11 @@ if (require.main === module) {
     }
   });
 }
+
+// Para scripts/selfcheck.js (`npm test`): la CSP se compara con la copia de
+// vercel.json, y las reglas de reference_img_url se prueban con asserts.
+app.cspString = cspString;
+app.referenceImagePrefix = REFERENCE_IMAGE_PREFIX;
+app.referencePath = referencePath;
 
 module.exports = app;

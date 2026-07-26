@@ -15,16 +15,7 @@
     <meta property="og:description" content="Paso a paso simple para cuidar tu tatuaje nuevo.">
 
     <!-- Meta Pixel — el ID llega desde /api/config (variable META_PIXEL_ID). -->
-    <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    </script>
+    <script src="/pixel.js" defer></script>
     <!-- End Meta Pixel -->
 
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
@@ -191,25 +182,6 @@
         <a href="/" class="care-back" style="margin-top:3rem;margin-bottom:0">&#8592; Volver al inicio</a>
     </div>
 
-    <script>
-        // WhatsApp y Meta Pixel salen de /api/config: sin credenciales en el HTML.
-        fetch('/api/config')
-            .then(res => res.ok ? res.json() : null)
-            .then(config => {
-                if (!config) return;
-                if (config.waPhone) {
-                    document.querySelectorAll('a.js-wa').forEach(a => {
-                        a.href = 'https://wa.me/' + config.waPhone;
-                        a.target = '_blank';
-                        a.rel = 'noopener';
-                    });
-                }
-                if (config.metaPixelId && typeof window.fbq === 'function') {
-                    window.fbq('init', config.metaPixelId);
-                    window.fbq('track', 'PageView');
-                }
-            })
-            .catch(() => {});
-    </script>
+    <script src="/page-config.js" defer></script>
 </body>
 </html>

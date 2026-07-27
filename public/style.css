@@ -1245,19 +1245,23 @@ section[id] { scroll-margin-top: var(--nav-h); }
     -webkit-backdrop-filter: blur(6px);
 }
 
+/* El panel es la caja de altura fija: nunca pasa del viewport, y en vez de
+   scrollear entero se reparte en tres bandas (cabecera / cuerpo / pie).
+   Solo el cuerpo scrollea, asi el boton de continuar nunca se sale de vista. */
 .qm-panel {
     position: relative;
     z-index: 2;
+    display: flex;
+    flex-direction: column;
     width: 100%;
     max-width: 34rem;
     max-height: calc(100dvh - 2rem);
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    overflow: hidden;
     background: #0a0a0a;
     border: 2px solid #2a2a2a;
-    padding: 2rem 1.75rem 2rem;
     transform: translateY(16px) scale(.98);
     transition: transform .32s cubic-bezier(0.16, 1, 0.3, 1);
+    --qm-pad-x: 1.75rem;
 }
 
 .qm.is-open .qm-panel {
@@ -1269,10 +1273,10 @@ section[id] { scroll-margin-top: var(--nav-h); }
     .qm-panel {
         max-width: 100%;
         max-height: 100dvh;
-        min-height: 100dvh;
+        height: 100dvh;
         border: none;
         border-top: 3px solid var(--red);
-        padding: 1.75rem 1.25rem 2.5rem;
+        --qm-pad-x: 1.25rem;
     }
 }
 
@@ -1296,8 +1300,11 @@ section[id] { scroll-margin-top: var(--nav-h); }
 
 .qm-close:hover { color: #fff; }
 
+/* Banda 1: cabecera fija (titulo + progreso). No scrollea nunca. */
 .qm-head {
-    margin-bottom: 1.75rem;
+    flex: 0 0 auto;
+    padding: 2rem var(--qm-pad-x) 0;
+    margin-bottom: 1.5rem;
     transition: opacity .2s ease;
 }
 
@@ -1322,9 +1329,12 @@ section[id] { scroll-margin-top: var(--nav-h); }
 .qm-title span { color: var(--red); }
 
 /* ── carrusel del portafolio ──
-   Alto fijo y compacto: el formulario tiene que seguir cabiendo en el panel. */
+   Se encoge con el viewport: el formulario tiene que seguir cabiendo en el
+   panel sin que el carrusel lo empuje fuera. */
 .qm-car {
-    margin: -.75rem 0 1.5rem;
+    flex: 0 0 auto;
+    padding: 0 var(--qm-pad-x);
+    margin: -.75rem 0 1.25rem;
 }
 
 .qm-car-filters {
@@ -1356,9 +1366,11 @@ section[id] { scroll-margin-top: var(--nav-h); }
     border-color: var(--red);
 }
 
+/* El alto sigue al viewport: en pantallas bajas el carrusel se encoge en vez
+   de empujar el formulario fuera del panel. */
 .qm-car-stage {
     position: relative;
-    height: 200px;
+    height: clamp(84px, 22vh, 200px);
     background: #000;
     border: 1px solid #2a2a2a;
     overflow: hidden;
@@ -1412,7 +1424,7 @@ section[id] { scroll-margin-top: var(--nav-h); }
 .qm-car-next { right: .4rem; }
 
 @media (max-width: 640px) {
-    .qm-car-stage { height: 160px; }
+    .qm-car-stage { height: clamp(84px, 18vh, 160px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1441,13 +1453,38 @@ section[id] { scroll-margin-top: var(--nav-h); }
     color: #52525b;
 }
 
+/* Banda 2: el unico elemento que scrollea. `min-height: 0` es obligatorio;
+   sin el, un hijo flex se niega a encogerse por debajo de su contenido y el
+   scroll se desborda al panel. */
+.qm-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 var(--qm-pad-x);
+}
+
 /* ── pasos ── */
 .qm-step { display: none; }
-.qm-step.is-active { display: block; animation: qmIn .32s ease both; }
 
+/* Columna que llena el cuerpo para que `margin-top:auto` del pie lo empuje
+   abajo cuando el contenido es corto. `flex-shrink: 0` evita que el paso se
+   comprima cuando es mas alto que el cuerpo: en ese caso queremos scroll. */
+.qm-step.is-active {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+    animation: qmIn .32s ease both;
+}
+
+/* Solo opacidad: un `transform` aqui crearia un bloque contenedor nuevo y
+   dejaria de funcionar el `position: sticky` del pie. */
 @keyframes qmIn {
-    from { opacity: 0; transform: translateX(12px); }
-    to   { opacity: 1; transform: none; }
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 .qm-step-lead {
@@ -1662,6 +1699,59 @@ section[id] { scroll-margin-top: var(--nav-h); }
     display: grid;
     grid-template-columns: 1fr 2fr;
     gap: .75rem;
+}
+
+/* Banda 3: el pie. Va dentro del cuerpo scrolleable pero pegado abajo, asi
+   el boton de accion queda siempre a la vista aunque el paso sea largo.
+   `margin-top: auto` lo manda al fondo cuando el contenido es corto. */
+.qm-foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    margin-top: auto;
+    padding-top: 1rem;
+    padding-bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
+    background: #0a0a0a;
+}
+
+/* Degradado que difumina el contenido que pasa por debajo del pie. */
+.qm-foot::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 1.5rem;
+    background: linear-gradient(to top, #0a0a0a, rgba(10, 10, 10, 0));
+    pointer-events: none;
+}
+
+/* El margen superior ya lo pone el pie. */
+.qm-foot .qm-btn { margin-top: 0; }
+
+/* Pantallas bajas (portatiles de 600-700px, movil en horizontal): se recorta
+   la cabecera y el boton para que el paso entero siga cabiendo. */
+@media (max-height: 700px) {
+    .qm-head {
+        padding-top: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    .qm-kicker { margin-bottom: .4rem; }
+    .qm-title {
+        font-size: clamp(1.35rem, 5vw, 1.75rem) !important;
+        margin-bottom: .85rem;
+    }
+    .qm-car { margin-bottom: .85rem; }
+    .qm-step-lead { margin-bottom: .9rem; }
+    .qm-field { margin-bottom: .9rem; }
+    .qm-foot {
+        padding-top: .75rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+    .qm-btn {
+        padding: .9rem 1rem;
+        font-size: 1rem;
+    }
 }
 
 .qm-skip {

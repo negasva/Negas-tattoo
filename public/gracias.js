@@ -6,8 +6,8 @@
    y el evento se pierde. En un page load no hay esa carrera.
 
    Los datos de la cotizacion llegan en sessionStorage (los deja script.js al
-   recibir el OK de /api/lead/complete). Como respaldo se aceptan ?min= y ?max=
-   en la URL. El rango lo calculo el servidor: aqui solo se pinta.
+   recibir el OK de /api/lead/complete). El rango lo calculo el servidor: aqui
+   solo se pinta.
 
    Ningun ID esta escrito aqui: todos vienen de /api/config. */
 
@@ -15,19 +15,23 @@ const money = new Intl.NumberFormat('es-CO', {
     style: 'currency', currency: 'COP', maximumFractionDigits: 0
 });
 
-const params = new URLSearchParams(location.search);
-let quote = {};
-try { quote = JSON.parse(sessionStorage.getItem('negasQuote')) || {}; } catch { /* datos corruptos: seguimos sin ellos */ }
+// Portero: a /gracias solo se llega enviando el cotizador. Si no hay
+// negasQuote — entrada directa por URL, pestana nueva o datos corruptos — de
+// vuelta al cotizador, y sin disparar ninguna conversion. `replace` y no
+// `assign` para que el boton "atras" no devuelva aqui.
+let quote = null;
+try { quote = JSON.parse(sessionStorage.getItem('negasQuote')); } catch { /* corrupto: como si no hubiera nada */ }
+if (!quote) location.replace('/cotizar');
 
-const min = Number(quote.price?.min || params.get('min'));
-const max = Number(quote.price?.max || params.get('max'));
+const min = Number(quote?.price?.min);
+const max = Number(quote?.price?.max);
 
 if (min > 0 && max > 0) {
     document.getElementById('ty-price-val').textContent = `${money.format(min)} – ${money.format(max)}`;
     document.getElementById('ty-price').hidden = false;
 }
 
-const firstName = (quote.name || '').split(' ')[0];
+const firstName = (quote?.name || '').split(' ')[0];
 if (firstName) document.getElementById('ty-name').textContent = firstName;
 
 function whatsAppMessage() {
@@ -84,7 +88,10 @@ function loadGoogleTags(config) {
     ids.forEach(id => window.gtag('config', id));
 }
 
-fetch('/api/config')
+// `location.replace` no detiene el script: sin este `if`, el visitante
+// ilegitimo se llevaria la conversion antes de que el navegador cambie de
+// pagina.
+if (quote) fetch('/api/config')
     .then(res => res.ok ? res.json() : null)
     .then(config => {
         if (!config) return;

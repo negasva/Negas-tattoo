@@ -157,6 +157,14 @@ llega a ver el `noindex`.
 Contra el doble conteo: una bandera en `sessionStorage` (`negasGracias`). Si
 alguien recarga `/gracias`, no se vuelve a contar.
 
+**Portero**: si no hay `negasQuote` en `sessionStorage` —entrada directa por
+URL, pestaña nueva, datos corruptos— `gracias.js` hace
+`location.replace('/cotizar')` y no dispara ninguna conversión. El guardia va
+en el cliente porque en producción `/gracias` lo sirve el CDN de Vercel: no
+pasa por Express, así que un middleware de servidor no lo vería. Recargar
+`/gracias` en la misma pestaña sigue funcionando: `sessionStorage` sobrevive
+al reload.
+
 Para retargeting en Meta: crea un público personalizado de quienes dispararon
 `AbrioCotizador` pero **no** `SubmitApplication`.
 

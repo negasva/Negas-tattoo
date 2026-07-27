@@ -8,7 +8,11 @@
 //    y nadie se entera.
 // 2. `reference_img_url` solo puede apuntar a nuestro propio Storage, y el
 //    admin tiene que saber sacar la ruta del objeto para firmarla.
+// 3. Los filtros del carrusel del cotizador filtran contra las mismas
+//    categorias que la galeria. Una tilde de menos y ese filtro sale vacio
+//    sin error en consola.
 const assert = require('assert');
+const fs = require('fs');
 
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'https://ejemplo.supabase.co';
 
@@ -54,5 +58,16 @@ assert.strictEqual(
   assert(!String(url ?? '').startsWith(referenceImagePrefix), `deberia rechazarse: ${url}`);
 });
 
+/* ─── 3 · Filtros del carrusel == filtros de la galeria ────────────────── */
+const html = fs.readFileSync(require('path').join(__dirname, '../public/index.html'), 'utf8');
+const filtersOf = (attr) => [...html.matchAll(new RegExp(`${attr}="([^"]*)"`, 'g'))].map((m) => m[1]);
+
+assert.deepStrictEqual(
+  filtersOf('data-qm-filter').slice().sort(),
+  filtersOf('data-filter').slice().sort(),
+  'Los data-qm-filter del carrusel no son los mismos valores que los data-filter de la galería.'
+);
+
 console.log('✓ CSP idéntica en server.js y vercel.json, sin unsafe-inline en script-src.');
 console.log('✓ reference_img_url solo acepta y firma objetos del propio Storage.');
+console.log('✓ Los filtros del carrusel coinciden con los de la galería.');

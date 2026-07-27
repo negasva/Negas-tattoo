@@ -1321,6 +1321,104 @@ section[id] { scroll-margin-top: var(--nav-h); }
 
 .qm-title span { color: var(--red); }
 
+/* ── carrusel del portafolio ──
+   Alto fijo y compacto: el formulario tiene que seguir cabiendo en el panel. */
+.qm-car {
+    margin: -.75rem 0 1.5rem;
+}
+
+.qm-car-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-bottom: .6rem;
+}
+
+.qm-car-btn {
+    background: transparent;
+    border: 1px solid #2a2a2a;
+    color: #52525b;
+    padding: .3rem .6rem;
+    font-family: inherit;
+    font-size: .6rem;
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    cursor: pointer;
+    transition: color var(--trans-base), border-color var(--trans-base);
+}
+
+.qm-car-btn:hover { color: #fff; }
+
+.qm-car-btn.is-active {
+    color: #fff;
+    border-color: var(--red);
+}
+
+.qm-car-stage {
+    position: relative;
+    height: 200px;
+    background: #000;
+    border: 1px solid #2a2a2a;
+    overflow: hidden;
+}
+
+.qm-car-track {
+    position: absolute;
+    inset: 0;
+}
+
+.qm-car-track img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transform: scale(1.04);
+    transition: opacity .9s ease, transform .9s ease;
+}
+
+.qm-car-track img.is-active {
+    opacity: 1;
+    transform: none;
+}
+
+.qm-car-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, .55);
+    border: 1px solid var(--line);
+    color: #fff;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color var(--trans-base), border-color var(--trans-base);
+}
+
+.qm-car-nav:hover {
+    background: var(--red);
+    border-color: var(--red);
+}
+
+.qm-car-prev { left: .4rem; }
+.qm-car-next { right: .4rem; }
+
+@media (max-width: 640px) {
+    .qm-car-stage { height: 160px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .qm-car-track img { transition: opacity .2s ease; transform: none; }
+}
+
 .qm-bar {
     height: 3px;
     background: #1f1f1f;
@@ -2171,6 +2269,57 @@ section[id] { scroll-margin-top: var(--nav-h); }
 
     /* En movil el CTA rojo ya ocupa media pantalla: aqui solo el icono. */
     .floating-wa-label { display: none; }
+}
+
+/* ═══════════════════════════════════════════════
+   REDES FLOTANTES
+   Columna encima del CTA de cotizar (abajo a la derecha). z-index por debajo
+   del popup (400) para no quedar sobre el modal.
+═══════════════════════════════════════════════ */
+.floating-socials {
+    position: fixed;
+    right: 16px;
+    bottom: 72px;
+    z-index: 250;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+}
+
+.floating-soc {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(10, 10, 10, .92);
+    border: 1px solid var(--line);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .5);
+    transition: background-color var(--trans-base), border-color var(--trans-base), transform var(--trans-base);
+}
+
+.floating-soc svg {
+    width: 1.05rem;
+    height: 1.05rem;
+}
+
+.floating-soc:hover {
+    background: var(--red);
+    border-color: var(--red);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .floating-socials {
+        right: 12px;
+        bottom: 64px;
+        gap: .3rem;
+    }
+
+    .floating-soc { width: 34px; height: 34px; }
+    .floating-soc svg { width: .9rem; height: .9rem; }
 }
 
 @keyframes shake {

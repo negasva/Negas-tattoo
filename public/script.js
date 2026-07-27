@@ -220,6 +220,7 @@ async function loadGallery() {
         galleryImages = [];
     }
     renderGallery(activeFilter);
+    qmCarRender('All');
 }
 
 function renderGallery(filter) {
@@ -331,6 +332,83 @@ document.querySelectorAll('.gal-btn').forEach(btn => {
         renderGallery(this.dataset.filter);
     });
 });
+
+/* ═══════════════════════════════════════════════════════════════
+   CARRUSEL DEL PORTAFOLIO (dentro del cotizador)
+   Reusa galleryImages: no hace su propio fetch. Sin piezas, se oculta y el
+   formulario queda como si el carrusel no existiera.
+   ═══════════════════════════════════════════════════════════════ */
+const qmCar = document.getElementById('qm-car');
+const qmCarTrack = document.getElementById('qm-car-track');
+const qmCarStill = matchMedia('(prefers-reduced-motion: reduce)');
+let qmCarIndex = 0;
+let qmCarTimer = null;
+
+function qmCarStop() {
+    clearInterval(qmCarTimer);
+    qmCarTimer = null;
+}
+
+function qmCarPlay() {
+    qmCarStop();
+    if (qmCarStill.matches || !qmCar || qmCar.hidden || !isQuoteOpen()) return;
+    qmCarTimer = setInterval(() => qmCarGo(qmCarIndex + 1), 4500);
+}
+
+function qmCarGo(i) {
+    const slides = qmCarTrack.children;
+    if (!slides.length) return;
+    qmCarIndex = (i + slides.length) % slides.length;
+    [...slides].forEach((el, n) => el.classList.toggle('is-active', n === qmCarIndex));
+}
+
+function qmCarRender(filter) {
+    if (!qmCarTrack) return;
+
+    const items = filter === 'All'
+        ? galleryImages
+        : galleryImages.filter(img => tagsOf(img).includes(filter));
+
+    qmCar.hidden = items.length === 0;
+    qmCarTrack.innerHTML = '';
+
+    items.forEach(item => {
+        const img = document.createElement('img');
+        img.alt = item.alt || `Tatuaje ${tagsOf(item).join(' y ')} — Negas Tattoo Sabaneta`;
+        img.src = item.url;
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        const small = item.url.replace('-1080.webp', '-480.webp');
+        if (small !== item.url) {
+            img.srcset = `${small} 480w, ${item.url} 1080w`;
+            img.sizes = '(max-width: 640px) 90vw, 32rem';
+        }
+        qmCarTrack.appendChild(img);
+    });
+
+    qmCarGo(0);
+    qmCarPlay();
+}
+
+if (qmCar) {
+    qmCar.querySelectorAll('.qm-car-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            qmCar.querySelectorAll('.qm-car-btn').forEach(b => b.classList.remove('is-active'));
+            this.classList.add('is-active');
+            qmCarRender(this.dataset.qmFilter);
+        });
+    });
+
+    // Cada flecha reinicia el autoplay: si no, el siguiente salto automatico
+    // puede caer medio segundo despues del clic.
+    qmCar.querySelector('.qm-car-prev').addEventListener('click', () => { qmCarGo(qmCarIndex - 1); qmCarPlay(); });
+    qmCar.querySelector('.qm-car-next').addEventListener('click', () => { qmCarGo(qmCarIndex + 1); qmCarPlay(); });
+
+    qmCar.addEventListener('mouseenter', qmCarStop);
+    qmCar.addEventListener('focusin', qmCarStop);
+    qmCar.addEventListener('mouseleave', qmCarPlay);
+    qmCar.addEventListener('focusout', qmCarPlay);
+}
 
 /* ═══════════════════════════════════════════════════════════════
    LIGHTBOX
@@ -453,6 +531,7 @@ function openQuote(origin = 'desconocido', { push = true } = {}) {
 
     track('AbrioCotizador', { origen: origin });
     showStep(currentStep);
+    qmCarPlay();
 }
 
 function closeQuote(isNavigation = false) {
@@ -460,6 +539,7 @@ function closeQuote(isNavigation = false) {
     modal.classList.remove('is-open');
     modal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('no-scroll');
+    qmCarStop();
 
     if (!isNavigation && history.state?.quote) {
         history.back();

@@ -123,6 +123,9 @@ Ejemplo a 12 cm: `90.000 + 456.000 = 546.000` → se muestra **$520.000 – $680
   `/api/config`. Así el ID no queda escrito en el repositorio.
 - **Google Ads / GA4**: se activan solos cuando rellenes `GOOGLE_ADS_ID`,
   `GOOGLE_ADS_CONVERSION_LABEL` y `GA4_MEASUREMENT_ID`.
+- **`GOOGLE_ADS_CONVERSION_LABEL_COMPLETA`**: etiqueta de la conversión
+  «cotización completa», la que se cuenta en `/gracias`. Si la dejas vacía se
+  usa `GOOGLE_ADS_CONVERSION_LABEL`, así que la medición no se cae.
 
 Eventos que se disparan:
 
@@ -131,8 +134,28 @@ Eventos que se disparan:
 | `AbrioCotizador` | Se abre el popup |
 | `Lead` | Paso 1 guardado — **este es el que alimenta el retargeting** |
 | `VioPrecio` | Mueve el slider y ve el rango |
-| `SubmitApplication` | Cotización completa |
+| `SubmitApplication` | Carga de `/gracias` — cotización completa |
 | `ClickWhatsApp` | Cualquier clic a WhatsApp |
+
+### Página de gracias (`/gracias`)
+
+Al terminar el paso 4, `script.js` guarda la cotización en `sessionStorage` y
+redirige a `/gracias`. Ahí se disparan **las dos** conversiones: Meta
+(`SubmitApplication`) y Google Ads. Van en la carga de la página, no antes de
+redirigir, porque la navegación cancela el beacon del píxel y el evento se
+pierde. Además es el momento exacto que Ads cuenta con el método *Page load*.
+
+En Google Ads: la acción de conversión se configura con **Page load** y la URL
+`negas.tattoo/gracias`. No hace falta rewrite en `vercel.json` — con
+`cleanUrls: true` la ruta sirve `public/gracias.html` sola.
+
+La página lleva `noindex,nofollow` y **no** va en `sitemap.xml`: es una página
+de conversión, no tiene nada que buscar nadie y canibalizaría la landing.
+Tampoco se bloquea en `robots.txt`, porque si Google no puede rastrearla nunca
+llega a ver el `noindex`.
+
+Contra el doble conteo: una bandera en `sessionStorage` (`negasGracias`). Si
+alguien recarga `/gracias`, no se vuelve a contar.
 
 Para retargeting en Meta: crea un público personalizado de quienes dispararon
 `AbrioCotizador` pero **no** `SubmitApplication`.

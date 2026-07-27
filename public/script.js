@@ -55,16 +55,6 @@ function track(event, params = {}) {
     } catch (error) { console.warn('gtag no registro el evento', event, '—', error.message); }
 }
 
-function trackAdsConversion() {
-    const { googleAdsId, googleAdsConversionLabel } = appConfig;
-    if (!googleAdsId || !googleAdsConversionLabel || typeof window.gtag !== 'function') return;
-    try {
-        window.gtag('event', 'conversion', {
-            send_to: `${googleAdsId}/${googleAdsConversionLabel}`
-        });
-    } catch (error) { console.warn('Conversion de Google Ads no registrada —', error.message); }
-}
-
 function loadGoogleTags() {
     const ids = [appConfig.googleAdsId, appConfig.ga4Id].filter(Boolean);
     if (!ids.length) return;
@@ -819,48 +809,6 @@ fileClear?.addEventListener('click', () => {
 });
 
 /* ─── Envio final ────────────────────────────────────────────── */
-function buildWhatsAppMessage() {
-    const idea = quoteSession.description.length > 220
-        ? quoteSession.description.slice(0, 217) + '...'
-        : quoteSession.description;
-
-    const priceLine = quoteSession.price
-        ? `${formatCop(quoteSession.price.min)} – ${formatCop(quoteSession.price.max)}`
-        : 'por definir';
-
-    return [
-        `Hola Negas, soy ${quoteSession.name}.`,
-        '',
-        'Acabo de cotizar en la página:',
-        `• Idea: ${idea}`,
-        `• Tamaño: ${quoteSession.sizeCm} cm`,
-        `• Inversión aproximada: ${priceLine}`,
-        '',
-        'Quiero confirmar los detalles.'
-    ].join('\n');
-}
-
-function showDoneStep() {
-    const doneName = document.getElementById('qm-done-name');
-    const doneVal = document.getElementById('qm-done-val');
-    const waCta = document.getElementById('qm-wa-cta');
-
-    if (doneName) doneName.textContent = quoteSession.name.split(' ')[0] || 'ya quedó';
-    if (doneVal && quoteSession.price) {
-        doneVal.textContent = `${formatCop(quoteSession.price.min)} – ${formatCop(quoteSession.price.max)}`;
-    }
-
-    if (waCta && appConfig.waPhone) {
-        const text = encodeURIComponent(buildWhatsAppMessage());
-        waCta.href = `https://wa.me/${appConfig.waPhone}?text=${text}`;
-        waCta.addEventListener('click', () => {
-            track('ClickWhatsApp', { origen: 'cierre-cotizador' });
-        }, { once: true });
-    }
-
-    showStep(5);
-}
-
 async function submitQuote({ skipImage = false } = {}) {
     if (isSubmitting) return;
     if (!quoteSession.leadId || !quoteSession.token) {
@@ -910,14 +858,18 @@ async function submitQuote({ skipImage = false } = {}) {
             quoteSession.price = { min: data.price.min, max: data.price.max };
         }
 
-        track('SubmitApplication', {
-            content_name: 'Cotizacion completa',
-            value: quoteSession.price?.min || 0,
-            currency: 'COP'
-        });
-        trackAdsConversion();
-
-        showDoneStep();
+        // Las conversiones (SubmitApplication de Meta y la de Google Ads) se
+        // disparan en /gracias, no aqui: al redirigir, la navegacion cancela
+        // el beacon del pixel y el evento se pierde. Alli van en page load,
+        // que ademas es el metodo con el que Ads cuenta esta conversion.
+        sessionStorage.setItem('negasQuote', JSON.stringify({
+            name: quoteSession.name,
+            description: quoteSession.description,
+            sizeCm: quoteSession.sizeCm,
+            price: quoteSession.price
+        }));
+        sessionStorage.removeItem('negasGracias');
+        window.location.assign('/gracias');
     } catch (error) {
         setError('form', error.message);
     } finally {

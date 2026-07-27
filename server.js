@@ -227,6 +227,7 @@ app.get('/api/config', apiLimiter, (_req, res) => {
     metaPixelId: META_PIXEL_ID,
     googleAdsId: (process.env.GOOGLE_ADS_ID || '').trim(),
     googleAdsConversionLabel: (process.env.GOOGLE_ADS_CONVERSION_LABEL || '').trim(),
+    googleAdsConversionLabelCompleta: (process.env.GOOGLE_ADS_CONVERSION_LABEL_COMPLETA || '').trim(),
     ga4Id: (process.env.GA4_MEASUREMENT_ID || '').trim(),
     pricing: PRICING,
     gallery: { categories: GALLERY_CATEGORIES, spans: GALLERY_SPANS }

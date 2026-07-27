@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotizaci&#243;n recibida | Negas Tattoo</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/favicon.png">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://connect.facebook.net">
+
+    <!-- Pagina de conversion: no aporta nada en buscadores y canibalizaria la
+         landing. Fuera del indice y fuera del sitemap.xml. -->
+    <meta name="robots" content="noindex,nofollow">
+
+    <!-- Meta Pixel — el ID llega desde /api/config (variable META_PIXEL_ID). -->
+    <script src="/pixel.js" defer></script>
+    <!-- End Meta Pixel -->
+
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .ty-wrap { max-width: 42rem; margin: 0 auto; padding: 4.5rem 1.5rem 5rem; }
+        .ty-kicker { font-family: monospace; font-size: .625rem; text-transform: uppercase; letter-spacing: .2em; color: #D20000; margin-bottom: .85rem; }
+        .ty-title { font-size: clamp(2.5rem, 11vw, 4.5rem) !important; text-align: left !important; line-height: .85; margin-bottom: 1.25rem; }
+        .ty-title span { color: #D20000; }
+        .ty-lead { color: #a1a1aa; font-size: 1rem; line-height: 1.65; padding-bottom: 2.5rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+
+        .ty-price { border: 2px solid #D20000; background: rgba(210,0,0,.07); padding: 1.75rem; margin: 2.5rem 0; text-align: center; }
+        .ty-price-label { font-family: monospace; font-size: .6rem; text-transform: uppercase; letter-spacing: .15em; color: #D20000; margin-bottom: .6rem; }
+        .ty-price-val { font-family: 'Archivo Black', sans-serif; font-size: clamp(1.35rem, 6vw, 2rem); color: #fff; line-height: 1.1; letter-spacing: -.03em; }
+        .ty-price-note { color: #a1a1aa; font-size: .8rem; line-height: 1.5; margin: .75rem 0 0; }
+
+        .ty-cta { display: flex; align-items: center; justify-content: center; gap: .6rem; width: 100%; padding: 1.35rem 1rem; margin-top: 2rem; background: #D20000; color: #fff; text-decoration: none; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -.04em; font-size: 1.15rem; transition: background-color .3s; }
+        .ty-cta:hover { background: #b00000; }
+        .ty-cta svg { width: 1.2rem; height: 1.2rem; }
+
+        .ty-links { display: inline-flex; align-items: center; gap: .5rem; font-family: monospace; font-size: .625rem; text-transform: uppercase; letter-spacing: .2em; color: #52525b; margin-top: 3rem; }
+        .ty-links a { color: inherit; text-decoration: none; transition: color .2s; }
+        .ty-links a:hover { color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="ty-wrap">
+        <div class="ty-kicker">Cotizaci&#243;n recibida</div>
+        <h1 class="ty-title">Listo,<br><span id="ty-name">ya qued&#243;</span></h1>
+        <p class="ty-lead">
+            Tu cotizaci&#243;n ya me lleg&#243;. Te escribo por <strong>WhatsApp</strong> para confirmar
+            los detalles y cuadrar la fecha. Si quieres adelantar, escr&#237;beme t&#250; de una &#8212;
+            el mensaje ya va listo.
+        </p>
+
+        <!-- El rango lo calculo el servidor en /api/lead/complete; aqui solo se
+             muestra. Si alguien entra directo a /gracias, no hay nada que
+             mostrar y el bloque se queda oculto. -->
+        <div class="ty-price" id="ty-price" hidden>
+            <div class="ty-price-label">Inversi&#243;n aproximada</div>
+            <div class="ty-price-val" id="ty-price-val"></div>
+            <p class="ty-price-note">Rango estimado. El valor final se confirma al revisar el dise&#241;o.</p>
+        </div>
+
+        <a href="#" class="ty-cta" id="ty-wa" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.9 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            Escribirle a Negas
+        </a>
+
+        <nav class="ty-links" aria-label="Seguir navegando">
+            <a href="/cuidados">Cuidados post-tatuaje</a> <span>/</span>
+            <a href="/#work">Ver portafolio</a> <span>/</span>
+            <a href="/">Inicio</a>
+        </nav>
+    </div>
+
+    <script src="/gracias.js" defer></script>
+</body>
+</html>

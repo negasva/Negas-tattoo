@@ -1261,7 +1261,7 @@ section[id] { scroll-margin-top: var(--nav-h); }
     border: 2px solid #2a2a2a;
     transform: translateY(16px) scale(.98);
     transition: transform .32s cubic-bezier(0.16, 1, 0.3, 1);
-    --qm-pad-x: 1.75rem;
+    padding: 2rem 1.75rem 0;
 }
 
 .qm.is-open .qm-panel {
@@ -1276,7 +1276,7 @@ section[id] { scroll-margin-top: var(--nav-h); }
         height: 100dvh;
         border: none;
         border-top: 3px solid var(--red);
-        --qm-pad-x: 1.25rem;
+        padding: 1.75rem 1.25rem 0;
     }
 }
 
@@ -1303,7 +1303,6 @@ section[id] { scroll-margin-top: var(--nav-h); }
 /* Banda 1: cabecera fija (titulo + progreso). No scrollea nunca. */
 .qm-head {
     flex: 0 0 auto;
-    padding: 2rem var(--qm-pad-x) 0;
     margin-bottom: 1.5rem;
     transition: opacity .2s ease;
 }
@@ -1333,7 +1332,6 @@ section[id] { scroll-margin-top: var(--nav-h); }
    panel sin que el carrusel lo empuje fuera. */
 .qm-car {
     flex: 0 0 auto;
-    padding: 0 var(--qm-pad-x);
     margin: -.75rem 0 1.25rem;
 }
 
@@ -1463,8 +1461,6 @@ section[id] { scroll-margin-top: var(--nav-h); }
     flex-direction: column;
     overflow-y: auto;
     overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    padding: 0 var(--qm-pad-x);
 }
 
 /* ── pasos ── */
@@ -1732,17 +1728,12 @@ section[id] { scroll-margin-top: var(--nav-h); }
 /* Pantallas bajas (portatiles de 600-700px, movil en horizontal): se recorta
    la cabecera y el boton para que el paso entero siga cabiendo. */
 @media (max-height: 700px) {
-    .qm-head {
-        padding-top: 1.25rem;
-        margin-bottom: 1rem;
-    }
-    .qm-kicker { margin-bottom: .4rem; }
+    .qm-panel { padding-top: 1.25rem; }
+    .qm-head { margin-bottom: 1rem; }
     .qm-title {
         font-size: clamp(1.35rem, 5vw, 1.75rem) !important;
         margin-bottom: .85rem;
     }
-    .qm-car { margin-bottom: .85rem; }
-    .qm-step-lead { margin-bottom: .9rem; }
     .qm-field { margin-bottom: .9rem; }
     .qm-foot {
         padding-top: .75rem;

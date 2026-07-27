@@ -512,8 +512,10 @@ function showStep(step) {
     if (fill) fill.style.width = `${(Math.min(step, TOTAL_STEPS) / TOTAL_STEPS) * 100}%`;
     if (now) now.textContent = String(Math.min(step, TOTAL_STEPS));
 
-    const panel = modal.querySelector('.qm-panel');
-    if (panel) panel.scrollTop = 0;
+    // El cuerpo es el que scrollea (el panel tiene alto fijo), asi que es ahi
+    // donde hay que volver arriba al cambiar de paso.
+    const body = modal.querySelector('.qm-body');
+    if (body) body.scrollTop = 0;
 
     const focusTarget = modal.querySelector('.qm-step.is-active input:not([type="hidden"]):not([type="checkbox"]), .qm-step.is-active textarea');
     if (focusTarget && !isMobileDevice()) setTimeout(() => focusTarget.focus(), 220);

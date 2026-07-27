@@ -342,7 +342,7 @@ function qmCarStop() {
 function qmCarPlay() {
     qmCarStop();
     if (qmCarStill.matches || !qmCar || qmCar.hidden || !isQuoteOpen()) return;
-    qmCarTimer = setInterval(() => qmCarGo(qmCarIndex + 1), 2250);
+    qmCarTimer = setInterval(() => qmCarGo(qmCarIndex + 1), 1250);
 }
 
 function qmCarGo(i) {

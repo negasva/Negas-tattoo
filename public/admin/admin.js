@@ -101,6 +101,9 @@ async function loadDashboard() {
         renderLeads()
     } catch (err) {
         console.error(err)
+        // El toast se va en 3 segundos y la tabla vacia se lee como "no hay
+        // leads". El motivo real (403, sesion expirada) se queda en la tabla.
+        $('leads-table').innerHTML = `<tr><td colspan="7" class="px-6 py-10 text-center text-zinc-500">${escapeHtml(err.message)}</td></tr>`
         toast('No se pudieron cargar los leads', true)
     }
 }

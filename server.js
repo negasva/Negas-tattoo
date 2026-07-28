@@ -251,7 +251,8 @@ app.get('/api/health', apiLimiter, asyncRoute('No se pudo completar el diagnosti
     WHATSAPP_PHONE: Boolean((process.env.WHATSAPP_PHONE || '').trim()),
     RECAPTCHA_SITE_KEY: Boolean(RECAPTCHA_SITE_KEY),
     RECAPTCHA_SECRET_KEY: Boolean(RECAPTCHA_SECRET_KEY),
-    META_PIXEL_ID: Boolean(META_PIXEL_ID)
+    META_PIXEL_ID: Boolean(META_PIXEL_ID),
+    ADMIN_EMAILS: ADMIN_EMAILS.length
   };
 
   const db = { tabla_leads: null, columnas_nuevas_de_leads: null, tabla_gallery_images: null };
@@ -596,6 +597,14 @@ async function requireAdmin(req, res, next) {
     const email = (data.user.email || '').toLowerCase();
     // Falla cerrado: lista vacia = nadie entra. Antes, ADMIN_EMAILS sin
     // rellenar convertia en administrador a cualquier usuario registrado.
+    // El mensaje distingue los dos casos: sin esto, "no tienes permisos" para
+    // el unico dueno del estudio no dice que lo que falta es la env var.
+    if (!ADMIN_EMAILS.length) {
+      return res.status(403).json({
+        ok: false,
+        error: 'El servidor no tiene ADMIN_EMAILS configurada: nadie puede administrar.'
+      });
+    }
     if (!ADMIN_EMAILS.includes(email)) {
       return res.status(403).json({ ok: false, error: 'Esta cuenta no tiene permisos de administrador.' });
     }
@@ -855,6 +864,9 @@ if (require.main === module) {
     console.log(`Server running on port ${PORT}`);
     if (!SUPABASE_SERVICE_ROLE_KEY) {
       console.warn('⚠  Falta SUPABASE_SERVICE_ROLE_KEY — revisa /api/health');
+    }
+    if (!ADMIN_EMAILS.length) {
+      console.warn('⚠  Falta ADMIN_EMAILS — el panel /admin devolvera 403 a todo el mundo');
     }
   });
 }
